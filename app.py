@@ -11,6 +11,7 @@ from src.config import Config
 from src.ai.client import AIClient
 from src.core.workspace import WorkspaceManager
 from src.core.task_queue import get_task_queue, shutdown_task_queue
+from src.core.standards_store import StandardsStore
 from src.api import (
     chat_bp,
     init_chat_bp,
@@ -18,6 +19,8 @@ from src.api import (
     init_agents_bp,
     institutions_bp,
     init_institutions_bp,
+    standards_bp,
+    init_standards_bp,
 )
 
 
@@ -27,6 +30,7 @@ app.secret_key = Config.SECRET_KEY
 
 # Initialize core services
 workspace_manager = WorkspaceManager()
+standards_store = StandardsStore()
 
 # Initialize AI client (may fail if no API key)
 try:
@@ -39,10 +43,12 @@ except ValueError as e:
 init_chat_bp(workspace_manager, ai_client)
 init_agents_bp(workspace_manager)
 init_institutions_bp(workspace_manager)
+init_standards_bp(standards_store)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
 app.register_blueprint(institutions_bp)
+app.register_blueprint(standards_bp)
 
 # Start task queue
 task_queue = get_task_queue()

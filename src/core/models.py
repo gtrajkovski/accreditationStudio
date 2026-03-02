@@ -921,3 +921,173 @@ class ChunkedDocument:
             chunking_stats=data.get("chunking_stats", {}),
             created_at=data.get("created_at", now_iso()),
         )
+
+
+# ===========================
+# Standards Library Models
+# ===========================
+
+@dataclass
+class ChecklistItem:
+    """A checklist item within a standards section.
+
+    Represents a specific requirement or criterion that documents
+    must satisfy for accreditation compliance.
+    """
+    number: str = ""                          # e.g., "1.a", "2.b.i"
+    category: str = ""                        # e.g., "Institutional", "Program"
+    description: str = ""
+    section_reference: str = ""               # e.g., "Section I.A.1"
+    applies_to: List[str] = field(default_factory=list)  # DocumentType values
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "number": self.number,
+            "category": self.category,
+            "description": self.description,
+            "section_reference": self.section_reference,
+            "applies_to": self.applies_to,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ChecklistItem":
+        return cls(
+            number=data.get("number", ""),
+            category=data.get("category", ""),
+            description=data.get("description", ""),
+            section_reference=data.get("section_reference", ""),
+            applies_to=data.get("applies_to", []),
+        )
+
+
+@dataclass
+class StandardsSection:
+    """A section within a standards library.
+
+    Sections form a hierarchy (e.g., I -> I.A -> I.A.1) linked
+    via parent_section references.
+    """
+    id: str = field(default_factory=lambda: generate_id("sec"))
+    number: str = ""                          # e.g., "I", "I.A", "I.A.1"
+    title: str = ""
+    text: str = ""                            # Full section text
+    parent_section: str = ""                  # ID of parent section (empty for top-level)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "number": self.number,
+            "title": self.title,
+            "text": self.text,
+            "parent_section": self.parent_section,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "StandardsSection":
+        return cls(
+            id=data.get("id", generate_id("sec")),
+            number=data.get("number", ""),
+            title=data.get("title", ""),
+            text=data.get("text", ""),
+            parent_section=data.get("parent_section", ""),
+        )
+
+
+@dataclass
+class StandardsLibrary:
+    """A set of accreditation standards for an accrediting body.
+
+    Contains the hierarchical structure of standards sections and
+    checklist items used for compliance auditing.
+    """
+    id: str = field(default_factory=lambda: generate_id("std"))
+    accrediting_body: AccreditingBody = AccreditingBody.ACCSC
+    name: str = ""                            # e.g., "ACCSC Substantive Standards"
+    version: str = ""                         # e.g., "2023"
+    effective_date: str = ""
+    sections: List[StandardsSection] = field(default_factory=list)
+    checklist_items: List[ChecklistItem] = field(default_factory=list)
+    full_text: str = ""                       # Complete standards document text
+    is_system_preset: bool = False
+    created_at: str = field(default_factory=now_iso)
+    updated_at: str = field(default_factory=now_iso)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "accrediting_body": self.accrediting_body.value if isinstance(self.accrediting_body, AccreditingBody) else self.accrediting_body,
+            "name": self.name,
+            "version": self.version,
+            "effective_date": self.effective_date,
+            "sections": [s.to_dict() for s in self.sections],
+            "checklist_items": [c.to_dict() for c in self.checklist_items],
+            "full_text": self.full_text,
+            "is_system_preset": self.is_system_preset,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "StandardsLibrary":
+        accreditor = data.get("accrediting_body", "ACCSC")
+        if isinstance(accreditor, str):
+            try:
+                accreditor = AccreditingBody(accreditor)
+            except ValueError:
+                accreditor = AccreditingBody.CUSTOM
+
+        return cls(
+            id=data.get("id", generate_id("std")),
+            accrediting_body=accreditor,
+            name=data.get("name", ""),
+            version=data.get("version", ""),
+            effective_date=data.get("effective_date", ""),
+            sections=[StandardsSection.from_dict(s) for s in data.get("sections", [])],
+            checklist_items=[ChecklistItem.from_dict(c) for c in data.get("checklist_items", [])],
+            full_text=data.get("full_text", ""),
+            is_system_preset=data.get("is_system_preset", False),
+            created_at=data.get("created_at", now_iso()),
+            updated_at=data.get("updated_at", now_iso()),
+        )
+
+
+@dataclass
+class RegulatoryStack:
+    """Combined regulatory requirements for an institution.
+
+    Aggregates accreditor standards with federal, state, and
+    professional requirements for comprehensive compliance tracking.
+    """
+    id: str = field(default_factory=lambda: generate_id("stack"))
+    institution_id: str = ""
+    accreditor_standards_id: str = ""         # Reference to StandardsLibrary
+    federal_regulations: List[Dict[str, Any]] = field(default_factory=list)
+    state_regulations: List[Dict[str, Any]] = field(default_factory=list)
+    professional_requirements: List[Dict[str, Any]] = field(default_factory=list)
+    created_at: str = field(default_factory=now_iso)
+    updated_at: str = field(default_factory=now_iso)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "institution_id": self.institution_id,
+            "accreditor_standards_id": self.accreditor_standards_id,
+            "federal_regulations": self.federal_regulations,
+            "state_regulations": self.state_regulations,
+            "professional_requirements": self.professional_requirements,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "RegulatoryStack":
+        return cls(
+            id=data.get("id", generate_id("stack")),
+            institution_id=data.get("institution_id", ""),
+            accreditor_standards_id=data.get("accreditor_standards_id", ""),
+            federal_regulations=data.get("federal_regulations", []),
+            state_regulations=data.get("state_regulations", []),
+            professional_requirements=data.get("professional_requirements", []),
+            created_at=data.get("created_at", now_iso()),
+            updated_at=data.get("updated_at", now_iso()),
+        )
