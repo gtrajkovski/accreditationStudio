@@ -66,13 +66,48 @@ def dashboard():
     """Main dashboard page."""
     institutions = workspace_manager.list_institutions()
 
+    # Calculate metrics
+    total_documents = sum(inst.get('document_count', 0) for inst in institutions)
+
+    # Calculate average compliance rate
+    assessed = [i for i in institutions if i.get('compliance_status') != 'not_assessed']
+    if assessed:
+        compliance_scores = {
+            'compliant': 100,
+            'partial': 50,
+            'non_compliant': 0,
+        }
+        total_score = sum(compliance_scores.get(i['compliance_status'], 0) for i in assessed)
+        compliance_rate = round(total_score / len(assessed))
+    else:
+        compliance_rate = 0
+
+    # Get recent agent sessions across all institutions
+    active_sessions = []
+    for inst in institutions[:10]:  # Check first 10 institutions
+        sessions = workspace_manager.list_agent_sessions(inst['id'], limit=5)
+        for sess in sessions:
+            if sess.get('status') in ('pending', 'running'):
+                sess['institution_name'] = inst['name']
+                active_sessions.append(sess)
+
+    # Sort by created_at and limit
+    active_sessions.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+    active_sessions = active_sessions[:5]
+
+    # Count pending actions (checkpoints awaiting approval)
+    pending_actions = sum(
+        1 for sess in active_sessions
+        if sess.get('status') == 'waiting_for_human'
+    )
+
     return render_template(
         'dashboard.html',
         institutions=institutions,
-        compliance_rate=0,  # TODO: Calculate from institutions
-        pending_actions=0,  # TODO: Count pending checkpoints
-        total_documents=0,  # TODO: Sum documents across institutions
-        active_sessions=[],  # TODO: Get from agent sessions
+        compliance_rate=compliance_rate,
+        pending_actions=pending_actions,
+        total_documents=total_documents,
+        active_sessions=active_sessions,
     )
 
 
@@ -100,10 +135,14 @@ def institution_overview(id):
     if not institution:
         return render_template('404.html'), 404
 
+    # Serialize programs for JavaScript
+    programs_json = [p.to_dict() for p in institution.programs]
+
     return render_template(
         'institutions/overview.html',
         institution=institution,
         current_institution=institution,
+        programs_json=programs_json,
     )
 
 

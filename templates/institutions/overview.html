@@ -86,22 +86,41 @@
                 <th>Program Name</th>
                 <th>Credential</th>
                 <th>Modality</th>
+                <th>Duration</th>
                 <th>Credits</th>
+                <th style="width: 100px;">Actions</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="programs-table-body">
             {% for program in institution.programs %}
-            <tr>
-                <td>{{ program.name }}</td>
+            <tr data-program-id="{{ program.id }}">
+                <td>{{ program.name_en }}</td>
                 <td>{{ program.credential_level.value }}</td>
                 <td>{{ program.modality.value }}</td>
+                <td>{{ program.duration_months }} months</td>
                 <td>{{ program.total_credits }}</td>
+                <td>
+                    <div class="flex gap-xs">
+                        <button class="btn btn-secondary btn-sm" onclick="editProgram('{{ program.id }}')" title="Edit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteProgram('{{ program.id }}')" title="Delete">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <div class="text-center text-muted" style="padding: var(--spacing-lg);">
+    <div class="text-center text-muted" style="padding: var(--spacing-lg);" id="no-programs-message">
         <p>No programs added yet.</p>
     </div>
     {% endif %}
@@ -116,14 +135,218 @@
         <p>No recent activity.</p>
     </div>
 </div>
+
+<!-- Program Modal -->
+<div id="program-modal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="closeProgramModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="program-modal-title">Add Program</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeProgramModal()">&times;</button>
+        </div>
+        <form id="program-form" onsubmit="saveProgram(event)">
+            <input type="hidden" id="program-id" value="">
+
+            <div class="form-group">
+                <label for="program-name">Program Name (English) *</label>
+                <input type="text" id="program-name" name="name_en" required class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="program-name-es">Program Name (Spanish)</label>
+                <input type="text" id="program-name-es" name="name_es" class="form-control">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="program-credential">Credential Level *</label>
+                    <select id="program-credential" name="credential_level" required class="form-control">
+                        <option value="diploma">Diploma</option>
+                        <option value="certificate">Certificate</option>
+                        <option value="associate">Associate</option>
+                        <option value="bachelor">Bachelor</option>
+                        <option value="master">Master</option>
+                        <option value="doctoral">Doctoral</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="program-modality">Modality *</label>
+                    <select id="program-modality" name="modality" required class="form-control">
+                        <option value="on_ground">On Ground</option>
+                        <option value="hybrid">Hybrid</option>
+                        <option value="online">Online</option>
+                        <option value="mixed">Mixed</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="program-duration">Duration (months) *</label>
+                    <input type="number" id="program-duration" name="duration_months" required min="1" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="program-credits">Total Credits</label>
+                    <input type="number" id="program-credits" name="total_credits" min="0" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="program-periods">Academic Periods</label>
+                    <input type="number" id="program-periods" name="academic_periods" min="1" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="program-cost">Total Cost ($)</label>
+                    <input type="number" id="program-cost" name="total_cost" min="0" step="0.01" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="program-licensure" name="licensure_required">
+                    Requires Professional Licensure
+                </label>
+            </div>
+
+            <div id="licensure-fields" style="display: none;">
+                <div class="form-group">
+                    <label for="program-exam">Licensure Exam</label>
+                    <input type="text" id="program-exam" name="licensure_exam" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="program-body">Professional Body</label>
+                    <input type="text" id="program-body" name="professional_body" class="form-control">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeProgramModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="program-submit-btn">Add Program</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-content {
+    position: relative;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    width: auto;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+</style>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+const institutionId = '{{ institution.id }}';
+let programsData = {{ programs_json | tojson | safe }};
+
 async function startWorkflow() {
     try {
         const result = await window.API.post('/api/agents/start-workflow', {
-            institution_id: '{{ institution.id }}',
+            institution_id: institutionId,
             accrediting_body: '{{ institution.accrediting_body.value }}'
         });
 
@@ -135,7 +358,109 @@ async function startWorkflow() {
 }
 
 function showAddProgramModal() {
-    window.toast.info('Program management coming soon!');
+    document.getElementById('program-modal-title').textContent = 'Add Program';
+    document.getElementById('program-submit-btn').textContent = 'Add Program';
+    document.getElementById('program-form').reset();
+    document.getElementById('program-id').value = '';
+    document.getElementById('licensure-fields').style.display = 'none';
+    document.getElementById('program-modal').style.display = 'flex';
 }
+
+function editProgram(programId) {
+    const program = programsData.find(p => p.id === programId);
+    if (!program) {
+        window.toast.error('Program not found');
+        return;
+    }
+
+    document.getElementById('program-modal-title').textContent = 'Edit Program';
+    document.getElementById('program-submit-btn').textContent = 'Save Changes';
+    document.getElementById('program-id').value = programId;
+
+    document.getElementById('program-name').value = program.name_en || '';
+    document.getElementById('program-name-es').value = program.name_es || '';
+    document.getElementById('program-credential').value = program.credential_level || 'certificate';
+    document.getElementById('program-modality').value = program.modality || 'on_ground';
+    document.getElementById('program-duration').value = program.duration_months || '';
+    document.getElementById('program-credits').value = program.total_credits || '';
+    document.getElementById('program-periods').value = program.academic_periods || '';
+    document.getElementById('program-cost').value = program.total_cost || '';
+    document.getElementById('program-licensure').checked = program.licensure_required || false;
+    document.getElementById('program-exam').value = program.licensure_exam || '';
+    document.getElementById('program-body').value = program.professional_body || '';
+
+    document.getElementById('licensure-fields').style.display =
+        program.licensure_required ? 'block' : 'none';
+
+    document.getElementById('program-modal').style.display = 'flex';
+}
+
+function closeProgramModal() {
+    document.getElementById('program-modal').style.display = 'none';
+}
+
+async function saveProgram(event) {
+    event.preventDefault();
+
+    const programId = document.getElementById('program-id').value;
+    const isEdit = !!programId;
+
+    const formData = {
+        name_en: document.getElementById('program-name').value,
+        name_es: document.getElementById('program-name-es').value || null,
+        credential_level: document.getElementById('program-credential').value,
+        modality: document.getElementById('program-modality').value,
+        duration_months: parseInt(document.getElementById('program-duration').value) || 0,
+        total_credits: parseInt(document.getElementById('program-credits').value) || 0,
+        academic_periods: parseInt(document.getElementById('program-periods').value) || 0,
+        total_cost: parseFloat(document.getElementById('program-cost').value) || 0,
+        licensure_required: document.getElementById('program-licensure').checked,
+        licensure_exam: document.getElementById('program-exam').value || null,
+        professional_body: document.getElementById('program-body').value || null,
+    };
+
+    try {
+        let result;
+        if (isEdit) {
+            result = await window.API.put(`/api/institutions/${institutionId}/programs/${programId}`, formData);
+            window.toast.success('Program updated!');
+        } else {
+            result = await window.API.post(`/api/institutions/${institutionId}/programs`, formData);
+            window.toast.success('Program added!');
+        }
+
+        closeProgramModal();
+        location.reload(); // Refresh to show changes
+    } catch (error) {
+        window.toast.error(`Failed to save program: ${error.message}`);
+    }
+}
+
+async function deleteProgram(programId) {
+    if (!confirm('Are you sure you want to delete this program?')) {
+        return;
+    }
+
+    try {
+        await window.API.delete(`/api/institutions/${institutionId}/programs/${programId}`);
+        window.toast.success('Program deleted!');
+        location.reload();
+    } catch (error) {
+        window.toast.error(`Failed to delete program: ${error.message}`);
+    }
+}
+
+// Toggle licensure fields
+document.getElementById('program-licensure').addEventListener('change', function() {
+    document.getElementById('licensure-fields').style.display =
+        this.checked ? 'block' : 'none';
+});
+
+// Close modal on escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeProgramModal();
+    }
+});
 </script>
 {% endblock %}

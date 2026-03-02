@@ -324,7 +324,11 @@ class WorkspaceManager:
         """List all institutions in the workspace.
 
         Returns:
-            List of institution metadata dictionaries.
+            List of institution metadata dictionaries including:
+            - id, name, accrediting_body
+            - program_count, document_count
+            - compliance_status (compliant/partial/non_compliant/not_assessed)
+            - updated_at
         """
         institutions = []
 
@@ -334,17 +338,43 @@ class WorkspaceManager:
                 if institution_file.exists():
                     try:
                         data = self._read_json(institution_file)
+                        documents = data.get("documents", [])
+
+                        # Calculate compliance status from documents/audits
+                        compliance_status = self._calculate_compliance_status(data)
+
                         institutions.append({
                             "id": data.get("id"),
                             "name": data.get("name"),
                             "accrediting_body": data.get("accrediting_body"),
                             "program_count": len(data.get("programs", [])),
+                            "document_count": len(documents),
+                            "compliance_status": compliance_status,
                             "updated_at": data.get("updated_at"),
                         })
                     except (json.JSONDecodeError, KeyError):
                         continue
 
         return sorted(institutions, key=lambda x: x.get("updated_at", ""), reverse=True)
+
+    def _calculate_compliance_status(self, data: Dict[str, Any]) -> str:
+        """Calculate overall compliance status for an institution.
+
+        Args:
+            data: Institution data dictionary.
+
+        Returns:
+            One of: 'compliant', 'partial', 'non_compliant', 'not_assessed'
+        """
+        # Check if there are any audits with findings
+        documents = data.get("documents", [])
+        if not documents:
+            return "not_assessed"
+
+        # Look for audit results in the workspace
+        # For now, return not_assessed until audits are implemented
+        # TODO: Aggregate from actual audit findings
+        return "not_assessed"
 
     def delete_institution(self, institution_id: str) -> bool:
         """Delete an institution's workspace.

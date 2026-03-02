@@ -210,11 +210,17 @@ def create_program(institution_id: str):
     """Create a new program.
 
     Request Body:
-        name: Program name (required)
+        name_en: Program name in English (required)
+        name_es: Program name in Spanish (optional)
         credential_level: Credential level (required)
-        cip_code: CIP code (optional)
-        modality: Delivery modality (optional, default: on_campus)
+        modality: Delivery modality (optional, default: on_ground)
+        duration_months: Program duration in months (optional)
         total_credits: Total credit hours (optional)
+        total_cost: Total program cost (optional)
+        academic_periods: Number of academic periods (optional)
+        licensure_required: Whether licensure is required (optional)
+        licensure_exam: Licensure exam name (optional)
+        professional_body: Professional licensing body (optional)
 
     Returns:
         JSON with created program.
@@ -225,11 +231,11 @@ def create_program(institution_id: str):
 
     data = request.get_json() or {}
 
-    name = data.get('name')
+    name_en = data.get('name_en')
     credential_level = data.get('credential_level')
 
-    if not name:
-        return jsonify({"error": "name is required"}), 400
+    if not name_en:
+        return jsonify({"error": "name_en is required"}), 400
     if not credential_level:
         return jsonify({"error": "credential_level is required"}), 400
 
@@ -243,7 +249,7 @@ def create_program(institution_id: str):
         }), 400
 
     # Validate modality if provided
-    modality = Modality.ON_CAMPUS
+    modality = Modality.ON_GROUND
     if 'modality' in data:
         try:
             modality = Modality(data['modality'])
@@ -255,12 +261,20 @@ def create_program(institution_id: str):
 
     # Create program
     program = Program(
-        name=name,
+        name_en=name_en,
+        name_es=data.get('name_es'),
         credential_level=level,
-        cip_code=data.get('cip_code', ''),
         modality=modality,
+        duration_months=data.get('duration_months', 0),
         total_credits=data.get('total_credits', 0),
-        institution_id=institution_id,
+        total_cost=data.get('total_cost', 0.0),
+        academic_periods=data.get('academic_periods', 0),
+        cost_per_period=data.get('cost_per_period', 0.0),
+        book_cost=data.get('book_cost', 0.0),
+        licensure_required=data.get('licensure_required', False),
+        licensure_exam=data.get('licensure_exam'),
+        professional_body=data.get('professional_body'),
+        programmatic_accreditor=data.get('programmatic_accreditor'),
     )
 
     # Add to institution
@@ -297,11 +311,17 @@ def update_program(institution_id: str, program_id: str):
     """Update program details.
 
     Request Body:
-        name: Program name (optional)
+        name_en: Program name in English (optional)
+        name_es: Program name in Spanish (optional)
         credential_level: Credential level (optional)
-        cip_code: CIP code (optional)
         modality: Delivery modality (optional)
+        duration_months: Program duration in months (optional)
         total_credits: Total credit hours (optional)
+        total_cost: Total program cost (optional)
+        academic_periods: Number of academic periods (optional)
+        licensure_required: Whether licensure is required (optional)
+        licensure_exam: Licensure exam name (optional)
+        professional_body: Professional licensing body (optional)
 
     Returns:
         JSON with updated program.
@@ -317,8 +337,10 @@ def update_program(institution_id: str, program_id: str):
     data = request.get_json() or {}
 
     # Update fields
-    if 'name' in data:
-        program.name = data['name']
+    if 'name_en' in data:
+        program.name_en = data['name_en']
+    if 'name_es' in data:
+        program.name_es = data['name_es']
     if 'credential_level' in data:
         try:
             program.credential_level = CredentialLevel(data['credential_level'])
@@ -327,8 +349,6 @@ def update_program(institution_id: str, program_id: str):
             return jsonify({
                 "error": f"Invalid credential_level. Valid values: {valid_levels}"
             }), 400
-    if 'cip_code' in data:
-        program.cip_code = data['cip_code']
     if 'modality' in data:
         try:
             program.modality = Modality(data['modality'])
@@ -337,8 +357,26 @@ def update_program(institution_id: str, program_id: str):
             return jsonify({
                 "error": f"Invalid modality. Valid values: {valid_modalities}"
             }), 400
+    if 'duration_months' in data:
+        program.duration_months = data['duration_months']
     if 'total_credits' in data:
         program.total_credits = data['total_credits']
+    if 'total_cost' in data:
+        program.total_cost = data['total_cost']
+    if 'academic_periods' in data:
+        program.academic_periods = data['academic_periods']
+    if 'cost_per_period' in data:
+        program.cost_per_period = data['cost_per_period']
+    if 'book_cost' in data:
+        program.book_cost = data['book_cost']
+    if 'licensure_required' in data:
+        program.licensure_required = data['licensure_required']
+    if 'licensure_exam' in data:
+        program.licensure_exam = data['licensure_exam']
+    if 'professional_body' in data:
+        program.professional_body = data['professional_body']
+    if 'programmatic_accreditor' in data:
+        program.programmatic_accreditor = data['programmatic_accreditor']
 
     program.updated_at = datetime.now().isoformat()
     institution.updated_at = datetime.now().isoformat()
