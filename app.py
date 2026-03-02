@@ -5,6 +5,7 @@ educational institutions.
 """
 
 import atexit
+import click
 from flask import Flask, render_template, redirect, url_for
 
 from src.config import Config
@@ -234,6 +235,75 @@ def health_check():
         "version": "0.1.0",
         "ai_enabled": ai_client is not None,
     }
+
+
+# =============================================================================
+# Database CLI Commands
+# =============================================================================
+
+@app.cli.group()
+def db():
+    """Database management commands."""
+    pass
+
+
+@db.command()
+def upgrade():
+    """Apply pending database migrations."""
+    from src.db.migrate import apply_migrations, get_db_path
+
+    click.echo(f"Database: {get_db_path()}")
+    click.echo("Applying migrations...")
+
+    try:
+        applied = apply_migrations()
+        if applied:
+            click.echo(click.style(f"Applied {len(applied)} migration(s):", fg="green"))
+            for version in applied:
+                click.echo(f"  - {version}")
+        else:
+            click.echo(click.style("No pending migrations.", fg="yellow"))
+    except Exception as e:
+        click.echo(click.style(f"Migration failed: {e}", fg="red"), err=True)
+        raise SystemExit(1)
+
+
+@db.command()
+def status():
+    """Show database migration status."""
+    from src.db.migrate import get_migration_status
+
+    status = get_migration_status()
+
+    click.echo(f"Database: {status['db_path']}")
+    click.echo(f"Total migrations: {status['total']}")
+    click.echo(f"Applied: {len(status['applied'])}")
+    click.echo(f"Pending: {len(status['pending'])}")
+
+    if status['applied']:
+        click.echo(click.style("\nApplied:", fg="green"))
+        for v in status['applied']:
+            click.echo(f"  [x] {v}")
+
+    if status['pending']:
+        click.echo(click.style("\nPending:", fg="yellow"))
+        for v in status['pending']:
+            click.echo(f"  [ ] {v}")
+
+
+@app.cli.command('init-db')
+def init_db():
+    """Initialize the database (runs all migrations)."""
+    from src.db.migrate import apply_migrations, get_db_path
+
+    click.echo(f"Initializing database at: {get_db_path()}")
+
+    try:
+        applied = apply_migrations()
+        click.echo(click.style(f"Database initialized with {len(applied)} migration(s).", fg="green"))
+    except Exception as e:
+        click.echo(click.style(f"Initialization failed: {e}", fg="red"), err=True)
+        raise SystemExit(1)
 
 
 # =============================================================================
