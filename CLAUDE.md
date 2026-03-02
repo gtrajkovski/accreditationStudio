@@ -250,22 +250,17 @@ def test_agent_executes_task(mock_anthropic):
 
 ## Current Status
 
-**Phase 1 (Foundation):** Complete
-- ✅ Project scaffolding
-- ✅ WorkspaceManager with file locking and version tracking
-- ✅ Core models (Institution, Program, Document, Audit, Agent models)
-- ✅ BaseAgent framework with tool execution and session management
-- ✅ OrchestratorAgent shell
-- ✅ Task queue infrastructure
-- ✅ Chat API blueprint
-- ✅ Institution CRUD API
-- ✅ Basic dashboard and institution pages
+**Phase 1 (Foundation):** ✅ Complete
 
-**Phase 2 (Document Ingestion):** Complete
-- ✅ Document upload API with file type validation
-- ✅ Document parser (`src/importers/document_parser.py`) — PDF, DOCX, text, images (OCR)
-- ✅ PII detection (`src/importers/pii_detector.py`) with redaction
-- ✅ Chunking pipeline (`src/importers/document_chunker.py`) — section-aware, PII handling, overlap
-- ✅ Ingestion Agent (`src/agents/ingestion_agent.py`) — orchestrates full pipeline
+**Phase 2 (Ingestion + Standards):** ✅ Complete
+- ✅ Document parser, PII detector, chunking pipeline
+- ✅ Ingestion Agent with 7 tools
+- ✅ Standards Library (`src/core/standards_store.py`) with ACCSC/SACSCOC/HLC/ABHES/COE presets
+- ✅ Standards API (`src/api/standards.py`)
+- ✅ Semantic search module (`src/search/`) — embeddings + ChromaDB vector store
+- 🔶 Search API blueprint (pending)
 
-Next: Phase 3 — Compliance Audit Engine (Standards Agent, audit workflow).
+**Phase 3 (Audit Engine):** Next
+- Standards Agent, Audit Agent, audit workflow UI
+
+Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `documents_bp`, `standards_bp`

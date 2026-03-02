@@ -27,22 +27,42 @@ from src.core.models import (
 
 
 class AgentType(Enum):
-    """Types of specialized agents in the system."""
+    """Types of specialized agents in the system.
+
+    Organized by layer:
+    - Orchestration: ORCHESTRATOR
+    - Evidence/Standards: STANDARDS_LIBRARIAN, EVIDENCE_MAPPER, CROSSWALK_BUILDER
+    - Document Intelligence: INGESTION, POLICY_CONSISTENCY, TRUTH_INDEX_CURATOR
+    - Compliance/Audit: COMPLIANCE_AUDIT, RISK_SCORER, SUBSTANTIVE_CHANGE
+    - Output Generation: REMEDIATION, NARRATIVE, PACKET_ASSEMBLER
+    - Operational: CALENDAR_DEADLINE, SITE_VISIT_PREP
+    """
+    # Orchestration Layer
     ORCHESTRATOR = "orchestrator"
-    INGESTION = "ingestion"
-    DOCUMENT_ANALYZER = "document_analyzer"
-    GAP_ANALYZER = "gap_analyzer"
-    COMPLIANCE_CHECKER = "compliance_checker"
+
+    # Evidence & Standards Layer
+    STANDARDS_LIBRARIAN = "standards_librarian"
     EVIDENCE_MAPPER = "evidence_mapper"
-    SELF_STUDY_WRITER = "self_study_writer"
-    TRUTH_RECONCILER = "truth_reconciler"
-    EXHIBIT_ORGANIZER = "exhibit_organizer"
-    PROGRESS_TRACKER = "progress_tracker"
-    RECOMMENDATION_ENGINE = "recommendation_engine"
-    CALENDAR_MANAGER = "calendar_manager"
-    STAKEHOLDER_COORDINATOR = "stakeholder_coordinator"
-    QUALITY_REVIEWER = "quality_reviewer"
-    BRIEFING_GENERATOR = "briefing_generator"
+    CROSSWALK_BUILDER = "crosswalk_builder"
+
+    # Document Intelligence Layer
+    INGESTION = "ingestion"
+    POLICY_CONSISTENCY = "policy_consistency"
+    TRUTH_INDEX_CURATOR = "truth_index_curator"
+
+    # Compliance & Audit Layer
+    COMPLIANCE_AUDIT = "compliance_audit"
+    RISK_SCORER = "risk_scorer"
+    SUBSTANTIVE_CHANGE = "substantive_change"
+
+    # Output Generation Layer
+    REMEDIATION = "remediation"
+    NARRATIVE = "narrative"
+    PACKET_ASSEMBLER = "packet_assembler"
+
+    # Operational Layer
+    CALENDAR_DEADLINE = "calendar_deadline"
+    SITE_VISIT_PREP = "site_visit_prep"
 
 
 class BaseAgent(ABC):

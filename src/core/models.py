@@ -1052,6 +1052,85 @@ class StandardsLibrary:
 
 
 @dataclass
+class AgentResult:
+    """Standardized result from any agent execution.
+
+    All agents return this structure for consistent handling by the
+    orchestrator and workflow engine.
+    """
+    status: str = "success"  # success, error, pending_approval
+    confidence: float = 0.0  # 0.0-1.0, triggers checkpoint if < threshold
+    citations: List[Dict[str, Any]] = field(default_factory=list)  # Evidence pointers
+    artifacts: List[str] = field(default_factory=list)  # Paths to created files
+    data: Dict[str, Any] = field(default_factory=dict)  # Agent-specific output
+    human_checkpoint_required: bool = False
+    checkpoint_reason: str = ""
+    next_actions: List[Dict[str, Any]] = field(default_factory=list)  # Suggested follow-ups
+    error: Optional[str] = None
+    duration_ms: int = 0
+    tokens_used: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "status": self.status,
+            "confidence": self.confidence,
+            "citations": self.citations,
+            "artifacts": self.artifacts,
+            "data": self.data,
+            "human_checkpoint_required": self.human_checkpoint_required,
+            "checkpoint_reason": self.checkpoint_reason,
+            "next_actions": self.next_actions,
+            "error": self.error,
+            "duration_ms": self.duration_ms,
+            "tokens_used": self.tokens_used,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "AgentResult":
+        return cls(
+            status=data.get("status", "success"),
+            confidence=data.get("confidence", 0.0),
+            citations=data.get("citations", []),
+            artifacts=data.get("artifacts", []),
+            data=data.get("data", {}),
+            human_checkpoint_required=data.get("human_checkpoint_required", False),
+            checkpoint_reason=data.get("checkpoint_reason", ""),
+            next_actions=data.get("next_actions", []),
+            error=data.get("error"),
+            duration_ms=data.get("duration_ms", 0),
+            tokens_used=data.get("tokens_used", 0),
+        )
+
+    @classmethod
+    def success(cls, data: Dict[str, Any], confidence: float = 1.0,
+                citations: List[Dict[str, Any]] = None,
+                artifacts: List[str] = None) -> "AgentResult":
+        """Create a successful result."""
+        return cls(
+            status="success",
+            confidence=confidence,
+            citations=citations or [],
+            artifacts=artifacts or [],
+            data=data,
+        )
+
+    @classmethod
+    def error(cls, message: str) -> "AgentResult":
+        """Create an error result."""
+        return cls(status="error", error=message)
+
+    @classmethod
+    def needs_approval(cls, reason: str, data: Dict[str, Any] = None) -> "AgentResult":
+        """Create a result that requires human approval."""
+        return cls(
+            status="pending_approval",
+            human_checkpoint_required=True,
+            checkpoint_reason=reason,
+            data=data or {},
+        )
+
+
+@dataclass
 class RegulatoryStack:
     """Combined regulatory requirements for an institution.
 

@@ -15,6 +15,7 @@ from typing import Dict, Any, List, Optional, Callable, Generator
 from pathlib import Path
 
 from src.agents.base_agent import BaseAgent, AgentType
+from src.agents.registry import register_agent
 from src.core.models import (
     AgentSession,
     Document,
@@ -128,6 +129,7 @@ When processing a document:
 """
 
 
+@register_agent(AgentType.INGESTION)
 class IngestionAgent(BaseAgent):
     """Agent for document ingestion, classification, and processing."""
 

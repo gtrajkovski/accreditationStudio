@@ -15,6 +15,7 @@ from typing import Dict, Any, List, Optional, Callable, Generator
 from datetime import datetime
 
 from src.agents.base_agent import BaseAgent, AgentType
+from src.agents.registry import register_agent
 from src.core.models import (
     AgentSession,
     SessionStatus,
@@ -22,6 +23,7 @@ from src.core.models import (
 )
 
 
+@register_agent(AgentType.ORCHESTRATOR)
 class OrchestratorAgent(BaseAgent):
     """Master agent that coordinates the full accreditation workflow.
 
