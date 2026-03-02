@@ -27,6 +27,11 @@ pytest tests/test_file.py          # Run single test file
 pytest tests/test_file.py::test_fn # Run single test function
 pytest -x                          # Stop on first failure
 pip install -r requirements.txt    # Install dependencies
+
+# Database migrations
+flask db status                    # Show migration status
+flask db upgrade                   # Apply pending migrations
+flask init-db                      # Initialize fresh database
 ```
 
 ---
@@ -35,20 +40,35 @@ pip install -r requirements.txt    # Install dependencies
 
 ### Directory Structure
 
-- **`src/core/`** — Domain layer: models, workspace manager, task queue
-- **`src/agents/`** — Agent implementations (`BaseAgent`, `OrchestratorAgent`) + session management
+- **`src/core/`** — Domain layer: models, workspace manager, task queue, standards store
+- **`src/agents/`** — 24-agent tiered architecture with registry pattern
 - **`src/api/`** — Flask Blueprints with `init_*_bp(dependencies...)` DI pattern
 - **`src/ai/`** — AIClient wrapper for Anthropic SDK
-- **`src/generators/`** — Document generation (planned: `BaseGenerator[T]` pattern from reference)
-- **`src/validators/`** — Validation logic
-- **`src/regulatory/`** — Federal/state/professional regulation definitions
-- **`src/exporters/`** — .docx/.pdf generation, submission packaging
+- **`src/db/`** — SQLite database with migration system (`src/db/migrations/`)
+- **`src/services/`** — Business logic services (e.g., `readiness_service.py`)
+- **`src/i18n/`** — Internationalization (en-US, es-PR) with JSON string files
 - **`src/importers/`** — Document parsing (`document_parser.py`), PII detection (`pii_detector.py`), OCR, chunking
-- **`src/tasks/`** — Background task queue (SQLite-backed)
+- **`src/search/`** — Semantic search with embeddings + ChromaDB vector store
 
-**Entry point:** `app.py` — initializes `WorkspaceManager`, `AIClient`, task queue; registers blueprints; serves templates.
+**Entry point:** `app.py` — initializes `WorkspaceManager`, `AIClient`, `StandardsStore`; registers blueprints; injects i18n context.
 
-**Frontend:** Jinja2 templates + vanilla JS, dark theme (#1a1a2e).
+**Frontend:** Jinja2 templates + vanilla JS, dark theme (#1a1a2e), theme switching.
+
+### 24-Agent Tier Architecture
+
+Agents are organized into tiers (defined in `src/agents/base_agent.py`):
+
+| Tier | Purpose | Agents |
+|------|---------|--------|
+| 0 | Runtime & Governance | `ORCHESTRATOR`, `POLICY_SAFETY`, `EVIDENCE_GUARDIAN` |
+| 1 | Intake & Retrieval | `DOCUMENT_INTAKE`, `PARSING_STRUCTURE`, `PII_REDACTION`, `RETRIEVAL_TUNING` |
+| 2 | Standards & Regulatory | `STANDARDS_CURATOR`, `REGULATORY_STACK`, `STANDARDS_TRANSLATOR` |
+| 3 | Compliance & Quality | `COMPLIANCE_AUDIT`, `CONSISTENCY`, `RISK_SCORER`, `GAP_FINDER` |
+| 4 | Remediation & Authoring | `REMEDIATION`, `POLICY_AUTHOR`, `EXHIBIT_BUILDER`, `CHANGE_IMPACT` |
+| 5 | Submission & Defense | `NARRATIVE`, `CROSSWALK`, `PACKET`, `SITE_VISIT_COACH` |
+| 6 | Product Experience | `WORKFLOW_COACH`, `LOCALIZATION_QA` |
+
+Register agents with the decorator: `@register_agent(AgentType.MY_AGENT)`. The registry enables dynamic dispatch via `AgentRegistry.create(agent_type, session, ...)`.
 
 ### Local Workspace Structure
 
@@ -94,7 +114,38 @@ def init_institutions_bp(workspace_manager):
     _workspace_manager = workspace_manager
 ```
 
-Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `documents_bp`
+Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`
+
+### Database & Migrations
+
+SQLite database with versioned migrations in `src/db/migrations/`. Migrations are numbered sequentially (`0001_core.sql`, `0002_docs.sql`, etc.).
+
+```python
+from src.db.connection import get_conn
+from src.db.migrate import apply_migrations
+
+# Get database connection (row_factory = sqlite3.Row)
+conn = get_conn()
+
+# Apply migrations programmatically
+applied = apply_migrations()
+```
+
+### i18n System
+
+Translation files in `src/i18n/{locale}.json`. Access via template helper `t()` or Python:
+
+```python
+from src.i18n import t, get_all_strings
+
+# Python
+label = t("nav.dashboard", "es-PR")
+
+# Jinja2 (injected via context processor)
+{{ t('nav.dashboard') }}
+```
+
+Add new strings to both `en-US.json` and `es-PR.json`. Keys use dot notation (e.g., `nav.dashboard`, `compliance.status.compliant`).
 
 ### Document Import Pipeline
 
@@ -103,48 +154,37 @@ Documents flow through: **upload → parse → PII detect → store**
 ```python
 from src.importers import parse_document, detect_pii, redact_pii
 
-# Parse extracts text from PDF/DOCX/text/images
 parsed = parse_document(file_path)  # Returns ParsedDocument
-
-# Detect PII returns list of PIIMatch objects
-matches = detect_pii(parsed.text)
-
-# Redact replaces PII with [REDACTED:type] markers
-safe_text = redact_pii(parsed.text)
+matches = detect_pii(parsed.text)   # Returns list of PIIMatch
+safe_text = redact_pii(parsed.text) # Replaces with [REDACTED:type]
 ```
-
-`ParsedDocument` contains: `text`, `page_count`, `word_count`, `sections`, `metadata`, `parse_errors`
 
 ### Model Serialization
 
-All dataclasses in `src/core/models.py` implement `to_dict()` and `from_dict()` with unknown field filtering for schema evolution:
+All dataclasses implement `to_dict()` and `from_dict()` with unknown field filtering:
 
 ```python
 @dataclass
 class Institution:
     id: str = field(default_factory=lambda: generate_id("inst"))
     name: str = ""
-    # ...
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {"id": self.id, "name": self.name, ...}
-
+    def to_dict(self) -> Dict[str, Any]: ...
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Institution":
-        return cls(
-            id=data.get("id", generate_id("inst")),
-            name=data.get("name", ""),
-            # ...
-        )
+    def from_dict(cls, data: Dict[str, Any]) -> "Institution": ...
 ```
 
 Use `generate_id(prefix)` for IDs and `now_iso()` for timestamps.
 
 ### Agent Implementation
 
-Extend `BaseAgent` in `src/agents/base_agent.py`:
+Extend `BaseAgent` and register with decorator:
 
 ```python
+from src.agents.base_agent import BaseAgent, AgentType
+from src.agents.registry import register_agent
+
+@register_agent(AgentType.MY_AGENT)
 class MyAgent(BaseAgent):
     @property
     def agent_type(self) -> AgentType:
@@ -164,22 +204,25 @@ class MyAgent(BaseAgent):
         return {"error": f"Unknown tool: {tool_name}"}
 ```
 
-Key session management: `AgentSession` tracks tasks, checkpoints, tool calls, token usage, and messages. Agents yield progress updates via generators (`run_turn()`, `run_task()`, `run_all_tasks()`).
+Session management: `AgentSession` tracks tasks, checkpoints, tool calls, token usage. Agents yield progress via generators (`run_turn()`, `run_task()`, `run_all_tasks()`).
+
+### Readiness Score Service
+
+`src/services/readiness_service.py` computes institution readiness (0-100) with weighted sub-scores:
+
+```python
+from src.services.readiness_service import compute_readiness, get_next_actions
+
+readiness = compute_readiness(institution_id, accreditor_code="ACCSC")
+# Returns: total, documents, compliance, evidence, consistency scores + blockers
+
+actions = get_next_actions(institution_id, readiness)
+# Returns prioritized list of NextAction objects
+```
 
 ### Confidence Threshold
 
 Agents check confidence against `Config.AGENT_CONFIDENCE_THRESHOLD` (default 0.7). Below threshold → flagged for human review via `HumanCheckpoint`.
-
----
-
-## Core Models
-
-**`src/core/models.py`** defines:
-
-- **Enums:** `AccreditingBody`, `DocumentType`, `ComplianceStatus`, `FindingSeverity`, `RegulatorySource`, `AuditStatus`, `ExhibitStatus`, `SessionStatus`, `TaskPriority`, etc.
-- **Domain Models:** `Institution`, `Program`, `Document`, `Audit`, `AuditFinding`
-- **Importer Models:** `ParsedDocument` (in `document_parser.py`), `PIIMatch` (in `pii_detector.py`)
-- **Agent Models:** `AgentSession`, `AgentTask`, `ToolCall`, `HumanCheckpoint`, `ChatMessage`
 
 ---
 
@@ -190,6 +233,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 MODEL=claude-sonnet-4-20250514
 PORT=5003
 WORKSPACE_DIR=./workspace
+DATABASE=./accreditai.db
 AGENT_CONFIDENCE_THRESHOLD=0.7
 VECTOR_STORE=sqlite-vss
 CHUNK_SIZE=500
@@ -253,14 +297,20 @@ def test_agent_executes_task(mock_anthropic):
 **Phase 1 (Foundation):** ✅ Complete
 
 **Phase 2 (Ingestion + Standards):** ✅ Complete
-- ✅ Document parser, PII detector, chunking pipeline
-- ✅ Ingestion Agent with 7 tools
-- ✅ Standards Library (`src/core/standards_store.py`) with ACCSC/SACSCOC/HLC/ABHES/COE presets
-- ✅ Standards API (`src/api/standards.py`)
-- ✅ Semantic search module (`src/search/`) — embeddings + ChromaDB vector store
-- 🔶 Search API blueprint (pending)
+- Document parser, PII detector, chunking pipeline
+- Ingestion Agent with 7 tools
+- Standards Library with ACCSC/SACSCOC/HLC/ABHES/COE presets
+- Semantic search (embeddings + ChromaDB)
+- i18n system (en-US, es-PR)
+- Theme switching
 
-**Phase 3 (Audit Engine):** Next
-- Standards Agent, Audit Agent, audit workflow UI
+**Phase 3 (Audit Engine + Readiness):** In Progress
+- ✅ 24-agent tiered architecture
+- ✅ Agent registry with dynamic dispatch
+- ✅ Evidence Guardian (Tier 0 governance)
+- ✅ Readiness Score service with sub-scores
+- ✅ Database migrations (10 migrations)
+- 🔶 Consistency Agent integration
+- 🔶 Full audit workflow UI
 
-Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `documents_bp`, `standards_bp`
+Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`
