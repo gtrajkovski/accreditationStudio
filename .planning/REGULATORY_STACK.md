@@ -383,6 +383,61 @@ Section VII - Financial Practices
 
 ---
 
+---
+
+## Feature 9: Accreditor Package System
+
+### Purpose
+Repeatable onboarding for any accreditor (institutional or programmatic).
+
+### Package Structure
+```
+src/accreditors/<accreditor_id>/
+├── manifest.json    # id, name, type, scope
+├── sources.py       # Official URLs, fetch cadence
+├── parser.py        # Normalize to StandardsTree
+└── mappings.py      # Crosswalk seeds (optional)
+```
+
+### Recognized Institutional Accreditors (USDE)
+**Regional-equivalent:** HLC, MSCHE, NECHE, NWCCU, SACSCOC, WSCUC, ACCJC
+**National-equivalent:** ACCSC, ACCET, ACICS, COE, DEAC, ABHE, TRACS, AARTS, AIJS, NYSED
+
+---
+
+## Feature 10: Accreditor Switch Planner
+
+### Purpose
+Gap analysis when exploring accreditor change (A → B).
+
+### Workflow
+```
+Current Accreditor Stack → Crosswalk → Target Accreditor Stack
+                              ↓
+                      Gap Analysis
+                              ↓
+            net_new_requirements[]
+            evidence_gaps[]
+            governance_changes[]
+            transition_timeline[]
+```
+
+---
+
+## Feature 11: Accreditation Calendar + Letter Extraction
+
+### Purpose
+Track deadlines from cycles, visits, and sanction/monitoring letters.
+
+### Letter Extraction Agent
+Input: Uploaded accreditor letter (PDF/DOCX)
+Output: Extracted deadlines, deliverables, cited standards, inferred tasks
+
+### Event Types
+- visit, report, sanction, monitoring, rfi, internal
+
+---
+
 ## API Endpoints Summary
 
 | Method | Endpoint | Purpose |
