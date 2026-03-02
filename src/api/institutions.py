@@ -1,0 +1,569 @@
+"""Institution and Program CRUD API endpoints.
+
+Provides endpoints for:
+- Institution management (CRUD)
+- Program management (CRUD)
+- Document upload and management
+"""
+
+import json
+from typing import Dict, Any, Optional, List
+from flask import Blueprint, request, jsonify
+from datetime import datetime
+from pathlib import Path
+
+from src.core.models import (
+    Institution,
+    Program,
+    Document,
+    AccreditingBody,
+    CredentialLevel,
+    Modality,
+    DocumentType,
+)
+
+
+# Create Blueprint
+institutions_bp = Blueprint('institutions', __name__)
+
+# Module-level references (set during initialization)
+_workspace_manager = None
+
+
+def init_institutions_bp(workspace_manager):
+    """Initialize the institutions blueprint with dependencies.
+
+    Args:
+        workspace_manager: WorkspaceManager instance for persistence.
+    """
+    global _workspace_manager
+    _workspace_manager = workspace_manager
+    return institutions_bp
+
+
+# Institution endpoints
+
+@institutions_bp.route('/api/institutions', methods=['GET'])
+def list_institutions():
+    """List all institutions.
+
+    Returns:
+        JSON list of institution summaries.
+    """
+    try:
+        institutions = _workspace_manager.list_institutions()
+        return jsonify(institutions), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@institutions_bp.route('/api/institutions', methods=['POST'])
+def create_institution():
+    """Create a new institution.
+
+    Request Body:
+        name: Institution name (required)
+        accrediting_body: Accrediting body code (required)
+        opeid: OPE ID (optional)
+        website: Institution website (optional)
+
+    Returns:
+        JSON with created institution.
+    """
+    data = request.get_json() or {}
+
+    name = data.get('name')
+    accrediting_body = data.get('accrediting_body')
+
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    if not accrediting_body:
+        return jsonify({"error": "accrediting_body is required"}), 400
+
+    # Validate accrediting body
+    try:
+        body = AccreditingBody(accrediting_body)
+    except ValueError:
+        valid_bodies = [b.value for b in AccreditingBody]
+        return jsonify({
+            "error": f"Invalid accrediting_body. Valid values: {valid_bodies}"
+        }), 400
+
+    # Create institution
+    institution = Institution(
+        name=name,
+        accrediting_body=body,
+        opeid=data.get('opeid', ''),
+        website=data.get('website', ''),
+    )
+
+    try:
+        # Create workspace and save
+        _workspace_manager.create_institution_workspace(institution)
+        _workspace_manager.save_institution(institution)
+
+        return jsonify(institution.to_dict()), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@institutions_bp.route('/api/institutions/<institution_id>', methods=['GET'])
+def get_institution(institution_id: str):
+    """Get institution details.
+
+    Returns:
+        JSON with institution data.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    return jsonify(institution.to_dict()), 200
+
+
+@institutions_bp.route('/api/institutions/<institution_id>', methods=['PUT'])
+def update_institution(institution_id: str):
+    """Update institution details.
+
+    Request Body:
+        name: Institution name (optional)
+        accrediting_body: Accrediting body code (optional)
+        opeid: OPE ID (optional)
+        website: Institution website (optional)
+
+    Returns:
+        JSON with updated institution.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    data = request.get_json() or {}
+
+    # Update fields
+    if 'name' in data:
+        institution.name = data['name']
+    if 'accrediting_body' in data:
+        try:
+            institution.accrediting_body = AccreditingBody(data['accrediting_body'])
+        except ValueError:
+            valid_bodies = [b.value for b in AccreditingBody]
+            return jsonify({
+                "error": f"Invalid accrediting_body. Valid values: {valid_bodies}"
+            }), 400
+    if 'opeid' in data:
+        institution.opeid = data['opeid']
+    if 'website' in data:
+        institution.website = data['website']
+
+    institution.updated_at = datetime.now().isoformat()
+
+    try:
+        _workspace_manager.save_institution(institution)
+        return jsonify(institution.to_dict()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@institutions_bp.route('/api/institutions/<institution_id>', methods=['DELETE'])
+def delete_institution(institution_id: str):
+    """Delete an institution and all its data.
+
+    Returns:
+        JSON with success status.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    try:
+        _workspace_manager.delete_institution(institution_id)
+        return jsonify({
+            "success": True,
+            "message": "Institution deleted",
+            "institution_id": institution_id,
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Program endpoints
+
+@institutions_bp.route('/api/institutions/<institution_id>/programs', methods=['GET'])
+def list_programs(institution_id: str):
+    """List all programs for an institution.
+
+    Returns:
+        JSON list of programs.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    programs = [p.to_dict() for p in institution.programs]
+    return jsonify(programs), 200
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/programs', methods=['POST'])
+def create_program(institution_id: str):
+    """Create a new program.
+
+    Request Body:
+        name: Program name (required)
+        credential_level: Credential level (required)
+        cip_code: CIP code (optional)
+        modality: Delivery modality (optional, default: on_campus)
+        total_credits: Total credit hours (optional)
+
+    Returns:
+        JSON with created program.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    data = request.get_json() or {}
+
+    name = data.get('name')
+    credential_level = data.get('credential_level')
+
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+    if not credential_level:
+        return jsonify({"error": "credential_level is required"}), 400
+
+    # Validate credential level
+    try:
+        level = CredentialLevel(credential_level)
+    except ValueError:
+        valid_levels = [l.value for l in CredentialLevel]
+        return jsonify({
+            "error": f"Invalid credential_level. Valid values: {valid_levels}"
+        }), 400
+
+    # Validate modality if provided
+    modality = Modality.ON_CAMPUS
+    if 'modality' in data:
+        try:
+            modality = Modality(data['modality'])
+        except ValueError:
+            valid_modalities = [m.value for m in Modality]
+            return jsonify({
+                "error": f"Invalid modality. Valid values: {valid_modalities}"
+            }), 400
+
+    # Create program
+    program = Program(
+        name=name,
+        credential_level=level,
+        cip_code=data.get('cip_code', ''),
+        modality=modality,
+        total_credits=data.get('total_credits', 0),
+        institution_id=institution_id,
+    )
+
+    # Add to institution
+    institution.programs.append(program)
+    institution.updated_at = datetime.now().isoformat()
+
+    try:
+        _workspace_manager.save_institution(institution)
+        return jsonify(program.to_dict()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/programs/<program_id>', methods=['GET'])
+def get_program(institution_id: str, program_id: str):
+    """Get program details.
+
+    Returns:
+        JSON with program data.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    program = _find_program(institution, program_id)
+    if not program:
+        return jsonify({"error": "Program not found"}), 404
+
+    return jsonify(program.to_dict()), 200
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/programs/<program_id>', methods=['PUT'])
+def update_program(institution_id: str, program_id: str):
+    """Update program details.
+
+    Request Body:
+        name: Program name (optional)
+        credential_level: Credential level (optional)
+        cip_code: CIP code (optional)
+        modality: Delivery modality (optional)
+        total_credits: Total credit hours (optional)
+
+    Returns:
+        JSON with updated program.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    program = _find_program(institution, program_id)
+    if not program:
+        return jsonify({"error": "Program not found"}), 404
+
+    data = request.get_json() or {}
+
+    # Update fields
+    if 'name' in data:
+        program.name = data['name']
+    if 'credential_level' in data:
+        try:
+            program.credential_level = CredentialLevel(data['credential_level'])
+        except ValueError:
+            valid_levels = [l.value for l in CredentialLevel]
+            return jsonify({
+                "error": f"Invalid credential_level. Valid values: {valid_levels}"
+            }), 400
+    if 'cip_code' in data:
+        program.cip_code = data['cip_code']
+    if 'modality' in data:
+        try:
+            program.modality = Modality(data['modality'])
+        except ValueError:
+            valid_modalities = [m.value for m in Modality]
+            return jsonify({
+                "error": f"Invalid modality. Valid values: {valid_modalities}"
+            }), 400
+    if 'total_credits' in data:
+        program.total_credits = data['total_credits']
+
+    program.updated_at = datetime.now().isoformat()
+    institution.updated_at = datetime.now().isoformat()
+
+    try:
+        _workspace_manager.save_institution(institution)
+        return jsonify(program.to_dict()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/programs/<program_id>', methods=['DELETE'])
+def delete_program(institution_id: str, program_id: str):
+    """Delete a program.
+
+    Returns:
+        JSON with success status.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    program = _find_program(institution, program_id)
+    if not program:
+        return jsonify({"error": "Program not found"}), 404
+
+    institution.programs = [p for p in institution.programs if p.id != program_id]
+    institution.updated_at = datetime.now().isoformat()
+
+    try:
+        _workspace_manager.save_institution(institution)
+        return jsonify({
+            "success": True,
+            "message": "Program deleted",
+            "program_id": program_id,
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Document endpoints
+
+@institutions_bp.route('/api/institutions/<institution_id>/documents', methods=['GET'])
+def list_documents(institution_id: str):
+    """List all documents for an institution.
+
+    Query Parameters:
+        doc_type: Filter by document type (optional)
+
+    Returns:
+        JSON list of documents.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    documents = institution.documents
+
+    # Filter by type if specified
+    doc_type = request.args.get('doc_type')
+    if doc_type:
+        documents = [d for d in documents if d.doc_type.value == doc_type]
+
+    return jsonify([d.to_dict() for d in documents]), 200
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/documents', methods=['POST'])
+def create_document(institution_id: str):
+    """Create a document record (metadata only, file upload separate).
+
+    Request Body:
+        title: Document title (required)
+        doc_type: Document type (required)
+        file_path: Path to uploaded file (optional)
+        description: Document description (optional)
+
+    Returns:
+        JSON with created document.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    data = request.get_json() or {}
+
+    title = data.get('title')
+    doc_type = data.get('doc_type')
+
+    if not title:
+        return jsonify({"error": "title is required"}), 400
+    if not doc_type:
+        return jsonify({"error": "doc_type is required"}), 400
+
+    # Validate document type
+    try:
+        dtype = DocumentType(doc_type)
+    except ValueError:
+        valid_types = [t.value for t in DocumentType]
+        return jsonify({
+            "error": f"Invalid doc_type. Valid values: {valid_types}"
+        }), 400
+
+    # Create document
+    document = Document(
+        title=title,
+        doc_type=dtype,
+        file_path=data.get('file_path', ''),
+        description=data.get('description', ''),
+        institution_id=institution_id,
+    )
+
+    # Add to institution
+    institution.documents.append(document)
+    institution.updated_at = datetime.now().isoformat()
+
+    try:
+        _workspace_manager.save_institution(institution)
+        return jsonify(document.to_dict()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/documents/<document_id>', methods=['GET'])
+def get_document(institution_id: str, document_id: str):
+    """Get document details.
+
+    Returns:
+        JSON with document data.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    document = _find_document(institution, document_id)
+    if not document:
+        return jsonify({"error": "Document not found"}), 404
+
+    return jsonify(document.to_dict()), 200
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/documents/<document_id>', methods=['DELETE'])
+def delete_document(institution_id: str, document_id: str):
+    """Delete a document.
+
+    Returns:
+        JSON with success status.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    document = _find_document(institution, document_id)
+    if not document:
+        return jsonify({"error": "Document not found"}), 404
+
+    institution.documents = [d for d in institution.documents if d.id != document_id]
+    institution.updated_at = datetime.now().isoformat()
+
+    try:
+        _workspace_manager.save_institution(institution)
+        return jsonify({
+            "success": True,
+            "message": "Document deleted",
+            "document_id": document_id,
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Truth Index endpoints
+
+@institutions_bp.route('/api/institutions/<institution_id>/truth-index', methods=['GET'])
+def get_truth_index(institution_id: str):
+    """Get the Single Source of Truth index for an institution.
+
+    Returns:
+        JSON with truth index data.
+    """
+    truth_index = _workspace_manager.get_truth_index(institution_id)
+    if truth_index is None:
+        return jsonify({"error": "Institution not found"}), 404
+
+    return jsonify(truth_index), 200
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/truth-index', methods=['PATCH'])
+def update_truth_index(institution_id: str):
+    """Update the truth index.
+
+    Request Body:
+        updates: Dictionary of updates to apply
+        path: Optional dot-separated path for nested updates
+
+    Returns:
+        JSON with updated truth index.
+    """
+    data = request.get_json() or {}
+
+    updates = data.get('updates', {})
+    path = data.get('path', [])
+
+    if isinstance(path, str):
+        path = path.split('.') if path else []
+
+    try:
+        _workspace_manager.update_truth_index(institution_id, updates, path)
+        truth_index = _workspace_manager.get_truth_index(institution_id)
+        return jsonify(truth_index), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Helper functions
+
+def _find_program(institution: Institution, program_id: str) -> Optional[Program]:
+    """Find a program by ID."""
+    for program in institution.programs:
+        if program.id == program_id:
+            return program
+    return None
+
+
+def _find_document(institution: Institution, document_id: str) -> Optional[Document]:
+    """Find a document by ID."""
+    for document in institution.documents:
+        if document.id == document_id:
+            return document
+    return None

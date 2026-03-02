@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Add Institution - AccreditAI{% endblock %}
+{% block header_title %}Add Institution{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px;">
+    <form id="create-form" onsubmit="submitForm(event)">
+        <div class="form-group">
+            <label class="form-label" for="name">Institution Name *</label>
+            <input
+                type="text"
+                id="name"
+                name="name"
+                class="form-input"
+                placeholder="e.g., Acme University"
+                required
+            >
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="accrediting_body">Accrediting Body *</label>
+            <select id="accrediting_body" name="accrediting_body" class="form-select" required>
+                <option value="">Select accreditor...</option>
+                {% for body in accrediting_bodies %}
+                <option value="{{ body }}">{{ body }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="opeid">OPE ID</label>
+            <input
+                type="text"
+                id="opeid"
+                name="opeid"
+                class="form-input"
+                placeholder="e.g., 00123456"
+            >
+            <small class="text-muted">8-digit Office of Postsecondary Education ID</small>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="website">Website</label>
+            <input
+                type="url"
+                id="website"
+                name="website"
+                class="form-input"
+                placeholder="https://www.example.edu"
+            >
+        </div>
+
+        <div class="flex gap-md mt-lg">
+            <button type="submit" class="btn btn-primary">
+                Create Institution
+            </button>
+            <a href="{{ url_for('institutions_list') }}" class="btn btn-secondary">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function submitForm(event) {
+    event.preventDefault();
+
+    const form = document.getElementById('create-form');
+    const data = {
+        name: form.name.value,
+        accrediting_body: form.accrediting_body.value,
+        opeid: form.opeid.value,
+        website: form.website.value,
+    };
+
+    try {
+        const result = await window.API.post('/api/institutions', data);
+        window.toast.success('Institution created!');
+        window.location.href = `/institutions/${result.id}`;
+    } catch (error) {
+        window.toast.error(`Failed to create: ${error.message}`);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}AI Chat - AccreditAI{% endblock %}
+{% block header_title %}AI Assistant{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div id="chat-messages" class="chat-messages">
+        <div class="chat-message assistant">
+            <p>Hello! I'm your AccreditAI assistant. I can help you with:</p>
+            <ul style="margin-top: 8px; padding-left: 20px;">
+                <li>Understanding accreditation requirements</li>
+                <li>Analyzing compliance gaps</li>
+                <li>Drafting self-study narratives</li>
+                <li>Preparing for site visits</li>
+            </ul>
+            <p style="margin-top: 8px;">How can I assist you today?</p>
+        </div>
+    </div>
+
+    <div class="chat-input-container">
+        <input
+            type="text"
+            id="chat-input"
+            class="form-input chat-input"
+            placeholder="Type your message..."
+            onkeypress="if(event.key === 'Enter') sendMessage()"
+        >
+        <button id="send-btn" class="btn btn-primary" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+            </svg>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const messagesContainer = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+
+let isStreaming = false;
+
+function addMessage(content, role) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${role}`;
+    messageDiv.innerHTML = content;
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    return messageDiv;
+}
+
+async function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message || isStreaming) return;
+
+    // Add user message
+    addMessage(message, 'user');
+    chatInput.value = '';
+
+    // Create assistant message placeholder
+    const assistantDiv = addMessage('<span class="spinner"></span>', 'assistant');
+
+    isStreaming = true;
+    sendBtn.disabled = true;
+
+    try {
+        // Use streaming API
+        let fullResponse = '';
+
+        await window.API.streamPost('/api/chat/stream', { message }, {
+            onChunk: (text) => {
+                fullResponse += text;
+                assistantDiv.innerHTML = formatMessage(fullResponse);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            },
+            onComplete: () => {
+                assistantDiv.innerHTML = formatMessage(fullResponse);
+            },
+            onError: (error) => {
+                assistantDiv.innerHTML = `<span class="text-error">Error: ${error.message}</span>`;
+                window.toast.error('Failed to get response');
+            }
+        });
+    } catch (error) {
+        assistantDiv.innerHTML = `<span class="text-error">Error: ${error.message}</span>`;
+        window.toast.error('Failed to send message');
+    } finally {
+        isStreaming = false;
+        sendBtn.disabled = false;
+        chatInput.focus();
+    }
+}
+
+function formatMessage(text) {
+    // Simple markdown-like formatting
+    return text
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>');
+}
+
+// Focus input on load
+chatInput.focus();
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Self-Study - {{ institution.name }} - AccreditAI{% endblock %}
+{% block header_title %}Self-Study Drafts{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-primary" onclick="startDrafting()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+    Start AI Drafting
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+            <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+        </svg>
+        <h3 style="margin-bottom: var(--spacing-sm);">No Self-Study Drafts</h3>
+        <p style="margin-bottom: var(--spacing-lg);">
+            Complete a compliance check first, then AI can help draft your self-study narratives.
+        </p>
+        <div class="flex gap-md justify-center">
+            <a href="{{ url_for('institution_compliance', id=institution.id) }}" class="btn btn-secondary">
+                Check Compliance First
+            </a>
+            <button class="btn btn-primary" onclick="startDrafting()">
+                Start AI Drafting
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function startDrafting() {
+    window.toast.info('Complete a compliance check first to enable AI drafting.');
+}
+</script>
+{% endblock %}

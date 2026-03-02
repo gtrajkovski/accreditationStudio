@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}{{ institution.name }} - AccreditAI{% endblock %}
+{% block header_title %}{{ institution.name }}{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('institution_documents', id=institution.id) }}" class="btn btn-secondary">
+    Documents
+</a>
+<a href="{{ url_for('institution_compliance', id=institution.id) }}" class="btn btn-secondary">
+    Compliance
+</a>
+<button class="btn btn-primary" onclick="startWorkflow()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+    </svg>
+    Start AI Workflow
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid mb-lg">
+    <!-- Institution Info -->
+    <div class="card">
+        <h3 class="card-title mb-md">Institution Details</h3>
+        <div class="flex flex-col gap-sm">
+            <div class="flex justify-between">
+                <span class="text-muted">Accreditor:</span>
+                <span>{{ institution.accrediting_body.value }}</span>
+            </div>
+            {% if institution.opeid %}
+            <div class="flex justify-between">
+                <span class="text-muted">OPE ID:</span>
+                <span>{{ institution.opeid }}</span>
+            </div>
+            {% endif %}
+            {% if institution.website %}
+            <div class="flex justify-between">
+                <span class="text-muted">Website:</span>
+                <a href="{{ institution.website }}" target="_blank">{{ institution.website }}</a>
+            </div>
+            {% endif %}
+            <div class="flex justify-between">
+                <span class="text-muted">Created:</span>
+                <span>{{ institution.created_at[:10] }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="card">
+        <h3 class="card-title mb-md">Quick Stats</h3>
+        <div class="flex flex-col gap-sm">
+            <div class="flex justify-between">
+                <span class="text-muted">Programs:</span>
+                <span>{{ institution.programs|length }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-muted">Documents:</span>
+                <span>{{ institution.documents|length }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-muted">Compliance Status:</span>
+                <span class="badge badge-not-assessed">Not Assessed</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Programs Section -->
+<div class="card mb-lg">
+    <div class="card-header">
+        <h3 class="card-title">Programs</h3>
+        <button class="btn btn-secondary btn-sm" onclick="showAddProgramModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Add Program
+        </button>
+    </div>
+
+    {% if institution.programs %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Program Name</th>
+                <th>Credential</th>
+                <th>Modality</th>
+                <th>Credits</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for program in institution.programs %}
+            <tr>
+                <td>{{ program.name }}</td>
+                <td>{{ program.credential_level.value }}</td>
+                <td>{{ program.modality.value }}</td>
+                <td>{{ program.total_credits }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="text-center text-muted" style="padding: var(--spacing-lg);">
+        <p>No programs added yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Activity -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Recent Activity</h3>
+    </div>
+    <div class="text-center text-muted" style="padding: var(--spacing-lg);">
+        <p>No recent activity.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function startWorkflow() {
+    try {
+        const result = await window.API.post('/api/agents/start-workflow', {
+            institution_id: '{{ institution.id }}',
+            accrediting_body: '{{ institution.accrediting_body.value }}'
+        });
+
+        window.toast.success('Workflow started!');
+        window.location.href = '/agent-sessions';
+    } catch (error) {
+        window.toast.error(`Failed to start workflow: ${error.message}`);
+    }
+}
+
+function showAddProgramModal() {
+    window.toast.info('Program management coming soon!');
+}
+</script>
+{% endblock %}

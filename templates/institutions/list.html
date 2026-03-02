@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Institutions - AccreditAI{% endblock %}
+{% block header_title %}Institutions{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('institution_create') }}" class="btn btn-primary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M12 5v14M5 12h14"/>
+    </svg>
+    Add Institution
+</a>
+{% endblock %}
+
+{% block content %}
+{% if institutions %}
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Institution</th>
+                <th>Accreditor</th>
+                <th>Programs</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inst in institutions %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('institution_overview', id=inst.id) }}" style="font-weight: 500;">
+                        {{ inst.name }}
+                    </a>
+                </td>
+                <td>{{ inst.accrediting_body }}</td>
+                <td>{{ inst.program_count }}</td>
+                <td class="text-muted">{{ inst.updated_at[:10] if inst.updated_at else 'N/A' }}</td>
+                <td>
+                    <div class="flex gap-sm">
+                        <a href="{{ url_for('institution_overview', id=inst.id) }}" class="btn btn-secondary btn-sm">
+                            View
+                        </a>
+                        <button class="btn btn-danger btn-sm" onclick="confirmDelete('{{ inst.id }}', '{{ inst.name }}')">
+                            Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: var(--spacing-xl);">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+        <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
+    </svg>
+    <h2 style="margin-bottom: var(--spacing-sm);">No Institutions Yet</h2>
+    <p class="text-muted" style="margin-bottom: var(--spacing-lg);">
+        Add your first institution to get started with accreditation preparation.
+    </p>
+    <a href="{{ url_for('institution_create') }}" class="btn btn-primary btn-lg">
+        Add Your First Institution
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function confirmDelete(id, name) {
+    if (confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+        window.API.delete(`/api/institutions/${id}`)
+            .then(() => {
+                window.toast.success('Institution deleted');
+                location.reload();
+            })
+            .catch(error => {
+                window.toast.error(`Failed to delete: ${error.message}`);
+            });
+    }
+}
+</script>
+{% endblock %}

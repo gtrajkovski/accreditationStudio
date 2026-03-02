@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Agent Sessions - AccreditAI{% endblock %}
+{% block header_title %}Agent Sessions{% endblock %}
+
+{% block content %}
+<div class="card mb-lg">
+    <div class="card-header">
+        <h3 class="card-title">Active Sessions</h3>
+        <button class="btn btn-secondary btn-sm" onclick="refreshSessions()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Refresh
+        </button>
+    </div>
+
+    <div id="sessions-container">
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <div class="spinner" style="margin: 0 auto var(--spacing-md);"></div>
+            <p>Loading sessions...</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Start New Session</h3>
+    </div>
+    <p class="text-muted mb-md">
+        Start an AI workflow from an institution's overview page, or select one below:
+    </p>
+    <div id="institutions-list">
+        <div class="spinner"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function loadSessions() {
+    const container = document.getElementById('sessions-container');
+
+    try {
+        const sessions = await window.API.get('/api/agents/sessions');
+
+        if (sessions.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                    <p>No active sessions.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = sessions.map(session => `
+            <div class="flex items-center justify-between" style="padding: var(--spacing-md); border-bottom: 1px solid var(--border-subtle);">
+                <div>
+                    <div style="font-weight: 500;">${session.agent_type}</div>
+                    <div class="text-muted" style="font-size: var(--font-size-sm);">
+                        ${session.institution_id} &bull; Started ${session.created_at?.slice(0, 16) || 'N/A'}
+                    </div>
+                </div>
+                <div class="flex items-center gap-md">
+                    <span class="badge badge-${getStatusBadge(session.status)}">${session.status}</span>
+                    ${session.pending_checkpoints > 0 ? `
+                        <button class="btn btn-warning btn-sm" onclick="viewCheckpoints('${session.id}')">
+                            ${session.pending_checkpoints} Pending
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-secondary btn-sm" onclick="viewSession('${session.id}')">
+                        View
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        container.innerHTML = `
+            <div class="text-center text-error" style="padding: var(--spacing-xl);">
+                <p>Failed to load sessions: ${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+async function loadInstitutions() {
+    const container = document.getElementById('institutions-list');
+
+    try {
+        const institutions = await window.API.get('/api/institutions');
+
+        if (institutions.length === 0) {
+            container.innerHTML = `
+                <p class="text-muted">No institutions available. <a href="/institutions/new">Create one first.</a></p>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="flex flex-wrap gap-sm">
+                ${institutions.map(inst => `
+                    <a href="/institutions/${inst.id}" class="btn btn-secondary">
+                        ${inst.name}
+                    </a>
+                `).join('')}
+            </div>
+        `;
+    } catch (error) {
+        container.innerHTML = `<p class="text-error">Failed to load institutions.</p>`;
+    }
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'running': 'info',
+        'awaiting_approval': 'warning',
+        'completed': 'success',
+        'failed': 'error',
+        'cancelled': 'error'
+    };
+    return badges[status] || 'info';
+}
+
+function viewSession(sessionId) {
+    window.toast.info('Session details view coming soon!');
+}
+
+function viewCheckpoints(sessionId) {
+    window.toast.info('Checkpoint review coming soon!');
+}
+
+function refreshSessions() {
+    loadSessions();
+    window.toast.info('Sessions refreshed');
+}
+
+// Load on page ready
+document.addEventListener('DOMContentLoaded', () => {
+    loadSessions();
+    loadInstitutions();
+});
+</script>
+{% endblock %}

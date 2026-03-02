@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AccreditAI{% endblock %}
+{% block header_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid mb-lg">
+    <!-- Quick Stats -->
+    <div class="card">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ institutions|length }}</div>
+                <div class="stat-label">Institutions</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="stat-card">
+            <div class="stat-icon" style="background-color: var(--success);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"/>
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ compliance_rate }}%</div>
+                <div class="stat-label">Average Compliance</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="stat-card">
+            <div class="stat-icon" style="background-color: var(--warning);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4M12 16h.01"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ pending_actions }}</div>
+                <div class="stat-label">Pending Actions</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="stat-card">
+            <div class="stat-icon" style="background-color: var(--info);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <path d="M14 2v6h6"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_documents }}</div>
+                <div class="stat-label">Documents</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Recent Institutions -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Recent Institutions</h2>
+            <a href="{{ url_for('institutions_list') }}" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+
+        {% if institutions %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Accreditor</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inst in institutions[:5] %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('institution_overview', id=inst.id) }}">
+                            {{ inst.name }}
+                        </a>
+                    </td>
+                    <td>{{ inst.accrediting_body }}</td>
+                    <td>
+                        <span class="badge badge-{{ inst.compliance_status or 'not-assessed' }}">
+                            {{ inst.compliance_status or 'Not Assessed' }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <p>No institutions yet.</p>
+            <a href="{{ url_for('institution_create') }}" class="btn btn-primary mt-md">
+                Add Your First Institution
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Active Agent Sessions -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Active Agent Sessions</h2>
+            <a href="{{ url_for('agent_sessions') }}" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+
+        {% if active_sessions %}
+        <div class="flex flex-col gap-md">
+            {% for session in active_sessions[:5] %}
+            <div class="flex items-center justify-between" style="padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border-subtle);">
+                <div>
+                    <div style="font-weight: 500;">{{ session.agent_type }}</div>
+                    <div class="text-muted" style="font-size: var(--font-size-sm);">
+                        {{ session.institution_name }}
+                    </div>
+                </div>
+                <span class="badge badge-{{ 'info' if session.status == 'running' else 'warning' }}">
+                    {{ session.status }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <p>No active sessions.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-lg">
+    <div class="card-header">
+        <h2 class="card-title">Quick Actions</h2>
+    </div>
+    <div class="flex gap-md">
+        <a href="{{ url_for('institution_create') }}" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Add Institution
+        </a>
+        <a href="{{ url_for('chat') }}" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+            Chat with AI
+        </a>
+        <a href="#" class="btn btn-secondary" onclick="showHelp()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/>
+            </svg>
+            Help
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function showHelp() {
+    window.toast.info('Help documentation coming soon!');
+}
+</script>
+{% endblock %}

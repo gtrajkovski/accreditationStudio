@@ -1,0 +1,165 @@
+/* AccreditAI - CSS Custom Properties */
+
+/* ============================================
+   Dark Theme (Default)
+   ============================================ */
+:root,
+[data-theme="dark"] {
+  --theme-name: "dark";
+
+  /* Background Colors */
+  --bg-base: #1a1a2e;
+  --bg-panel: #16213e;
+  --bg-input: #0f0f1a;
+  --bg-hover: #1f2937;
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-card: #1e1e3f;
+
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-disabled: #606060;
+  --text-muted: #888888;
+  --text-inverse: #1a1a2e;
+
+  /* Accent Colors - Blue/Professional */
+  --accent-primary: #4361ee;
+  --accent-hover: #3d8ee6;
+  --accent-light: #5a7bff;
+
+  /* Border Colors */
+  --border-subtle: #2a2a4a;
+  --border-medium: #3a3a5a;
+  --border-focus: #4361ee;
+
+  /* Status Colors */
+  --success: #4ade80;
+  --success-hover: #22c55e;
+  --success-bg: #064e3b;
+  --error: #ef4444;
+  --error-hover: #dc2626;
+  --error-bg: #7f1d1d;
+  --warning: #fbbf24;
+  --warning-hover: #e5a91f;
+  --warning-bg: #78350f;
+  --info: #3b82f6;
+  --info-bg: #1e3a8a;
+
+  /* Compliance Status Colors */
+  --compliant: #4ade80;
+  --partial: #fbbf24;
+  --non-compliant: #ef4444;
+  --not-assessed: #6b7280;
+
+  /* Shadows */
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 2px var(--shadow-color);
+  --shadow-md: 0 4px 6px var(--shadow-color);
+  --shadow-lg: 0 10px 15px var(--shadow-color);
+  --shadow-xl: 0 20px 25px var(--shadow-color);
+}
+
+/* ============================================
+   Light Theme
+   ============================================ */
+[data-theme="light"] {
+  --theme-name: "light";
+
+  /* Background Colors */
+  --bg-base: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-input: #f1f5f9;
+  --bg-hover: #e2e8f0;
+  --bg-overlay: rgba(0, 0, 0, 0.3);
+  --bg-card: #ffffff;
+
+  /* Text Colors */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-disabled: #94a3b8;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* Accent Colors */
+  --accent-primary: #3b52cc;
+  --accent-hover: #2d40a8;
+  --accent-light: #6366f1;
+
+  /* Border Colors */
+  --border-subtle: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --border-focus: #3b52cc;
+
+  /* Status Colors */
+  --success: #16a34a;
+  --success-hover: #15803d;
+  --success-bg: #dcfce7;
+  --error: #dc2626;
+  --error-hover: #b91c1c;
+  --error-bg: #fee2e2;
+  --warning: #d97706;
+  --warning-hover: #b45309;
+  --warning-bg: #fef3c7;
+  --info: #2563eb;
+  --info-bg: #dbeafe;
+
+  /* Compliance Status Colors */
+  --compliant: #16a34a;
+  --partial: #d97706;
+  --non-compliant: #dc2626;
+  --not-assessed: #6b7280;
+
+  /* Shadows */
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 2px var(--shadow-color);
+  --shadow-md: 0 4px 6px var(--shadow-color);
+  --shadow-lg: 0 10px 15px var(--shadow-color);
+  --shadow-xl: 0 20px 25px var(--shadow-color);
+}
+
+/* ============================================
+   Shared Variables (theme-independent)
+   ============================================ */
+:root {
+  /* Layout Spacing */
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 60px;
+  --header-height: 60px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s;
+  --transition-normal: 0.3s;
+  --transition-slow: 0.5s;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Layers */
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 1100;
+  --z-modal-backdrop: 1200;
+  --z-modal: 1300;
+  --z-toast: 1400;
+  --z-tooltip: 1500;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+}
