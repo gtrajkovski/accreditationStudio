@@ -19,6 +19,11 @@ from src.services.work_queue_service import (
     WorkItemType,
     WorkItemPriority,
 )
+from src.services.evidence_contract_service import (
+    check_evidence_coverage,
+    validate_packet_export,
+    CoverageReport,
+)
 from src.services.change_detection_service import (
     detect_change,
     record_change,
@@ -59,4 +64,7 @@ __all__ = [
     "record_change",
     "get_pending_reaudits",
     "DocumentChange",
+    "check_evidence_coverage",
+    "validate_packet_export",
+    "CoverageReport",
 ]
