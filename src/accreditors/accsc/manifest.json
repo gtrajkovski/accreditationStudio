@@ -1,0 +1,11 @@
+{
+  "id": "accsc",
+  "name": "Accrediting Commission of Career Schools and Colleges",
+  "code": "ACCSC",
+  "type": "institutional",
+  "scope": "Postsecondary, non-degree-granting and degree-granting institutions offering certificates, diplomas, and degrees, including associate, baccalaureate, and master's degrees, primarily in career-oriented programs",
+  "default_language": "en-US",
+  "recognized_by": ["USDE"],
+  "website": "https://www.accsc.org",
+  "notes": "One of the largest national accreditors for career colleges. Detailed checklists for enrollment agreements, catalogs, and other institutional documents."
+}
