@@ -1,0 +1,11 @@
+{
+  "id": "coe",
+  "name": "Council on Occupational Education",
+  "code": "COE",
+  "type": "institutional",
+  "scope": "Postsecondary occupational education institutions offering non-degree and applied associate degree programs in career and technical education",
+  "default_language": "en-US",
+  "recognized_by": ["USDE"],
+  "website": "https://council.org",
+  "notes": "National accreditor for career and technical education. Uses numbered standards (1-12) with lettered criteria. Handbook updated annually."
+}
