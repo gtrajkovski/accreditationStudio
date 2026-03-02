@@ -26,6 +26,8 @@ from src.api import (
     init_settings_bp,
     work_queue_bp,
     init_work_queue_bp,
+    autopilot_bp,
+    init_autopilot_bp,
 )
 from src.api.readiness import readiness_bp, init_readiness_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
@@ -54,6 +56,7 @@ init_standards_bp(standards_store)
 init_settings_bp()
 init_readiness_bp(workspace_manager)
 init_work_queue_bp(workspace_manager)
+init_autopilot_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -62,6 +65,7 @@ app.register_blueprint(standards_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(readiness_bp)
 app.register_blueprint(work_queue_bp)
+app.register_blueprint(autopilot_bp)
 
 
 # =============================================================================
@@ -228,6 +232,20 @@ def institution_self_study(id):
 
     return render_template(
         'institutions/self_study.html',
+        institution=institution,
+        current_institution=institution,
+    )
+
+
+@app.route('/institutions/<id>/autopilot')
+def institution_autopilot(id):
+    """Institution autopilot settings page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/autopilot.html',
         institution=institution,
         current_institution=institution,
     )

@@ -1,0 +1,555 @@
+{% extends 'base.html' %}
+
+{% block title %}Autopilot - {{ institution.name }} - {{ t('app.name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-content">
+        <nav class="breadcrumb">
+            <a href="{{ url_for('institutions_list') }}">Institutions</a>
+            <span>/</span>
+            <a href="{{ url_for('institution_overview', id=institution.id) }}">{{ institution.name }}</a>
+            <span>/</span>
+            <span>Autopilot</span>
+        </nav>
+        <h1>Autopilot Settings</h1>
+        <p class="text-muted">Schedule automatic maintenance: re-indexing, consistency checks, and readiness scoring</p>
+    </div>
+    <div class="page-header-actions">
+        <button class="btn btn-primary" onclick="runNow()" id="run-now-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5,3 19,12 5,21"/>
+            </svg>
+            Run Now
+        </button>
+    </div>
+</div>
+
+<div class="autopilot-grid">
+    <!-- Configuration Card -->
+    <div class="card config-card">
+        <div class="card-header">
+            <h2 class="card-title">Schedule Configuration</h2>
+            <label class="toggle-switch">
+                <input type="checkbox" id="autopilot-enabled" onchange="toggleAutopilot()">
+                <span class="toggle-slider"></span>
+                <span class="toggle-label" id="enabled-label">Disabled</span>
+            </label>
+        </div>
+        <div class="card-body">
+            <div class="form-group">
+                <label>Run Time (UTC)</label>
+                <div class="time-picker">
+                    <select id="schedule-hour" class="form-control">
+                        {% for h in range(24) %}
+                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                        {% endfor %}
+                    </select>
+                    <span>:</span>
+                    <select id="schedule-minute" class="form-control">
+                        {% for m in range(0, 60, 15) %}
+                        <option value="{{ m }}">{{ '%02d'|format(m) }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <p class="form-hint">Jobs run daily at this time</p>
+            </div>
+
+            <div class="form-group">
+                <label>Tasks to Run</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="run-reindex" checked>
+                        <span class="checkbox-label">
+                            <strong>Re-index Documents</strong>
+                            <small>Parse and embed new/changed documents</small>
+                        </span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="run-consistency" checked>
+                        <span class="checkbox-label">
+                            <strong>Consistency Checks</strong>
+                            <small>Detect cross-document mismatches</small>
+                        </span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="run-audit">
+                        <span class="checkbox-label">
+                            <strong>Compliance Audit</strong>
+                            <small>Full audit (slower, uses AI)</small>
+                        </span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="run-readiness" checked>
+                        <span class="checkbox-label">
+                            <strong>Readiness Score</strong>
+                            <small>Recompute readiness metrics</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="saveConfig()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Card -->
+    <div class="card status-card">
+        <div class="card-header">
+            <h2 class="card-title">Status</h2>
+        </div>
+        <div class="card-body">
+            <div class="status-item">
+                <span class="status-label">Last Run</span>
+                <span class="status-value" id="last-run">Never</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Next Scheduled</span>
+                <span class="status-value" id="next-run">Not scheduled</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Last Result</span>
+                <span class="status-value" id="last-result">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Readiness Change</span>
+                <span class="status-value" id="readiness-change">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Run History -->
+<div class="card history-card">
+    <div class="card-header">
+        <h2 class="card-title">Run History</h2>
+        <button class="btn btn-ghost btn-sm" onclick="loadHistory()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Refresh
+        </button>
+    </div>
+    <div class="card-body">
+        <table class="table" id="history-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Trigger</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                    <th>Docs Indexed</th>
+                    <th>Issues</th>
+                    <th>Readiness</th>
+                </tr>
+            </thead>
+            <tbody id="history-body">
+                <tr>
+                    <td colspan="7" class="text-center text-muted">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.autopilot-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-sm);
+}
+
+.breadcrumb a {
+    color: var(--text-muted);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    color: var(--accent);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: var(--space-md);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    display: none;
+}
+
+.toggle-slider {
+    width: 44px;
+    height: 24px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.2s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: var(--success);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.toggle-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* Time Picker */
+.time-picker {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.time-picker select {
+    width: 70px;
+}
+
+.time-picker span {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* Checkbox Group */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    cursor: pointer;
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+}
+
+.checkbox-item:hover {
+    background: var(--bg-hover);
+}
+
+.checkbox-item input {
+    margin-top: 4px;
+}
+
+.checkbox-label {
+    display: flex;
+    flex-direction: column;
+}
+
+.checkbox-label strong {
+    font-weight: 500;
+}
+
+.checkbox-label small {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Status Card */
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.status-item:last-child {
+    border-bottom: none;
+}
+
+.status-label {
+    color: var(--text-muted);
+}
+
+.status-value {
+    font-weight: 500;
+}
+
+.status-value.success {
+    color: var(--success);
+}
+
+.status-value.error {
+    color: var(--error);
+}
+
+.status-value.positive {
+    color: var(--success);
+}
+
+.status-value.negative {
+    color: var(--error);
+}
+
+/* Form Actions */
+.form-actions {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Table */
+.history-card .table {
+    width: 100%;
+}
+
+.history-card .table th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: var(--space-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-card .table td {
+    padding: var(--space-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.badge-trigger {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.badge-trigger.scheduled {
+    background: rgba(96, 165, 250, 0.2);
+    color: var(--info);
+}
+
+.badge-trigger.manual {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--warning);
+}
+
+.badge-status {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+}
+
+.badge-status.completed {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.badge-status.failed {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--error);
+}
+
+.badge-status.running {
+    background: rgba(96, 165, 250, 0.2);
+    color: var(--info);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .autopilot-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+const institutionId = '{{ institution.id }}';
+let currentConfig = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadConfig();
+    loadHistory();
+});
+
+async function loadConfig() {
+    try {
+        const response = await window.API.get(`/api/autopilot/institutions/${institutionId}/config`);
+        currentConfig = response;
+        applyConfig(response);
+    } catch (error) {
+        console.error('Failed to load config:', error);
+    }
+}
+
+function applyConfig(config) {
+    document.getElementById('autopilot-enabled').checked = config.enabled;
+    document.getElementById('enabled-label').textContent = config.enabled ? 'Enabled' : 'Disabled';
+    document.getElementById('schedule-hour').value = config.schedule_hour;
+    document.getElementById('schedule-minute').value = config.schedule_minute;
+    document.getElementById('run-reindex').checked = config.run_reindex;
+    document.getElementById('run-consistency').checked = config.run_consistency;
+    document.getElementById('run-audit').checked = config.run_audit;
+    document.getElementById('run-readiness').checked = config.run_readiness;
+
+    // Update status
+    if (config.last_run_at) {
+        document.getElementById('last-run').textContent = formatDate(config.last_run_at);
+    }
+    if (config.next_run_at) {
+        document.getElementById('next-run').textContent = formatDate(config.next_run_at);
+    } else if (!config.enabled) {
+        document.getElementById('next-run').textContent = 'Not scheduled';
+    }
+}
+
+function toggleAutopilot() {
+    const enabled = document.getElementById('autopilot-enabled').checked;
+    document.getElementById('enabled-label').textContent = enabled ? 'Enabled' : 'Disabled';
+}
+
+async function saveConfig() {
+    const config = {
+        enabled: document.getElementById('autopilot-enabled').checked,
+        schedule_hour: parseInt(document.getElementById('schedule-hour').value),
+        schedule_minute: parseInt(document.getElementById('schedule-minute').value),
+        run_reindex: document.getElementById('run-reindex').checked,
+        run_consistency: document.getElementById('run-consistency').checked,
+        run_audit: document.getElementById('run-audit').checked,
+        run_readiness: document.getElementById('run-readiness').checked,
+    };
+
+    try {
+        const response = await window.API.put(`/api/autopilot/institutions/${institutionId}/config`, config);
+        currentConfig = response.config;
+        applyConfig(response.config);
+        window.Toast?.success('Settings saved');
+    } catch (error) {
+        console.error('Failed to save config:', error);
+        window.Toast?.error('Failed to save settings');
+    }
+}
+
+async function runNow() {
+    const btn = document.getElementById('run-now-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Running...';
+
+    try {
+        const response = await window.API.post(`/api/autopilot/institutions/${institutionId}/run`, {});
+        window.Toast?.success('Autopilot run completed');
+        loadHistory();
+        loadConfig();
+    } catch (error) {
+        console.error('Failed to run autopilot:', error);
+        window.Toast?.error('Autopilot run failed');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5,3 19,12 5,21"/>
+            </svg>
+            Run Now
+        `;
+    }
+}
+
+async function loadHistory() {
+    try {
+        const response = await window.API.get(`/api/autopilot/institutions/${institutionId}/history?limit=10`);
+        renderHistory(response.runs);
+
+        // Update status from latest run
+        if (response.runs.length > 0) {
+            const latest = response.runs[0];
+            document.getElementById('last-result').innerHTML = `
+                <span class="badge-status ${latest.status}">${latest.status}</span>
+            `;
+
+            if (latest.readiness_score_before !== null && latest.readiness_score_after !== null) {
+                const diff = latest.readiness_score_after - latest.readiness_score_before;
+                const cls = diff > 0 ? 'positive' : diff < 0 ? 'negative' : '';
+                const sign = diff > 0 ? '+' : '';
+                document.getElementById('readiness-change').innerHTML = `
+                    <span class="${cls}">${sign}${diff}</span>
+                    (${latest.readiness_score_before} → ${latest.readiness_score_after})
+                `;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load history:', error);
+    }
+}
+
+function renderHistory(runs) {
+    const tbody = document.getElementById('history-body');
+
+    if (runs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No runs yet</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = runs.map(run => `
+        <tr>
+            <td>${formatDate(run.created_at)}</td>
+            <td><span class="badge-trigger ${run.trigger_type}">${run.trigger_type}</span></td>
+            <td><span class="badge-status ${run.status}">${run.status}</span></td>
+            <td>${run.duration_seconds ? `${run.duration_seconds}s` : '-'}</td>
+            <td>${run.docs_indexed}${run.docs_failed > 0 ? ` <span class="text-error">(${run.docs_failed} failed)</span>` : ''}</td>
+            <td>${run.consistency_issues_found || 0}</td>
+            <td>${run.readiness_score_after !== null ? run.readiness_score_after : '-'}</td>
+        </tr>
+    `).join('');
+}
+
+function formatDate(isoString) {
+    if (!isoString) return '-';
+    const date = new Date(isoString);
+    return date.toLocaleString();
+}
+</script>
+{% endblock %}

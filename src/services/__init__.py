@@ -19,6 +19,15 @@ from src.services.work_queue_service import (
     WorkItemType,
     WorkItemPriority,
 )
+from src.services.autopilot_service import (
+    get_autopilot_config,
+    save_autopilot_config,
+    execute_autopilot_run,
+    schedule_all_institutions,
+    shutdown_scheduler,
+    AutopilotConfig,
+    AutopilotRun,
+)
 
 __all__ = [
     "compute_readiness",
@@ -33,4 +42,11 @@ __all__ = [
     "WorkItem",
     "WorkItemType",
     "WorkItemPriority",
+    "get_autopilot_config",
+    "save_autopilot_config",
+    "execute_autopilot_run",
+    "schedule_all_institutions",
+    "shutdown_scheduler",
+    "AutopilotConfig",
+    "AutopilotRun",
 ]

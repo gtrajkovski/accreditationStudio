@@ -27,6 +27,9 @@ cryptography>=41.0.0
 requests>=2.31.0
 icalendar>=5.0.0
 
+# Scheduling
+APScheduler>=3.10.0
+
 # Development
 pytest>=7.4.0
 pytest-cov>=4.1.0
