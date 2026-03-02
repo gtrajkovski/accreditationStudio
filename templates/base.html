@@ -1,13 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ locale }}" data-theme="{{ theme if theme != 'system' else '' }}" data-theme-preference="{{ theme }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AccreditAI{% endblock %}</title>
+    <meta name="locale" content="{{ locale }}">
+    <title>{% block title %}{{ t('app.name') }}{% endblock %}</title>
 
     <!-- CSS Files -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    <!-- Preload theme to prevent flash -->
+    <script>
+        (function() {
+            const stored = localStorage.getItem('accreditai_theme');
+            const pref = stored || '{{ theme }}' || 'system';
+            let effective = pref;
+            if (pref === 'system') {
+                effective = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', effective);
+            document.documentElement.setAttribute('data-theme-preference', pref);
+        })();
+    </script>
 
     {% block extra_head %}{% endblock %}
 </head>
@@ -101,9 +116,68 @@
         <!-- Main Content Area -->
         <div class="main-wrapper">
             <header class="header">
-                <h1 class="header-title">{% block header_title %}AccreditAI{% endblock %}</h1>
+                <h1 class="header-title">{% block header_title %}{{ t('app.name') }}{% endblock %}</h1>
                 <div class="header-actions">
                     {% block header_actions %}{% endblock %}
+
+                    <!-- Language Selector -->
+                    <div class="dropdown locale-selector">
+                        <button class="btn btn-ghost dropdown-toggle" type="button" id="localeDropdown">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="2" y1="12" x2="22" y2="12"/>
+                                <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+                            </svg>
+                            <span class="locale-label">{{ t('language.' + locale|replace('-', '_')) }}</span>
+                        </button>
+                        <div class="dropdown-menu" id="localeMenu">
+                            {% for loc in supported_locales %}
+                            <button class="dropdown-item {% if loc.code == locale %}active{% endif %}"
+                                    data-set-locale="{{ loc.code }}">
+                                {{ loc.name }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Theme Toggle -->
+                    <div class="dropdown theme-selector">
+                        <button class="btn btn-ghost dropdown-toggle" type="button" id="themeDropdown" data-theme-toggle>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon-light">
+                                <circle cx="12" cy="12" r="5"/>
+                                <line x1="12" y1="1" x2="12" y2="3"/>
+                                <line x1="12" y1="21" x2="12" y2="23"/>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                                <line x1="1" y1="12" x2="3" y2="12"/>
+                                <line x1="21" y1="12" x2="23" y2="12"/>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                            </svg>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon-dark">
+                                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu" id="themeMenu">
+                            <button class="dropdown-item" data-set-theme="light">
+                                {{ t('theme.light') }}
+                            </button>
+                            <button class="dropdown-item" data-set-theme="dark">
+                                {{ t('theme.dark') }}
+                            </button>
+                            <button class="dropdown-item" data-set-theme="system">
+                                {{ t('theme.system') }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Settings -->
+                    <a href="{{ url_for('settings_page') }}" class="btn btn-ghost" title="{{ t('nav.settings') }}">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                        </svg>
+                    </a>
                 </div>
             </header>
 
@@ -119,6 +193,35 @@
     <!-- Core Scripts -->
     <script src="{{ url_for('static', filename='js/utils/api.js') }}"></script>
     <script src="{{ url_for('static', filename='js/utils/toast.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+
+    <!-- Initialize i18n with server-provided strings -->
+    <script>
+        // Initialize i18n
+        AccreditAI.i18n.init({{ i18n_strings | tojson | safe }}, '{{ locale }}');
+
+        // Dropdown toggle behavior
+        document.querySelectorAll('.dropdown-toggle').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const menu = this.nextElementSibling;
+                const isOpen = menu.classList.contains('show');
+
+                // Close all dropdowns
+                document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+
+                if (!isOpen) {
+                    menu.classList.add('show');
+                }
+            });
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+        });
+    </script>
 
     {% block extra_scripts %}{% endblock %}
 </body>

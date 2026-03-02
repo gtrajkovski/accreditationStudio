@@ -22,7 +22,10 @@ from src.api import (
     init_institutions_bp,
     standards_bp,
     init_standards_bp,
+    settings_bp,
+    init_settings_bp,
 )
+from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 
 
 # Initialize Flask app
@@ -45,11 +48,39 @@ init_chat_bp(workspace_manager, ai_client)
 init_agents_bp(workspace_manager)
 init_institutions_bp(workspace_manager)
 init_standards_bp(standards_store)
+init_settings_bp()
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
 app.register_blueprint(institutions_bp)
 app.register_blueprint(standards_bp)
+app.register_blueprint(settings_bp)
+
+
+# =============================================================================
+# Template Context Processor (i18n)
+# =============================================================================
+
+@app.context_processor
+def inject_i18n():
+    """Inject i18n helpers into all templates."""
+    from src.api.settings import get_current_locale, get_current_theme
+
+    # Get current user preferences
+    try:
+        locale = get_current_locale()
+        theme = get_current_theme()
+    except Exception:
+        locale = DEFAULT_LOCALE
+        theme = "system"
+
+    return {
+        't': lambda key, params=None: t(key, locale, params),
+        'locale': locale,
+        'theme': theme,
+        'supported_locales': get_supported_locales(),
+        'i18n_strings': get_all_strings(locale),
+    }
 
 # Start task queue
 task_queue = get_task_queue()
@@ -205,6 +236,18 @@ def chat():
 def agent_sessions():
     """Agent sessions management page."""
     return render_template('agent_sessions.html')
+
+
+@app.route('/settings')
+def settings_page():
+    """User settings page."""
+    return render_template('settings.html')
+
+
+@app.route('/settings/glossary')
+def glossary_page():
+    """Terminology glossary editor."""
+    return render_template('settings/glossary.html')
 
 
 # =============================================================================
