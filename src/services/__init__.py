@@ -19,6 +19,12 @@ from src.services.work_queue_service import (
     WorkItemType,
     WorkItemPriority,
 )
+from src.services.change_detection_service import (
+    detect_change,
+    record_change,
+    get_pending_reaudits,
+    DocumentChange,
+)
 from src.services.autopilot_service import (
     get_autopilot_config,
     save_autopilot_config,
@@ -49,4 +55,8 @@ __all__ = [
     "shutdown_scheduler",
     "AutopilotConfig",
     "AutopilotRun",
+    "detect_change",
+    "record_change",
+    "get_pending_reaudits",
+    "DocumentChange",
 ]
