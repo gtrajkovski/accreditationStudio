@@ -1,117 +1,113 @@
 # AccreditAI State
 
 ## Current Phase
-Phase 3: Readiness Score + Command Center
+Phase 3: Readiness Score + Command Center - **COMPLETE**
 
 ## Session Date
 2026-03-02
 
 ## What's Complete This Session
 
-### Work Queue Screen (Full Implementation)
-- **Work Queue Service** (`src/services/work_queue_service.py`):
-  - `get_work_queue()` - Aggregates blockers, tasks, and approvals
-  - `get_work_queue_summary()` - Summary counts by type/priority
-  - `WorkItem` dataclass with type, priority, metadata
-  - Sources: readiness blockers, human checkpoints, waiting sessions, task queue
-- **API Blueprint** (`src/api/work_queue.py`):
-  - `GET /api/work-queue` - List all work items with filters
-  - `GET /api/work-queue/summary` - Summary counts
-  - `GET /api/work-queue/institutions/<id>` - Institution-specific queue
-- **UI** (`templates/work_queue.html`):
-  - Summary cards (total, critical, blockers, approvals, tasks)
-  - Filter tabs by type
-  - Priority-sorted work items with action buttons
-  - Auto-refresh every 30 seconds
-  - Inline approve/reject for checkpoints
-- **Navigation** - Added Work Queue link in sidebar
-- **Tests** - `tests/test_work_queue_service.py` (8 tests)
+### 1. Work Queue Screen
+- **Service** (`src/services/work_queue_service.py`): Aggregates blockers, tasks, approvals
+- **API** (`src/api/work_queue.py`): `/api/work-queue` endpoints
+- **UI** (`templates/work_queue.html`): Summary cards, filter tabs, auto-refresh
+- **Tests**: 8 tests passing
 
-### Readiness Score Computation (Full Implementation)
-- **Migration 0009**: `consistency_issues` table
-- **Migration 0010**: `institution_readiness_snapshots` + `institution_required_doc_types` tables
-- **Readiness Service** (`src/services/readiness_service.py`):
-  - `compute_readiness()` - Computes score with 4 sub-scores
-  - `persist_snapshot()` - Stores historical snapshots
-  - `get_next_actions()` - Rule-based action recommendations
-  - `get_blockers()` - Prioritized blockers list
-  - Cache management with 10-minute window
+### 2. Autopilot Nightly Run
+- **Service** (`src/services/autopilot_service.py`): APScheduler-based scheduler
+- **Jobs**: Re-index, consistency checks, audit (optional), readiness
+- **API** (`src/api/autopilot.py`): Config, manual trigger, history
+- **UI** (`templates/institutions/autopilot.html`): Schedule picker, run history
+- **Migration** (`0011_autopilot.sql`): `autopilot_config`, `autopilot_runs` tables
 
-### Scoring Model
-| Component | Weight | Penalties |
-|-----------|--------|-----------|
-| Compliance | 40% | Critical: -12, Significant: -7, Moderate: -5, Advisory: -3 |
-| Evidence | 25% | Missing evidence: -8/-5/-2 by severity, Weak: -2 |
-| Documents | 20% | Missing required: -15, Not indexed: -8 |
-| Consistency | 15% | High: -10, Medium: -6, Low: -2 |
+### 3. Change Detection
+- **Service** (`src/services/change_detection_service.py`):
+  - `detect_change()` - SHA-256 hash comparison
+  - `record_change()` - Persist change events
+  - `invalidate_findings()` - Mark findings for re-validation
+- **Migration** (`0012_change_detection.sql`): `document_changes`, `audit_invalidations`
 
-### API Endpoints
+### 4. Evidence Coverage Contract
+- **Service** (`src/services/evidence_contract_service.py`):
+  - `check_evidence_coverage()` - Calculate % standards with evidence
+  - `validate_packet_export()` - Block export if coverage < 80%
+  - Reports gaps by severity with suggestions
+
+### 5. Audit Reproducibility
+- **Service** (`src/services/audit_reproducibility_service.py`):
+  - `capture_audit_snapshot()` - Record model, prompts, doc hashes
+  - `record_finding_provenance()` - Link findings to exact AI interactions
+  - `verify_audit_reproducibility()` - Check if audit can be reproduced
+- **Migration** (`0013_audit_reproducibility.sql`): `audit_snapshots`, `finding_provenance`
+
+### 6. Readiness Score (Previous)
+- **Service** (`src/services/readiness_service.py`): 4 weighted sub-scores
+- **API** (`src/api/readiness.py`): Status, alerts, next-actions, history
+- **UI**: Institution overview dashboard widget
+
+## Files Added This Session
 ```
-GET  /api/institutions/<id>/status        # Full readiness + breakdown
-GET  /api/institutions/<id>/alerts        # Blockers + warnings
-GET  /api/institutions/<id>/next-actions  # Prioritized recommendations
-GET  /api/institutions/<id>/readiness/history  # Trend data
-POST /api/institutions/<id>/readiness/invalidate  # Mark stale
-```
+# Services
+src/services/work_queue_service.py
+src/services/autopilot_service.py
+src/services/change_detection_service.py
+src/services/evidence_contract_service.py
+src/services/audit_reproducibility_service.py
 
-### UI Updates
-- Institution overview has Readiness Dashboard widget
-- Animated circular score indicator
-- Color-coded breakdown bars
-- Blockers panel with Fix buttons
-- Next Best Actions list with priorities
+# API
+src/api/work_queue.py
+src/api/autopilot.py
 
-### Tests
-- `tests/test_readiness_service.py` - Full test coverage
+# Templates
+templates/work_queue.html
+templates/institutions/autopilot.html
 
-## Files Added/Modified
-```
-# Work Queue (this session)
-src/services/work_queue_service.py (new)
-src/api/work_queue.py (new)
-templates/work_queue.html (new)
-tests/test_work_queue_service.py (new)
-src/services/__init__.py (updated exports)
-src/api/__init__.py (updated exports)
-app.py (registered blueprint + route)
-templates/base.html (navigation link)
+# Migrations
+src/db/migrations/0011_autopilot.sql
+src/db/migrations/0012_change_detection.sql
+src/db/migrations/0013_audit_reproducibility.sql
 
-# Readiness Score (previous session)
-src/db/migrations/0009_consistency.sql
-src/db/migrations/0010_readiness.sql
-src/services/readiness_service.py
-src/api/readiness.py (rewritten)
-src/agents/evidence_guardian.py
-src/agents/base_agent.py (24 agents)
-templates/institutions/overview.html (Command Center widgets)
+# Tests
+tests/test_work_queue_service.py
 tests/test_readiness_service.py
 ```
 
-## Next Priorities (User Requested Features)
+## Commits This Session
+```
+8c7f880 Add Audit Reproducibility service
+39b6090 Add Evidence Coverage Contract service
+9fe041b Add Change Detection service
+9fc3cf8 Add Autopilot Nightly Run feature
+7171567 Add Work Queue screen and Readiness Score service
+```
 
-### High Impact Features for Daily Use
-1. **Autopilot Nightly Run** - Scheduled re-index, audit, consistency check
-2. ~~**Work Queue Screen**~~ - ✅ Complete
-3. **Change Detection** - Diff on doc upload, targeted re-audit
-4. **Evidence Coverage Contract** - Block packet export without evidence
-5. **Audit Reproducibility** - Record prompt/version/hashes for defensibility
+## Tests
+- **92 tests passing**
+- 701 warnings (mostly datetime deprecation)
 
-### Already Planned
-- Task Rail Component (SSE streaming)
-- Full Command Center Page
-- Evidence Explorer
-- Compliance Heatmap
+## High Impact Features - Status
+| Feature | Status |
+|---------|--------|
+| Work Queue Screen | ✅ Complete |
+| Autopilot Nightly Run | ✅ Complete |
+| Change Detection | ✅ Complete |
+| Evidence Coverage Contract | ✅ Complete |
+| Audit Reproducibility | ✅ Complete |
 
 ## Key Commands
 ```bash
-flask db upgrade          # Apply migrations (now includes 0009, 0010)
+flask db upgrade          # Apply migrations (0001-0013)
 flask db status           # Check migration status
 python app.py             # Run dev server on port 5003
-pytest tests/test_readiness_service.py  # Run readiness tests
+pytest                    # Run all tests (92 passing)
+pip install APScheduler   # Required for autopilot
 ```
 
 ## Database
 - Location: `workspace/_system/accreditai.db`
-- New tables: `readiness_consistency_issues`, `institution_readiness_snapshots`, `institution_required_doc_types`
-- Note: Renamed from `consistency_issues` to `readiness_consistency_issues` to avoid conflict with 0006 migration
-- Seeded required doc types for ACCSC and COE
+- Migrations: 13 total (0001-0013)
+- New tables this session:
+  - `autopilot_config`, `autopilot_runs`, `autopilot_run_tasks`
+  - `document_changes`, `audit_invalidations`
+  - `audit_snapshots`, `finding_provenance`
