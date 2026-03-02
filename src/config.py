@@ -19,8 +19,11 @@ class Config:
 
     # AI Model Settings
     MODEL = os.getenv("MODEL", "claude-sonnet-4-20250514")
-    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "claude-embed-1")
     MAX_TOKENS = int(os.getenv("MAX_TOKENS", "8192"))
+
+    # Embedding Settings
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+    EMBEDDING_DIMENSION = 384  # Matches all-MiniLM-L6-v2
 
     # Server Settings
     PORT = int(os.getenv("PORT", "5003"))
