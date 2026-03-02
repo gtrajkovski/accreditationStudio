@@ -1,82 +1,117 @@
-# GSD State
+# AccreditAI State
 
 ## Current Phase
-Phase: 3 - Audit Engine (with i18n infrastructure complete)
+Phase 3: Readiness Score + Command Center
 
-## Status
-In Progress - Infrastructure Ready
+## Session Date
+2026-03-02
 
-## Last Session (2026-03-02)
-Completed:
-1. **SQLite Migration System** (commit 666daf8)
-   - src/db/connection.py, migrate.py
-   - 8 migration files (0001-0008) creating 33 tables
-   - Flask CLI: `flask db upgrade`, `flask db status`
-   - All tests passing
+## What's Complete This Session
 
-2. **i18n + Theme System** (commit b706aea)
-   - src/i18n/ with en-US.json, es-PR.json catalogs
-   - src/api/settings.py with preferences endpoints
-   - static/js/theme.js, static/js/i18n.js
-   - Theme/language dropdowns in base.html header
-   - Template context processor for translations
+### Work Queue Screen (Full Implementation)
+- **Work Queue Service** (`src/services/work_queue_service.py`):
+  - `get_work_queue()` - Aggregates blockers, tasks, and approvals
+  - `get_work_queue_summary()` - Summary counts by type/priority
+  - `WorkItem` dataclass with type, priority, metadata
+  - Sources: readiness blockers, human checkpoints, waiting sessions, task queue
+- **API Blueprint** (`src/api/work_queue.py`):
+  - `GET /api/work-queue` - List all work items with filters
+  - `GET /api/work-queue/summary` - Summary counts
+  - `GET /api/work-queue/institutions/<id>` - Institution-specific queue
+- **UI** (`templates/work_queue.html`):
+  - Summary cards (total, critical, blockers, approvals, tasks)
+  - Filter tabs by type
+  - Priority-sorted work items with action buttons
+  - Auto-refresh every 30 seconds
+  - Inline approve/reject for checkpoints
+- **Navigation** - Added Work Queue link in sidebar
+- **Tests** - `tests/test_work_queue_service.py` (8 tests)
 
-3. **Accreditor Packages**
-   - ACCSC package (commit 80e47d8)
-   - COE package (commit 821758f)
-   - src/accreditors/registry.py for dynamic loading
+### Readiness Score Computation (Full Implementation)
+- **Migration 0009**: `consistency_issues` table
+- **Migration 0010**: `institution_readiness_snapshots` + `institution_required_doc_types` tables
+- **Readiness Service** (`src/services/readiness_service.py`):
+  - `compute_readiness()` - Computes score with 4 sub-scores
+  - `persist_snapshot()` - Stores historical snapshots
+  - `get_next_actions()` - Rule-based action recommendations
+  - `get_blockers()` - Prioritized blockers list
+  - Cache management with 10-minute window
 
-4. **Planning Documents**
-   - DATABASE_MIGRATION.md
-   - UI_MULTILINGUAL.md
+### Scoring Model
+| Component | Weight | Penalties |
+|-----------|--------|-----------|
+| Compliance | 40% | Critical: -12, Significant: -7, Moderate: -5, Advisory: -3 |
+| Evidence | 25% | Missing evidence: -8/-5/-2 by severity, Weak: -2 |
+| Documents | 20% | Missing required: -15, Not indexed: -8 |
+| Consistency | 15% | High: -10, Medium: -6, Low: -2 |
 
-## Commits This Session
-- 80e47d8 Add ACCSC accreditor package
-- 821758f Add COE accreditor package
-- b85f0fb Add SQLite migration plan and multilingual UI specification
-- 666daf8 Implement SQLite migration system
-- b706aea Add i18n system and theme switching
+### API Endpoints
+```
+GET  /api/institutions/<id>/status        # Full readiness + breakdown
+GET  /api/institutions/<id>/alerts        # Blockers + warnings
+GET  /api/institutions/<id>/next-actions  # Prioritized recommendations
+GET  /api/institutions/<id>/readiness/history  # Trend data
+POST /api/institutions/<id>/readiness/invalidate  # Mark stale
+```
 
-## Next Actions (Priority Order)
-1. **Bilingual Document Workbench**
-   - Translation service (src/services/translation_service.py)
-   - Document view endpoints with lang parameter
-   - "Show source excerpt" toggle
+### UI Updates
+- Institution overview has Readiness Dashboard widget
+- Animated circular score indicator
+- Color-coded breakdown bars
+- Blockers panel with Fix buttons
+- Next Best Actions list with priorities
 
-2. **Multilingual Standards Library**
-   - Add checklist_item_translations table (0009_standards_i18n.sql)
-   - Standards tree endpoint with localized titles
-   - Standards search in user's language
+### Tests
+- `tests/test_readiness_service.py` - Full test coverage
 
-3. **Settings/Glossary Page**
-   - templates/settings.html
-   - templates/settings/glossary.html
-   - Glossary CRUD endpoints
+## Files Added/Modified
+```
+# Work Queue (this session)
+src/services/work_queue_service.py (new)
+src/api/work_queue.py (new)
+templates/work_queue.html (new)
+tests/test_work_queue_service.py (new)
+src/services/__init__.py (updated exports)
+src/api/__init__.py (updated exports)
+app.py (registered blueprint + route)
+templates/base.html (navigation link)
 
-4. **Evidence Explorer UI**
-   - Standard → Evidence crosswalk display
-   - Semantic search integration
+# Readiness Score (previous session)
+src/db/migrations/0009_consistency.sql
+src/db/migrations/0010_readiness.sql
+src/services/readiness_service.py
+src/api/readiness.py (rewritten)
+src/agents/evidence_guardian.py
+src/agents/base_agent.py (24 agents)
+templates/institutions/overview.html (Command Center widgets)
+tests/test_readiness_service.py
+```
 
-5. **Compliance Command Center**
-   - Health score dashboard
-   - Critical issues list
-   - Deadline tracking
+## Next Priorities (User Requested Features)
 
-## Key Files Added This Session
-- src/db/__init__.py, connection.py, migrate.py
-- src/db/migrations/0001-0008_*.sql
-- src/i18n/__init__.py, en-US.json, es-PR.json
-- src/api/settings.py
-- src/accreditors/registry.py
-- src/accreditors/accsc/*, src/accreditors/coe/*
-- static/js/theme.js, static/js/i18n.js
-- tests/test_db_migrations.py
+### High Impact Features for Daily Use
+1. **Autopilot Nightly Run** - Scheduled re-index, audit, consistency check
+2. ~~**Work Queue Screen**~~ - ✅ Complete
+3. **Change Detection** - Diff on doc upload, targeted re-audit
+4. **Evidence Coverage Contract** - Block packet export without evidence
+5. **Audit Reproducibility** - Record prompt/version/hashes for defensibility
 
-## Database Status
-- 33 tables created via migrations
-- DB location: workspace/_system/accreditai.db
-- Run `flask db upgrade` to apply migrations
+### Already Planned
+- Task Rail Component (SSE streaming)
+- Full Command Center Page
+- Evidence Explorer
+- Compliance Heatmap
 
-## User Messages Pending
-1. Implement multilingual Standards Library (detailed spec provided)
-2. Bilingual document viewing with translation pipeline
+## Key Commands
+```bash
+flask db upgrade          # Apply migrations (now includes 0009, 0010)
+flask db status           # Check migration status
+python app.py             # Run dev server on port 5003
+pytest tests/test_readiness_service.py  # Run readiness tests
+```
+
+## Database
+- Location: `workspace/_system/accreditai.db`
+- New tables: `readiness_consistency_issues`, `institution_readiness_snapshots`, `institution_required_doc_types`
+- Note: Renamed from `consistency_issues` to `readiness_consistency_issues` to avoid conflict with 0006 migration
+- Seeded required doc types for ACCSC and COE

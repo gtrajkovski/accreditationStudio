@@ -109,6 +109,14 @@
                         </svg>
                         Agent Sessions
                     </a>
+                    <a href="{{ url_for('work_queue') }}" class="nav-item {% if request.endpoint == 'work_queue' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                            <path d="M9 14l2 2 4-4"/>
+                        </svg>
+                        Work Queue
+                    </a>
                 </div>
             </nav>
         </aside>
@@ -190,11 +198,25 @@
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- Page Context for Command Palette -->
+    <script type="application/json" id="page-context">
+    {
+        "institution_id": "{{ current_institution.id if current_institution else '' }}",
+        "page_type": "{{ request.endpoint or '' }}",
+        "locale": "{{ locale }}",
+        "theme": "{{ theme }}"
+    }
+    </script>
+
+    <!-- Command Palette -->
+    {% include 'partials/command_palette.html' %}
+
     <!-- Core Scripts -->
     <script src="{{ url_for('static', filename='js/utils/api.js') }}"></script>
     <script src="{{ url_for('static', filename='js/utils/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/command_palette.js') }}"></script>
 
     <!-- Initialize i18n with server-provided strings -->
     <script>

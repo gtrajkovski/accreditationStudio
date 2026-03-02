@@ -97,6 +97,7 @@ class AgentRegistry:
         try:
             from src.agents import (
                 orchestrator_agent,
+                evidence_guardian,  # Tier 0 governance
                 ingestion_agent,
                 standards_librarian,
                 evidence_mapper,

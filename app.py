@@ -24,7 +24,10 @@ from src.api import (
     init_standards_bp,
     settings_bp,
     init_settings_bp,
+    work_queue_bp,
+    init_work_queue_bp,
 )
+from src.api.readiness import readiness_bp, init_readiness_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 
 
@@ -49,12 +52,16 @@ init_agents_bp(workspace_manager)
 init_institutions_bp(workspace_manager)
 init_standards_bp(standards_store)
 init_settings_bp()
+init_readiness_bp(workspace_manager)
+init_work_queue_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
 app.register_blueprint(institutions_bp)
 app.register_blueprint(standards_bp)
 app.register_blueprint(settings_bp)
+app.register_blueprint(readiness_bp)
+app.register_blueprint(work_queue_bp)
 
 
 # =============================================================================
@@ -236,6 +243,13 @@ def chat():
 def agent_sessions():
     """Agent sessions management page."""
     return render_template('agent_sessions.html')
+
+
+@app.route('/work-queue')
+def work_queue():
+    """Unified work queue page."""
+    institutions = workspace_manager.list_institutions()
+    return render_template('work_queue.html', institutions=institutions)
 
 
 @app.route('/settings')

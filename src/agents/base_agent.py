@@ -27,42 +27,70 @@ from src.core.models import (
 
 
 class AgentType(Enum):
-    """Types of specialized agents in the system.
+    """Types of specialized agents in the system (24 total).
 
-    Organized by layer:
-    - Orchestration: ORCHESTRATOR
-    - Evidence/Standards: STANDARDS_LIBRARIAN, EVIDENCE_MAPPER, CROSSWALK_BUILDER
-    - Document Intelligence: INGESTION, POLICY_CONSISTENCY, TRUTH_INDEX_CURATOR
-    - Compliance/Audit: COMPLIANCE_AUDIT, RISK_SCORER, SUBSTANTIVE_CHANGE
-    - Output Generation: REMEDIATION, NARRATIVE, PACKET_ASSEMBLER
-    - Operational: CALENDAR_DEADLINE, SITE_VISIT_PREP
+    Tier 0 - Runtime & Governance:
+        ORCHESTRATOR, POLICY_SAFETY, EVIDENCE_GUARDIAN
+    Tier 1 - Intake, Organization & Retrieval:
+        DOCUMENT_INTAKE, PARSING_STRUCTURE, PII_REDACTION, RETRIEVAL_TUNING
+    Tier 2 - Standards & Regulatory Stack:
+        STANDARDS_CURATOR, REGULATORY_STACK, STANDARDS_TRANSLATOR
+    Tier 3 - Compliance Analysis & Quality:
+        COMPLIANCE_AUDIT, CONSISTENCY, RISK_SCORER, GAP_FINDER
+    Tier 4 - Remediation & Authoring:
+        REMEDIATION, POLICY_AUTHOR, EXHIBIT_BUILDER, CHANGE_IMPACT
+    Tier 5 - Submission & Audit Defense:
+        NARRATIVE, CROSSWALK, PACKET, SITE_VISIT_COACH
+    Tier 6 - Product Experience:
+        WORKFLOW_COACH, LOCALIZATION_QA
     """
-    # Orchestration Layer
+    # Tier 0 - Runtime & Governance
     ORCHESTRATOR = "orchestrator"
+    POLICY_SAFETY = "policy_safety"
+    EVIDENCE_GUARDIAN = "evidence_guardian"
 
-    # Evidence & Standards Layer
-    STANDARDS_LIBRARIAN = "standards_librarian"
-    EVIDENCE_MAPPER = "evidence_mapper"
-    CROSSWALK_BUILDER = "crosswalk_builder"
+    # Tier 1 - Intake, Organization & Retrieval
+    DOCUMENT_INTAKE = "document_intake"
+    INGESTION = "ingestion"  # Legacy alias for DOCUMENT_INTAKE
+    PARSING_STRUCTURE = "parsing_structure"
+    PII_REDACTION = "pii_redaction"
+    RETRIEVAL_TUNING = "retrieval_tuning"
 
-    # Document Intelligence Layer
-    INGESTION = "ingestion"
-    POLICY_CONSISTENCY = "policy_consistency"
-    TRUTH_INDEX_CURATOR = "truth_index_curator"
+    # Tier 2 - Standards & Regulatory Stack
+    STANDARDS_CURATOR = "standards_curator"
+    STANDARDS_LIBRARIAN = "standards_librarian"  # Legacy alias
+    REGULATORY_STACK = "regulatory_stack"
+    STANDARDS_TRANSLATOR = "standards_translator"
 
-    # Compliance & Audit Layer
+    # Tier 3 - Compliance Analysis & Quality
     COMPLIANCE_AUDIT = "compliance_audit"
+    CONSISTENCY = "consistency"
+    POLICY_CONSISTENCY = "policy_consistency"  # Legacy alias
     RISK_SCORER = "risk_scorer"
-    SUBSTANTIVE_CHANGE = "substantive_change"
+    GAP_FINDER = "gap_finder"
 
-    # Output Generation Layer
+    # Tier 4 - Remediation & Authoring
     REMEDIATION = "remediation"
-    NARRATIVE = "narrative"
-    PACKET_ASSEMBLER = "packet_assembler"
+    POLICY_AUTHOR = "policy_author"
+    EXHIBIT_BUILDER = "exhibit_builder"
+    CHANGE_IMPACT = "change_impact"
+    TRUTH_INDEX_CURATOR = "truth_index_curator"  # Legacy
+    SUBSTANTIVE_CHANGE = "substantive_change"  # Legacy alias
 
-    # Operational Layer
-    CALENDAR_DEADLINE = "calendar_deadline"
-    SITE_VISIT_PREP = "site_visit_prep"
+    # Tier 5 - Submission & Audit Defense
+    NARRATIVE = "narrative"
+    CROSSWALK = "crosswalk"
+    CROSSWALK_BUILDER = "crosswalk_builder"  # Legacy alias
+    PACKET = "packet"
+    PACKET_ASSEMBLER = "packet_assembler"  # Legacy alias
+    SITE_VISIT_COACH = "site_visit_coach"
+    SITE_VISIT_PREP = "site_visit_prep"  # Legacy alias
+
+    # Tier 6 - Product Experience
+    WORKFLOW_COACH = "workflow_coach"
+    LOCALIZATION_QA = "localization_qa"
+    CALENDAR_DEADLINE = "calendar_deadline"  # Legacy
+    EVIDENCE_MAPPER = "evidence_mapper"  # Legacy
 
 
 class BaseAgent(ABC):

@@ -1,0 +1,632 @@
+{% extends 'base.html' %}
+
+{% block title %}Work Queue - {{ t('app.name') }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>Work Queue</h1>
+        <p class="text-muted">All pending blockers, tasks, and approvals in one place</p>
+    </div>
+    <div class="page-header-actions">
+        <select id="institution-filter" class="form-control" style="width: 250px;">
+            <option value="">All Institutions</option>
+            {% for inst in institutions %}
+            <option value="{{ inst.id }}">{{ inst.name }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-secondary" onclick="refreshQueue()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="queue-summary" id="queue-summary">
+    <div class="summary-card summary-total">
+        <div class="summary-value" id="total-count">-</div>
+        <div class="summary-label">Total Items</div>
+    </div>
+    <div class="summary-card summary-critical">
+        <div class="summary-value" id="critical-count">-</div>
+        <div class="summary-label">Critical</div>
+    </div>
+    <div class="summary-card summary-blockers">
+        <div class="summary-value" id="blocker-count">-</div>
+        <div class="summary-label">Blockers</div>
+    </div>
+    <div class="summary-card summary-approvals">
+        <div class="summary-value" id="approval-count">-</div>
+        <div class="summary-label">Approvals</div>
+    </div>
+    <div class="summary-card summary-tasks">
+        <div class="summary-value" id="task-count">-</div>
+        <div class="summary-label">Tasks</div>
+    </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="queue-filters">
+    <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">
+        All
+        <span class="filter-count" id="filter-all-count"></span>
+    </button>
+    <button class="filter-tab" data-filter="blocker" onclick="setFilter('blocker')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        Blockers
+        <span class="filter-count" id="filter-blocker-count"></span>
+    </button>
+    <button class="filter-tab" data-filter="approval" onclick="setFilter('approval')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+        Approvals
+        <span class="filter-count" id="filter-approval-count"></span>
+    </button>
+    <button class="filter-tab" data-filter="task" onclick="setFilter('task')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12,6 12,12 16,14"/>
+        </svg>
+        Tasks
+        <span class="filter-count" id="filter-task-count"></span>
+    </button>
+</div>
+
+<!-- Work Queue List -->
+<div class="queue-list" id="queue-list">
+    <div class="queue-loading">
+        <div class="spinner"></div>
+        <span>Loading work queue...</span>
+    </div>
+</div>
+
+<!-- Empty State -->
+<div class="queue-empty" id="queue-empty" style="display: none;">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+    </svg>
+    <h3>All Clear!</h3>
+    <p class="text-muted">No pending work items. You're all caught up.</p>
+</div>
+
+<style>
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-lg);
+    gap: var(--space-md);
+}
+
+.page-header-content h1 {
+    margin: 0 0 var(--space-xs) 0;
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+.page-header-actions {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+/* Summary Cards */
+.queue-summary {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.summary-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    text-align: center;
+    border-left: 3px solid var(--border-color);
+}
+
+.summary-card.summary-total { border-left-color: var(--accent); }
+.summary-card.summary-critical { border-left-color: var(--error); }
+.summary-card.summary-blockers { border-left-color: var(--warning); }
+.summary-card.summary-approvals { border-left-color: var(--info); }
+.summary-card.summary-tasks { border-left-color: var(--text-muted); }
+
+.summary-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.summary-critical .summary-value { color: var(--error); }
+.summary-blockers .summary-value { color: var(--warning); }
+.summary-approvals .summary-value { color: var(--info); }
+
+.summary-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: var(--space-xs);
+}
+
+/* Filter Tabs */
+.queue-filters {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--space-sm);
+}
+
+.filter-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.15s ease;
+}
+
+.filter-tab:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.filter-tab.active {
+    background: var(--bg-card);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.filter-count {
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    min-width: 20px;
+    text-align: center;
+}
+
+.filter-tab.active .filter-count {
+    background: var(--accent);
+    color: white;
+}
+
+/* Queue List */
+.queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.queue-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+    color: var(--text-muted);
+}
+
+/* Work Item */
+.work-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    border-left: 3px solid var(--border-color);
+    transition: all 0.15s ease;
+}
+
+.work-item:hover {
+    background: var(--bg-hover);
+}
+
+.work-item.priority-critical { border-left-color: var(--error); }
+.work-item.priority-high { border-left-color: var(--warning); }
+.work-item.priority-medium { border-left-color: var(--info); }
+.work-item.priority-low { border-left-color: var(--text-muted); }
+
+.work-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.work-item.type-blocker .work-item-icon {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--warning);
+}
+
+.work-item.type-approval .work-item-icon {
+    background: rgba(96, 165, 250, 0.15);
+    color: var(--info);
+}
+
+.work-item.type-task .work-item-icon {
+    background: rgba(156, 163, 175, 0.15);
+    color: var(--text-muted);
+}
+
+.work-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.work-item-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xs);
+}
+
+.work-item-title {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.work-item-badge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+}
+
+.work-item-badge.type-blocker {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--warning);
+}
+
+.work-item-badge.type-approval {
+    background: rgba(96, 165, 250, 0.2);
+    color: var(--info);
+}
+
+.work-item-badge.type-task {
+    background: rgba(156, 163, 175, 0.2);
+    color: var(--text-muted);
+}
+
+.work-item-badge.priority-critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--error);
+}
+
+.work-item-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: var(--space-xs);
+}
+
+.work-item-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.work-item-meta svg {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+}
+
+.work-item-actions {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+}
+
+.work-item-actions .btn {
+    white-space: nowrap;
+}
+
+/* Empty State */
+.queue-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xl) * 2;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.queue-empty svg {
+    margin-bottom: var(--space-md);
+    opacity: 0.5;
+}
+
+.queue-empty h3 {
+    margin: 0 0 var(--space-xs) 0;
+    color: var(--text-primary);
+}
+
+/* Progress bar for tasks */
+.task-progress {
+    width: 100px;
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.task-progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .queue-summary {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+    }
+
+    .queue-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .work-item {
+        flex-direction: column;
+    }
+
+    .work-item-actions {
+        width: 100%;
+        margin-top: var(--space-sm);
+    }
+}
+</style>
+
+<script>
+let currentFilter = 'all';
+let allItems = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadWorkQueue();
+
+    // Institution filter change
+    document.getElementById('institution-filter').addEventListener('change', () => {
+        loadWorkQueue();
+    });
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadWorkQueue, 30000);
+});
+
+async function loadWorkQueue() {
+    const institutionId = document.getElementById('institution-filter').value;
+    const listEl = document.getElementById('queue-list');
+    const emptyEl = document.getElementById('queue-empty');
+
+    try {
+        // Build URL
+        let url = '/api/work-queue';
+        if (institutionId) {
+            url = `/api/work-queue/institutions/${institutionId}`;
+        }
+
+        const response = await window.API.get(url);
+        allItems = response.items || [];
+
+        // Update summary
+        updateSummary(allItems);
+
+        // Apply filter and render
+        renderItems(filterItems(allItems, currentFilter));
+
+    } catch (error) {
+        console.error('Failed to load work queue:', error);
+        listEl.innerHTML = `
+            <div class="queue-loading">
+                <span class="text-error">Failed to load work queue</span>
+            </div>
+        `;
+    }
+}
+
+function updateSummary(items) {
+    const counts = {
+        total: items.length,
+        critical: items.filter(i => i.priority === 'critical').length,
+        blocker: items.filter(i => i.type === 'blocker').length,
+        approval: items.filter(i => i.type === 'approval').length,
+        task: items.filter(i => i.type === 'task').length,
+    };
+
+    document.getElementById('total-count').textContent = counts.total;
+    document.getElementById('critical-count').textContent = counts.critical;
+    document.getElementById('blocker-count').textContent = counts.blocker;
+    document.getElementById('approval-count').textContent = counts.approval;
+    document.getElementById('task-count').textContent = counts.task;
+
+    // Update filter counts
+    document.getElementById('filter-all-count').textContent = counts.total;
+    document.getElementById('filter-blocker-count').textContent = counts.blocker;
+    document.getElementById('filter-approval-count').textContent = counts.approval;
+    document.getElementById('filter-task-count').textContent = counts.task;
+}
+
+function filterItems(items, filter) {
+    if (filter === 'all') return items;
+    return items.filter(i => i.type === filter);
+}
+
+function setFilter(filter) {
+    currentFilter = filter;
+
+    // Update active tab
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.filter === filter);
+    });
+
+    renderItems(filterItems(allItems, filter));
+}
+
+function renderItems(items) {
+    const listEl = document.getElementById('queue-list');
+    const emptyEl = document.getElementById('queue-empty');
+
+    if (items.length === 0) {
+        listEl.style.display = 'none';
+        emptyEl.style.display = 'flex';
+        return;
+    }
+
+    listEl.style.display = 'flex';
+    emptyEl.style.display = 'none';
+
+    listEl.innerHTML = items.map(item => renderWorkItem(item)).join('');
+}
+
+function renderWorkItem(item) {
+    const icon = getTypeIcon(item.type);
+    const timeAgo = formatTimeAgo(item.created_at);
+    const progressHtml = item.type === 'task' && item.metadata?.progress
+        ? `<div class="task-progress"><div class="task-progress-bar" style="width: ${item.metadata.progress}%"></div></div>`
+        : '';
+
+    return `
+        <div class="work-item type-${item.type} priority-${item.priority}">
+            <div class="work-item-icon">
+                ${icon}
+            </div>
+            <div class="work-item-content">
+                <div class="work-item-header">
+                    <span class="work-item-title">${escapeHtml(item.title)}</span>
+                    <span class="work-item-badge type-${item.type}">${item.type}</span>
+                    ${item.priority === 'critical' ? '<span class="work-item-badge priority-critical">Critical</span>' : ''}
+                </div>
+                <div class="work-item-description">${escapeHtml(item.description)}</div>
+                <div class="work-item-meta">
+                    ${item.source ? `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>${escapeHtml(item.source)}</span>` : ''}
+                    ${timeAgo ? `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>${timeAgo}</span>` : ''}
+                    ${progressHtml}
+                </div>
+            </div>
+            <div class="work-item-actions">
+                ${item.action_link ? `
+                    <a href="${item.action_link}" class="btn btn-primary btn-sm">${escapeHtml(item.action_label)}</a>
+                ` : ''}
+                ${item.type === 'approval' && item.checkpoint_id ? `
+                    <button class="btn btn-success btn-sm" onclick="approveItem('${item.session_id}', '${item.checkpoint_id}')">Approve</button>
+                    <button class="btn btn-danger btn-sm" onclick="rejectItem('${item.session_id}', '${item.checkpoint_id}')">Reject</button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function getTypeIcon(type) {
+    switch (type) {
+        case 'blocker':
+            return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>`;
+        case 'approval':
+            return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>`;
+        case 'task':
+            return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12,6 12,12 16,14"/>
+            </svg>`;
+        default:
+            return '';
+    }
+}
+
+function formatTimeAgo(dateStr) {
+    if (!dateStr) return '';
+
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    return date.toLocaleDateString();
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function refreshQueue() {
+    loadWorkQueue();
+}
+
+async function approveItem(sessionId, checkpointId) {
+    if (!confirm('Approve this item?')) return;
+
+    try {
+        await window.API.post(`/api/agents/sessions/${sessionId}/checkpoints/${checkpointId}/approve`, {});
+        loadWorkQueue();
+        window.Toast?.success('Item approved');
+    } catch (error) {
+        console.error('Failed to approve:', error);
+        window.Toast?.error('Failed to approve item');
+    }
+}
+
+async function rejectItem(sessionId, checkpointId) {
+    const reason = prompt('Reason for rejection:');
+    if (reason === null) return;
+
+    try {
+        await window.API.post(`/api/agents/sessions/${sessionId}/checkpoints/${checkpointId}/reject`, {
+            feedback: reason
+        });
+        loadWorkQueue();
+        window.Toast?.success('Item rejected');
+    } catch (error) {
+        console.error('Failed to reject:', error);
+        window.Toast?.error('Failed to reject item');
+    }
+}
+</script>
+{% endblock %}

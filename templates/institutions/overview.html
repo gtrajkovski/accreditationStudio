@@ -19,6 +19,86 @@
 {% endblock %}
 
 {% block content %}
+<!-- Readiness Score Dashboard -->
+<div class="readiness-dashboard mb-lg" id="readiness-dashboard">
+    <div class="readiness-score-card">
+        <div class="readiness-score-main">
+            <div class="readiness-score-circle" id="readiness-circle">
+                <svg viewBox="0 0 120 120">
+                    <circle class="score-bg" cx="60" cy="60" r="54" />
+                    <circle class="score-progress" cx="60" cy="60" r="54" id="score-progress" />
+                </svg>
+                <div class="score-value">
+                    <span class="score-number" id="readiness-score">--</span>
+                    <span class="score-label">Readiness</span>
+                </div>
+            </div>
+            <div class="readiness-level" id="readiness-level">Loading...</div>
+        </div>
+
+        <div class="readiness-breakdown" id="readiness-breakdown">
+            <h4>Score Breakdown</h4>
+            <div class="breakdown-item">
+                <div class="breakdown-label">
+                    <span>Documents</span>
+                    <span class="breakdown-value" id="score-documents">--%</span>
+                </div>
+                <div class="breakdown-bar">
+                    <div class="breakdown-fill" id="bar-documents" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">
+                    <span>Compliance</span>
+                    <span class="breakdown-value" id="score-compliance">--%</span>
+                </div>
+                <div class="breakdown-bar">
+                    <div class="breakdown-fill" id="bar-compliance" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">
+                    <span>Evidence Coverage</span>
+                    <span class="breakdown-value" id="score-evidence">--%</span>
+                </div>
+                <div class="breakdown-bar">
+                    <div class="breakdown-fill" id="bar-evidence" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">
+                    <span>Consistency</span>
+                    <span class="breakdown-value" id="score-consistency">--%</span>
+                </div>
+                <div class="breakdown-bar">
+                    <div class="breakdown-fill" id="bar-consistency" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts Section -->
+    <div class="readiness-alerts" id="readiness-alerts">
+        <h4>Blockers</h4>
+        <div class="alerts-list" id="alerts-list">
+            <div class="alert-placeholder">Analyzing readiness...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Next Best Actions -->
+<div class="next-actions-section mb-lg" id="next-actions-section">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Next Best Actions</h3>
+            <span class="badge" id="actions-count">0</span>
+        </div>
+        <div class="actions-list" id="actions-list">
+            <div class="action-placeholder">Loading recommendations...</div>
+        </div>
+    </div>
+</div>
+
 <div class="dashboard-grid mb-lg">
     <!-- Institution Info -->
     <div class="card">
@@ -234,6 +314,284 @@
 
 {% block extra_styles %}
 <style>
+/* Readiness Dashboard Styles */
+.readiness-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+
+@media (max-width: 900px) {
+    .readiness-dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+
+.readiness-score-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    display: flex;
+    gap: var(--spacing-xl);
+}
+
+.readiness-score-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 160px;
+}
+
+.readiness-score-circle {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.readiness-score-circle svg {
+    transform: rotate(-90deg);
+}
+
+.readiness-score-circle .score-bg {
+    fill: none;
+    stroke: var(--bg-secondary);
+    stroke-width: 8;
+}
+
+.readiness-score-circle .score-progress {
+    fill: none;
+    stroke: var(--success);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 339.292;
+    stroke-dashoffset: 339.292;
+    transition: stroke-dashoffset 1s ease-out, stroke 0.3s;
+}
+
+.readiness-score-circle.level-excellent .score-progress { stroke: var(--success); }
+.readiness-score-circle.level-good .score-progress { stroke: #84cc16; }
+.readiness-score-circle.level-moderate .score-progress { stroke: var(--warning); }
+.readiness-score-circle.level-low .score-progress { stroke: #f97316; }
+.readiness-score-circle.level-critical .score-progress { stroke: var(--danger); }
+
+.score-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.score-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.score-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.readiness-level {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    font-weight: 500;
+    background: var(--bg-secondary);
+}
+
+.readiness-breakdown {
+    flex: 1;
+}
+
+.readiness-breakdown h4 {
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.breakdown-item {
+    margin-bottom: var(--spacing-md);
+}
+
+.breakdown-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-xs);
+    font-size: 0.875rem;
+}
+
+.breakdown-value {
+    font-weight: 600;
+}
+
+.breakdown-bar {
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.breakdown-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: var(--radius-full);
+    transition: width 0.8s ease-out;
+}
+
+.readiness-alerts {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+}
+
+.readiness-alerts h4 {
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.alert-item {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--warning);
+}
+
+.alert-item.severity-critical {
+    border-left-color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.alert-item.severity-warning {
+    border-left-color: var(--warning);
+}
+
+.alert-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: var(--warning);
+}
+
+.alert-item.severity-critical .alert-icon {
+    color: var(--danger);
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-message {
+    font-weight: 500;
+    margin-bottom: var(--spacing-xs);
+}
+
+.alert-action {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.alert-placeholder {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
+}
+
+.no-alerts {
+    text-align: center;
+    color: var(--success);
+    padding: var(--spacing-lg);
+}
+
+/* Next Actions Styles */
+.next-actions-section .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.action-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.action-item:hover {
+    background: var(--bg-card);
+}
+
+.action-priority {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.action-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.action-title {
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.action-reason {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.action-arrow {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.action-placeholder {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
+}
+
 .modal {
     position: fixed;
     top: 0;
@@ -342,6 +700,127 @@
 <script>
 const institutionId = '{{ institution.id }}';
 let programsData = {{ programs_json | tojson | safe }};
+
+// Readiness Score Dashboard
+async function loadReadinessData() {
+    // Load status, alerts, and next-actions in parallel
+    try {
+        const [statusResult, alertsResult, actionsResult] = await Promise.all([
+            window.API.get(`/api/institutions/${institutionId}/status`),
+            window.API.get(`/api/institutions/${institutionId}/alerts`),
+            window.API.get(`/api/institutions/${institutionId}/next-actions`)
+        ]);
+
+        // Update readiness score display
+        updateReadinessScore(statusResult);
+
+        // Update blockers/alerts
+        updateAlerts(alertsResult);
+
+        // Update next actions
+        updateNextActions(actionsResult);
+
+    } catch (error) {
+        console.error('Failed to load readiness data:', error);
+        document.getElementById('readiness-score').textContent = '--';
+        document.getElementById('readiness-level').textContent = 'Error loading';
+    }
+}
+
+function updateReadinessScore(result) {
+    if (!result.success) {
+        document.getElementById('readiness-score').textContent = '--';
+        document.getElementById('readiness-level').textContent = 'Not assessed';
+        return;
+    }
+
+    const score = result.readiness_score;
+    const level = result.readiness_level;
+    document.getElementById('readiness-score').textContent = score;
+    document.getElementById('readiness-level').textContent = result.readiness_label;
+
+    // Update circle progress
+    const circle = document.getElementById('readiness-circle');
+    const progress = document.getElementById('score-progress');
+    circle.className = 'readiness-score-circle level-' + level;
+
+    // Animate the circle (339.292 is circumference of r=54)
+    const circumference = 339.292;
+    const offset = circumference - (score / 100) * circumference;
+    progress.style.strokeDashoffset = offset;
+
+    // Update breakdown bars
+    const breakdown = result.breakdown;
+    for (const [key, data] of Object.entries(breakdown)) {
+        const scoreEl = document.getElementById(`score-${key}`);
+        const barEl = document.getElementById(`bar-${key}`);
+        if (scoreEl && barEl) {
+            scoreEl.textContent = `${data.score}%`;
+            barEl.style.width = `${data.score}%`;
+
+            // Color code the bars
+            if (data.score >= 80) {
+                barEl.style.background = 'var(--success)';
+            } else if (data.score >= 60) {
+                barEl.style.background = 'var(--warning)';
+            } else {
+                barEl.style.background = 'var(--danger)';
+            }
+        }
+    }
+}
+
+function updateAlerts(result) {
+    const alertsList = document.getElementById('alerts-list');
+    const blockers = result.blockers || [];
+
+    if (blockers.length > 0) {
+        alertsList.innerHTML = blockers.map(blocker => `
+            <div class="alert-item severity-${blocker.severity}">
+                <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div class="alert-content">
+                    <div class="alert-message">${blocker.message}</div>
+                    <div class="alert-action">${blocker.action}</div>
+                </div>
+                ${blocker.link ? `<a href="${blocker.link}" class="btn btn-sm btn-secondary">Fix</a>` : ''}
+            </div>
+        `).join('');
+    } else {
+        alertsList.innerHTML = '<div class="no-alerts">No blocking issues!</div>';
+    }
+}
+
+function updateNextActions(result) {
+    const actionsList = document.getElementById('actions-list');
+    const actionsCount = document.getElementById('actions-count');
+    const actions = result.actions || [];
+
+    actionsCount.textContent = actions.length;
+
+    if (actions.length > 0) {
+        actionsList.innerHTML = actions.map(action => `
+            <div class="action-item" onclick="${action.link ? `window.location.href='${action.link}'` : ''}">
+                <div class="action-priority">${action.priority}</div>
+                <div class="action-content">
+                    <div class="action-title">${action.title}</div>
+                    <div class="action-reason">${action.reason}</div>
+                </div>
+                <svg class="action-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </div>
+        `).join('');
+    } else {
+        actionsList.innerHTML = '<div class="action-placeholder">All caught up! No actions needed.</div>';
+    }
+}
+
+// Load readiness data on page load
+document.addEventListener('DOMContentLoaded', loadReadinessData);
 
 async function startWorkflow() {
     try {
