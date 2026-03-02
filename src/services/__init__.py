@@ -19,6 +19,13 @@ from src.services.work_queue_service import (
     WorkItemType,
     WorkItemPriority,
 )
+from src.services.audit_reproducibility_service import (
+    capture_audit_snapshot,
+    save_audit_snapshot,
+    record_finding_provenance,
+    verify_audit_reproducibility,
+    AuditSnapshot,
+)
 from src.services.evidence_contract_service import (
     check_evidence_coverage,
     validate_packet_export,
@@ -67,4 +74,9 @@ __all__ = [
     "check_evidence_coverage",
     "validate_packet_export",
     "CoverageReport",
+    "capture_audit_snapshot",
+    "save_audit_snapshot",
+    "record_finding_provenance",
+    "verify_audit_reproducibility",
+    "AuditSnapshot",
 ]
