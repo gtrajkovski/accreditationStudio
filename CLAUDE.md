@@ -43,7 +43,7 @@ pip install -r requirements.txt    # Install dependencies
 - **`src/validators/`** — Validation logic
 - **`src/regulatory/`** — Federal/state/professional regulation definitions
 - **`src/exporters/`** — .docx/.pdf generation, submission packaging
-- **`src/importers/`** — Document parsing, OCR, chunking
+- **`src/importers/`** — Document parsing (`document_parser.py`), PII detection (`pii_detector.py`), OCR, chunking
 - **`src/tasks/`** — Background task queue (SQLite-backed)
 
 **Entry point:** `app.py` — initializes `WorkspaceManager`, `AIClient`, task queue; registers blueprints; serves templates.
@@ -82,7 +82,7 @@ workspace/{institution_id}/
 
 ### Blueprint Dependency Injection
 
-Each API blueprint uses `init_*_bp(dependencies...)` to inject dependencies:
+Each API blueprint uses `init_*_bp(dependencies...)` to inject dependencies. Blueprints are registered in `app.py`:
 
 ```python
 # src/api/institutions.py
@@ -93,6 +93,27 @@ def init_institutions_bp(workspace_manager):
     global _workspace_manager
     _workspace_manager = workspace_manager
 ```
+
+Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `documents_bp`
+
+### Document Import Pipeline
+
+Documents flow through: **upload → parse → PII detect → store**
+
+```python
+from src.importers import parse_document, detect_pii, redact_pii
+
+# Parse extracts text from PDF/DOCX/text/images
+parsed = parse_document(file_path)  # Returns ParsedDocument
+
+# Detect PII returns list of PIIMatch objects
+matches = detect_pii(parsed.text)
+
+# Redact replaces PII with [REDACTED:type] markers
+safe_text = redact_pii(parsed.text)
+```
+
+`ParsedDocument` contains: `text`, `page_count`, `word_count`, `sections`, `metadata`, `parse_errors`
 
 ### Model Serialization
 
@@ -157,6 +178,7 @@ Agents check confidence against `Config.AGENT_CONFIDENCE_THRESHOLD` (default 0.7
 
 - **Enums:** `AccreditingBody`, `DocumentType`, `ComplianceStatus`, `FindingSeverity`, `RegulatorySource`, `AuditStatus`, `ExhibitStatus`, `SessionStatus`, `TaskPriority`, etc.
 - **Domain Models:** `Institution`, `Program`, `Document`, `Audit`, `AuditFinding`
+- **Importer Models:** `ParsedDocument` (in `document_parser.py`), `PIIMatch` (in `pii_detector.py`)
 - **Agent Models:** `AgentSession`, `AgentTask`, `ToolCall`, `HumanCheckpoint`, `ChatMessage`
 
 ---
@@ -228,7 +250,7 @@ def test_agent_executes_task(mock_anthropic):
 
 ## Current Status
 
-Phase 1 (Foundation) partially complete:
+**Phase 1 (Foundation):** Complete
 - ✅ Project scaffolding
 - ✅ WorkspaceManager with file locking and version tracking
 - ✅ Core models (Institution, Program, Document, Audit, Agent models)
@@ -239,4 +261,11 @@ Phase 1 (Foundation) partially complete:
 - ✅ Institution CRUD API
 - ✅ Basic dashboard and institution pages
 
-Next: Ingestion Agent, document upload/parsing, chunking pipeline.
+**Phase 2 (Document Ingestion):** Complete
+- ✅ Document upload API with file type validation
+- ✅ Document parser (`src/importers/document_parser.py`) — PDF, DOCX, text, images (OCR)
+- ✅ PII detection (`src/importers/pii_detector.py`) with redaction
+- ✅ Chunking pipeline (`src/importers/document_chunker.py`) — section-aware, PII handling, overlap
+- ✅ Ingestion Agent (`src/agents/ingestion_agent.py`) — orchestrates full pipeline
+
+Next: Phase 3 — Compliance Audit Engine (Standards Agent, audit workflow).

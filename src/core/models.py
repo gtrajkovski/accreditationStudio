@@ -838,3 +838,86 @@ class ChatMessage:
             agent=data.get("agent"),
             timestamp=data.get("timestamp", now_iso()),
         )
+
+
+# ===========================
+# Document Chunking Models
+# ===========================
+
+@dataclass
+class DocumentChunk:
+    """A single chunk from a parsed document for RAG/vector storage."""
+    id: str = field(default_factory=lambda: generate_id("chunk"))
+    document_id: str = ""
+    chunk_index: int = 0
+    page_number: int = 1
+    section_header: str = ""
+    text_original: str = ""
+    text_redacted: str = ""
+    text_anonymized: str = ""
+    embedding: List[float] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: str = field(default_factory=now_iso)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "document_id": self.document_id,
+            "chunk_index": self.chunk_index,
+            "page_number": self.page_number,
+            "section_header": self.section_header,
+            "text_original": self.text_original,
+            "text_redacted": self.text_redacted,
+            "text_anonymized": self.text_anonymized,
+            "embedding": self.embedding,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DocumentChunk":
+        return cls(
+            id=data.get("id", generate_id("chunk")),
+            document_id=data.get("document_id", ""),
+            chunk_index=data.get("chunk_index", 0),
+            page_number=data.get("page_number", 1),
+            section_header=data.get("section_header", ""),
+            text_original=data.get("text_original", ""),
+            text_redacted=data.get("text_redacted", ""),
+            text_anonymized=data.get("text_anonymized", ""),
+            embedding=data.get("embedding", []),
+            metadata=data.get("metadata", {}),
+            created_at=data.get("created_at", now_iso()),
+        )
+
+
+@dataclass
+class ChunkedDocument:
+    """Result of chunking a parsed document."""
+    document_id: str = ""
+    source_file: str = ""
+    total_chunks: int = 0
+    chunks: List[DocumentChunk] = field(default_factory=list)
+    chunking_stats: Dict[str, Any] = field(default_factory=dict)
+    created_at: str = field(default_factory=now_iso)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "document_id": self.document_id,
+            "source_file": self.source_file,
+            "total_chunks": self.total_chunks,
+            "chunks": [c.to_dict() for c in self.chunks],
+            "chunking_stats": self.chunking_stats,
+            "created_at": self.created_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ChunkedDocument":
+        return cls(
+            document_id=data.get("document_id", ""),
+            source_file=data.get("source_file", ""),
+            total_chunks=data.get("total_chunks", 0),
+            chunks=[DocumentChunk.from_dict(c) for c in data.get("chunks", [])],
+            chunking_stats=data.get("chunking_stats", {}),
+            created_at=data.get("created_at", now_iso()),
+        )

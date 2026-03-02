@@ -29,6 +29,7 @@ from src.core.models import (
 class AgentType(Enum):
     """Types of specialized agents in the system."""
     ORCHESTRATOR = "orchestrator"
+    INGESTION = "ingestion"
     DOCUMENT_ANALYZER = "document_analyzer"
     GAP_ANALYZER = "gap_analyzer"
     COMPLIANCE_CHECKER = "compliance_checker"

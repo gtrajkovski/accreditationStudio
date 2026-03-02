@@ -13,15 +13,29 @@ from src.importers.pii_detector import (
     detect_pii,
     redact_pii,
 )
+from src.importers.document_chunker import (
+    DocumentChunker,
+    get_chunker,
+    chunk_document,
+)
+from src.core.models import DocumentChunk, ChunkedDocument
 
 __all__ = [
+    # Parser
     "DocumentParser",
     "ParsedDocument",
     "get_parser",
     "parse_document",
+    # PII
     "PIIDetector",
     "PIIMatch",
     "get_detector",
     "detect_pii",
     "redact_pii",
+    # Chunker
+    "DocumentChunker",
+    "DocumentChunk",
+    "ChunkedDocument",
+    "get_chunker",
+    "chunk_document",
 ]
