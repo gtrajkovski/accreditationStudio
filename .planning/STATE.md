@@ -1,100 +1,136 @@
 # AccreditAI State
 
 ## Current Phase
-Phase 3: Audit Engine - **IN PROGRESS**
+Phase 4: Remediation - **IN PROGRESS**
 
 ## Session Date
-2026-03-02
+2026-03-03
 
 ## What's Complete This Session
 
-### 7. Evidence Mapper Agent (NEW)
-- **Agent** (`src/agents/evidence_mapper.py`): Full implementation with 6 tools
-  - `search_evidence` - Search documents for evidence matching requirements
-  - `map_standard_to_evidence` - Map single standard to evidence
-  - `generate_crosswalk_table` - Full crosswalk in JSON/CSV/DOCX format
-  - `identify_evidence_gaps` - Find missing/weak evidence by severity
-  - `get_evidence_summary` - Dashboard overview with coverage stats
-  - `save_evidence_map` - Persist evidence maps to workspace
+### 1. Remediation Agent (NEW)
+- **Agent** (`src/agents/remediation_agent.py`): Full implementation with 7 tools
+  - `load_audit_findings` - Load findings from completed audit that need remediation
+  - `generate_correction` - Generate corrected text for a single finding using AI
+  - `generate_all_corrections` - Batch generate corrections for all findings
+  - `create_redline_document` - Create DOCX with tracked changes formatting
+  - `create_final_document` - Create clean DOCX with corrections applied
+  - `apply_truth_index` - Apply authoritative institutional values to changes
+  - `save_remediation` - Persist remediation result and generated documents
 - **Workflows**:
-  - `map_all_standards` - Full evidence mapping orchestration
-  - `gap_analysis` - Comprehensive gap analysis with recommendations
-- **Data Models** (`src/core/models.py`):
-  - `CrosswalkEntry` - Single row in crosswalk table
-  - `EvidenceMapping` - Standard-to-evidence mapping
-  - `EvidenceMap` - Complete map with coverage stats
-  - `EvidenceGap` - Identified gap with severity/suggestions
-- **Tests** (`tests/test_evidence_mapper.py`): 14 passing
+  - `remediate_document` - Full remediation orchestration with AI
+  - `run_programmatic_remediation` - Batch processing entry point
+- **Document Generation**:
+  - Redline DOCX with strikethrough (deletions) and yellow highlight (insertions)
+  - Final DOCX with clean corrected content organized by section
+  - Standard citations and rationale included
 
-### Previous (Same Session)
-1. Work Queue Screen - Complete
-2. Autopilot Nightly Run - Complete
-3. Change Detection - Complete
-4. Evidence Coverage Contract - Complete
-5. Audit Reproducibility - Complete
-6. Readiness Score - Complete
+### 2. Remediation Data Models (NEW)
+- **Models** (`src/core/models.py`):
+  - `RemediationStatus` - Enum: pending, in_progress, generated, reviewed, approved, applied
+  - `RemediationChange` - Single change with finding_id, original/corrected text, citation, confidence
+  - `RemediationResult` - Full result with changes list, document paths, truth index status
+
+### 3. Remediation API (NEW)
+- **API Blueprint** (`src/api/remediation.py`): Full REST API
+  - `POST /api/institutions/{id}/remediations` - Start remediation from audit
+  - `GET /api/institutions/{id}/remediations/{id}/stream` - SSE streaming progress
+  - `POST /api/institutions/{id}/remediations/{id}/run` - Synchronous execution
+  - `GET /api/institutions/{id}/remediations/{id}` - Get remediation result
+  - `GET /api/institutions/{id}/remediations` - List remediations
+  - `GET /api/institutions/{id}/remediations/{id}/download/{type}` - Download DOCX
+
+### 4. Tests (NEW)
+- **Tests** (`tests/test_remediation_agent.py`): 17 passing tests
+  - Agent initialization and tool definitions
+  - Load audit findings with severity filter
+  - Generate corrections with AI
+  - Apply truth index values
+  - Create redline and final documents
+  - Save remediation to workspace
+  - Workflow methods
 
 ## Files Added/Modified This Session
 ```
-# Agent (Modified)
-src/agents/evidence_mapper.py        # Full implementation
+# Agent (New/Rewritten)
+src/agents/remediation_agent.py        # Full implementation (900+ lines)
 
 # Models (Modified)
-src/core/models.py                   # Added 4 evidence mapping models
+src/core/models.py                     # Added RemediationStatus, RemediationChange, RemediationResult
+
+# API (New)
+src/api/remediation.py                 # Full REST API with SSE streaming
+
+# App (Modified)
+app.py                                 # Registered remediation_bp
 
 # Tests (New)
-tests/test_evidence_mapper.py        # 14 tests passing
+tests/test_remediation_agent.py        # 17 tests passing
 ```
 
-## Commits This Session
-```
-279d1aa Implement Evidence Mapper Agent with crosswalk generation
-8dc5520 Add Autopilot navigation link to institution sidebar
-682d749 Update STATE.md with session progress
-8c7f880 Add Audit Reproducibility service
-39b6090 Add Evidence Coverage Contract service
-9fe041b Add Change Detection service
-9fc3cf8 Add Autopilot Nightly Run feature
-7171567 Add Work Queue screen and Readiness Score service
-```
+### 5. Consistency Agent (NEW)
+- **Agent** (`src/agents/policy_consistency.py`): Full implementation with 5 tools
+  - `check_policy_consistency` - Check specific policy across documents with AI
+  - `run_full_consistency_scan` - Scan all 8 policy categories
+  - `compare_to_truth_index` - Validate docs against truth index
+  - `analyze_document_pair` - Deep AI comparison of two documents
+  - `generate_consistency_report` - Save full report to workspace
+- **Data Models**: Inconsistency, InconsistencySeverity, ConsistencyReport
+- **Policy Categories**: refund, cancellation, tuition, program_length, sap, attendance, grievance, contact
+- **Tests** (`tests/test_consistency_agent.py`): 9 passing
 
-## Tests
-- **92 tests passing** (existing)
-- **14 new tests** for Evidence Mapper (some mocking issues to fix)
-- 701 warnings (mostly datetime deprecation)
-
-## Phase 3 Progress
+## Phase 4 Progress
 | Feature | Status |
 |---------|--------|
-| Work Queue Screen | ✅ Complete |
-| Autopilot Nightly Run | ✅ Complete |
-| Change Detection | ✅ Complete |
-| Evidence Coverage Contract | ✅ Complete |
-| Audit Reproducibility | ✅ Complete |
-| Evidence Mapper Agent | ✅ Complete |
-| Compliance Audit Agent | 🔶 Next |
-| Risk Scorer Agent | 🔶 Pending |
-| Compliance Command Center UI | 🔶 Pending |
-| Evidence Explorer UI | 🔶 Pending |
+| Remediation Agent | ✅ Complete |
+| Remediation Data Models | ✅ Complete |
+| Remediation API | ✅ Complete |
+| Truth Index Application | ✅ Complete |
+| Redline Document Generation | ✅ Complete |
+| Final Document Generation | ✅ Complete |
+| Consistency Agent | ✅ Complete |
+| Document Workbench UI | 🔶 Next |
+| Checklist Auto-filling | 🔶 Pending |
 
 ## Next Steps
-1. Compliance Audit Agent (multi-pass with citations)
-2. Risk Scorer Agent (compliance health score)
-3. Compliance Command Center UI
-4. Evidence Explorer UI
+1. Consistency Agent (cross-document consistency checking)
+2. Document Workbench UI (view/edit remediated documents)
+3. Checklist Auto-filling
 
 ## Key Commands
 ```bash
-flask db upgrade          # Apply migrations (0001-0013)
+flask db upgrade          # Apply migrations
 flask db status           # Check migration status
 python app.py             # Run dev server on port 5003
-pytest                    # Run all tests (92 passing)
-pip install APScheduler   # Required for autopilot
+pytest tests/test_remediation_agent.py -v  # Run remediation tests
+
+# Test remediation API
+curl -X POST http://localhost:5003/api/institutions/{inst_id}/remediations \
+  -H "Content-Type: application/json" \
+  -d '{"audit_id": "audit_xxx"}'
 ```
 
-## Database
-- Location: `workspace/_system/accreditai.db`
-- Migrations: 13 total (0001-0013)
+## API Endpoints Added
+```
+POST   /api/institutions/{id}/remediations
+       Start remediation from completed audit
+       Body: {audit_id, max_findings?, severity_filter?}
+
+GET    /api/institutions/{id}/remediations/{id}/stream
+       SSE streaming of remediation progress (5 steps)
+
+POST   /api/institutions/{id}/remediations/{id}/run
+       Synchronous remediation execution
+
+GET    /api/institutions/{id}/remediations/{id}
+       Get remediation result with all changes
+
+GET    /api/institutions/{id}/remediations
+       List remediations for institution
+
+GET    /api/institutions/{id}/remediations/{id}/download/{type}
+       Download redline or final DOCX
+```
 
 ## Repository
 - Remote: https://github.com/gtrajkovski/accreditationStudio
