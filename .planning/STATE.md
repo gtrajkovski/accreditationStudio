@@ -54,6 +54,7 @@ Phase 4: Remediation - **IN PROGRESS**
 ```
 # Agent (New/Rewritten)
 src/agents/remediation_agent.py        # Full implementation (900+ lines)
+src/agents/policy_consistency.py       # Consistency checking (500+ lines)
 
 # Models (Modified)
 src/core/models.py                     # Added RemediationStatus, RemediationChange, RemediationResult
@@ -62,13 +63,30 @@ src/core/models.py                     # Added RemediationStatus, RemediationCha
 src/api/remediation.py                 # Full REST API with SSE streaming
 
 # App (Modified)
-app.py                                 # Registered remediation_bp
+app.py                                 # Registered remediation_bp, added workbench route
+
+# Templates (New)
+templates/institutions/workbench.html  # Document Workbench UI
+
+# Templates (Modified)
+templates/base.html                    # Added Workbench nav link
 
 # Tests (New)
 tests/test_remediation_agent.py        # 17 tests passing
+tests/test_consistency_agent.py        # 9 tests passing
 ```
 
-### 5. Consistency Agent (NEW)
+### 5. Document Workbench UI (NEW)
+- **Template** (`templates/institutions/workbench.html`): Full remediation review interface
+  - Status cards showing remediation status, changes summary, document downloads
+  - Changes list view with original/corrected text, citations, rationale, AI confidence
+  - Side-by-side diff view for comparing original vs corrected content
+  - Change approval workflow (individual and bulk approve)
+  - Download buttons for redline and final DOCX documents
+- **Route** (`app.py`): `/institutions/<id>/workbench`
+- **Navigation**: Added Workbench link to institution sidebar
+
+### 6. Consistency Agent (NEW)
 - **Agent** (`src/agents/policy_consistency.py`): Full implementation with 5 tools
   - `check_policy_consistency` - Check specific policy across documents with AI
   - `run_full_consistency_scan` - Scan all 8 policy categories
@@ -89,13 +107,12 @@ tests/test_remediation_agent.py        # 17 tests passing
 | Redline Document Generation | ✅ Complete |
 | Final Document Generation | ✅ Complete |
 | Consistency Agent | ✅ Complete |
-| Document Workbench UI | 🔶 Next |
-| Checklist Auto-filling | 🔶 Pending |
+| Document Workbench UI | ✅ Complete |
+| Checklist Auto-filling | 🔶 Next |
 
 ## Next Steps
-1. Consistency Agent (cross-document consistency checking)
-2. Document Workbench UI (view/edit remediated documents)
-3. Checklist Auto-filling
+1. Checklist Auto-filling
+2. Start Phase 5: Findings + Packets
 
 ## Key Commands
 ```bash

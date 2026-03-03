@@ -257,6 +257,20 @@ def institution_autopilot(id):
     )
 
 
+@app.route('/institutions/<id>/workbench')
+def institution_workbench(id):
+    """Document workbench for remediation review."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/workbench.html',
+        institution=institution,
+        current_institution=institution,
+    )
+
+
 @app.route('/chat')
 def chat():
     """AI chat interface page."""

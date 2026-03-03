@@ -30,8 +30,8 @@
 
 ### Phase 4: Remediation ← CURRENT
 21. ✅ Remediation Agent (7 tools, redlines, finals, truth index)
-22. 🔶 Document Workbench UI
-23. 🔶 Consistency Agent
+22. ✅ Document Workbench UI (remediation review, diff view, approvals)
+23. ✅ Consistency Agent (8 policy categories, cross-doc checking)
 24. 🔶 Checklist auto-filling
 
 ### Phase 5: Findings + Packets

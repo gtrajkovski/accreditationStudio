@@ -1,0 +1,563 @@
+{% extends "base.html" %}
+
+{% block title %}Document Workbench - {{ institution.name }} - AccreditAI{% endblock %}
+{% block header_title %}Document Workbench{% endblock %}
+
+{% block header_actions %}
+<select id="remediationFilter" class="form-control" style="width: auto; display: inline-block; margin-right: var(--spacing-sm);">
+    <option value="">Select Remediation</option>
+</select>
+<button class="btn btn-secondary" onclick="refreshRemediations()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M23 4v6h-6M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+    </svg>
+    Refresh
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Status Cards -->
+<div class="dashboard-grid mb-lg" id="statusCards">
+    <div class="card">
+        <h3 class="card-title mb-md">Remediation Status</h3>
+        <div style="text-align: center; padding: var(--spacing-lg);">
+            <div id="statusBadge" class="status-badge status-pending">--</div>
+            <div id="statusLabel" class="text-muted mt-sm">Select a remediation</div>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title mb-md">Changes Summary</h3>
+        <div id="changesSummary" style="padding: var(--spacing-md);">
+            <div class="summary-row"><span>Total Changes</span> <span id="countTotal">0</span></div>
+            <div class="summary-row"><span>Approved</span> <span id="countApproved" class="text-success">0</span></div>
+            <div class="summary-row"><span>Pending Review</span> <span id="countPending" class="text-warning">0</span></div>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-title mb-md">Documents</h3>
+        <div id="documentsActions" style="padding: var(--spacing-md);">
+            <button class="btn btn-secondary btn-block mb-sm" onclick="downloadRedline()" id="downloadRedlineBtn" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                Download Redline
+            </button>
+            <button class="btn btn-primary btn-block" onclick="downloadFinal()" id="downloadFinalBtn" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                Download Final
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- View Toggle -->
+<div class="view-toggle mb-md">
+    <button class="view-btn active" data-view="changes" onclick="switchView('changes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Changes List
+    </button>
+    <button class="view-btn" data-view="diff" onclick="switchView('diff')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M12 3v18M3 12h18"/>
+        </svg>
+        Side-by-Side Diff
+    </button>
+</div>
+
+<!-- Changes List View -->
+<div id="changesView" class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">Remediation Changes</h3>
+        <div>
+            <button class="btn btn-success btn-sm" onclick="approveAllChanges()" id="approveAllBtn" disabled>
+                Approve All
+            </button>
+        </div>
+    </div>
+    <div id="changesList">
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+            </svg>
+            <h3>No Remediation Selected</h3>
+            <p>Run a remediation from the Compliance page or select an existing one above.</p>
+            <a href="/institutions/{{ institution.id }}/compliance" class="btn btn-primary">Go to Compliance</a>
+        </div>
+    </div>
+</div>
+
+<!-- Diff View (hidden by default) -->
+<div id="diffView" class="card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Side-by-Side Comparison</h3>
+    </div>
+    <div class="diff-container">
+        <div class="diff-pane">
+            <div class="diff-header">Original</div>
+            <div id="originalContent" class="diff-content"></div>
+        </div>
+        <div class="diff-pane">
+            <div class="diff-header">Corrected</div>
+            <div id="correctedContent" class="diff-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Start Remediation Modal -->
+<div id="startRemediationModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideStartModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Start New Remediation</h3>
+            <button class="btn btn-ghost" onclick="hideStartModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Source Audit</label>
+                <select id="auditSelect" class="form-control">
+                    <option value="">Select an audit...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Severity Filter</label>
+                <select id="severitySelect" class="form-control">
+                    <option value="">All Findings</option>
+                    <option value="critical">Critical Only</option>
+                    <option value="significant">Significant & Above</option>
+                </select>
+            </div>
+            <div id="remediationProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <p id="progressText" class="text-muted mt-sm">Initializing...</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideStartModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="startRemediation()" id="startRemBtn">Start Remediation</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.summary-row { display: flex; justify-content: space-between; padding: var(--spacing-xs) 0; }
+.status-badge {
+    display: inline-block;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 1.1em;
+    text-transform: uppercase;
+}
+.status-pending { background: var(--bg-secondary); color: var(--text-muted); }
+.status-in_progress { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+.status-generated { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+.status-reviewed { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+.status-approved { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+.status-applied { background: rgba(74, 222, 128, 0.3); color: var(--success); }
+
+.view-toggle { display: flex; gap: var(--spacing-sm); }
+.view-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.view-btn:hover { background: var(--bg-card); }
+.view-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.change-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+    overflow: hidden;
+}
+.change-card.approved { border-left: 4px solid var(--success); }
+.change-card.pending { border-left: 4px solid var(--warning); }
+.change-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+.change-item-number { font-weight: 600; }
+.change-body { padding: var(--spacing-md); }
+.change-section { margin-bottom: var(--spacing-md); }
+.change-section:last-child { margin-bottom: 0; }
+.change-label {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.change-text {
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    line-height: 1.5;
+}
+.change-original {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid var(--danger);
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+.change-corrected {
+    background: rgba(74, 222, 128, 0.1);
+    border-left: 3px solid var(--success);
+}
+.change-citation {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+}
+.change-confidence {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.85em;
+}
+.confidence-bar {
+    width: 60px;
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.confidence-fill {
+    height: 100%;
+    transition: width 0.3s;
+}
+.confidence-high { background: var(--success); }
+.confidence-medium { background: var(--warning); }
+.confidence-low { background: var(--danger); }
+
+.diff-container { display: flex; gap: 1px; background: var(--border-color); }
+.diff-pane { flex: 1; background: var(--bg-card); }
+.diff-header {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-secondary);
+    font-weight: 600;
+    text-align: center;
+}
+.diff-content {
+    padding: var(--spacing-md);
+    max-height: 600px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+.diff-added { background: rgba(74, 222, 128, 0.2); }
+.diff-removed { background: rgba(239, 68, 68, 0.2); text-decoration: line-through; }
+
+.btn-block { width: 100%; }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.mt-sm { margin-top: var(--spacing-sm); }
+
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal-backdrop { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); }
+.modal-content { position: relative; background: var(--bg-card); border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); }
+.modal-header h3 { margin: 0; }
+.modal-body { padding: var(--spacing-lg); }
+.modal-footer { display: flex; justify-content: flex-end; gap: var(--spacing-sm); padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); }
+.form-group { margin-bottom: var(--spacing-md); }
+.form-group label { display: block; margin-bottom: var(--spacing-xs); font-weight: 500; }
+.form-control { width: 100%; padding: var(--spacing-sm); border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); }
+.progress-bar { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = '{{ institution.id }}';
+let currentRemediationId = null;
+let currentRemediation = null;
+let allChanges = [];
+
+async function loadRemediations() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/remediations`);
+        const data = await res.json();
+        const remediations = data.remediations || [];
+
+        const select = document.getElementById('remediationFilter');
+        select.innerHTML = '<option value="">Select Remediation</option>';
+
+        if (remediations.length === 0) {
+            showEmptyState();
+            return;
+        }
+
+        remediations.forEach(rem => {
+            const opt = document.createElement('option');
+            opt.value = rem.id;
+            const date = rem.created_at ? rem.created_at.slice(0, 10) : '';
+            opt.textContent = `${rem.id.slice(0, 12)}... (${rem.status}) ${date}`;
+            select.appendChild(opt);
+        });
+
+        // Load most recent if exists
+        if (remediations.length > 0) {
+            currentRemediationId = remediations[0].id;
+            select.value = currentRemediationId;
+            await loadRemediation(currentRemediationId);
+        }
+    } catch (err) {
+        console.error(err);
+        showEmptyState();
+    }
+}
+
+async function loadRemediation(remediationId) {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/remediations/${remediationId}`);
+        if (!res.ok) throw new Error('Failed to load remediation');
+        const data = await res.json();
+
+        currentRemediation = data;
+        allChanges = data.changes || [];
+
+        updateStatusDisplay(data);
+        updateSummary(data);
+        renderChanges();
+        updateDiffView();
+
+        // Enable download buttons if documents exist
+        document.getElementById('downloadRedlineBtn').disabled = !data.redline_path;
+        document.getElementById('downloadFinalBtn').disabled = !data.final_path;
+        document.getElementById('approveAllBtn').disabled = allChanges.length === 0;
+
+    } catch (err) {
+        console.error(err);
+        window.toast.error('Failed to load remediation');
+    }
+}
+
+function updateStatusDisplay(remediation) {
+    const badge = document.getElementById('statusBadge');
+    const label = document.getElementById('statusLabel');
+
+    const status = remediation.status || 'pending';
+    badge.className = `status-badge status-${status}`;
+    badge.textContent = status.replace('_', ' ');
+
+    const labels = {
+        'pending': 'Waiting to start',
+        'in_progress': 'Generating corrections...',
+        'generated': 'Review changes below',
+        'reviewed': 'Awaiting final approval',
+        'approved': 'Ready to apply',
+        'applied': 'Changes applied to documents'
+    };
+    label.textContent = labels[status] || status;
+}
+
+function updateSummary(remediation) {
+    const changes = remediation.changes || [];
+    const approved = changes.filter(c => c.human_approved).length;
+    const pending = changes.length - approved;
+
+    document.getElementById('countTotal').textContent = changes.length;
+    document.getElementById('countApproved').textContent = approved;
+    document.getElementById('countPending').textContent = pending;
+}
+
+function renderChanges() {
+    if (allChanges.length === 0) {
+        document.getElementById('changesList').innerHTML = `
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <p>No changes in this remediation</p>
+            </div>
+        `;
+        return;
+    }
+
+    const html = allChanges.map((change, idx) => {
+        const confidenceClass = change.ai_confidence >= 0.8 ? 'high' :
+                               change.ai_confidence >= 0.6 ? 'medium' : 'low';
+        const confidencePct = Math.round(change.ai_confidence * 100);
+
+        return `
+            <div class="change-card ${change.human_approved ? 'approved' : 'pending'}" data-change-id="${change.id}">
+                <div class="change-header">
+                    <div>
+                        <span class="change-item-number">${change.item_number || `Change ${idx + 1}`}</span>
+                        <span class="badge badge-${change.change_type === 'insert' ? 'success' : change.change_type === 'delete' ? 'danger' : 'warning'} ml-sm">
+                            ${change.change_type}
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                        <div class="change-confidence">
+                            <span>AI Confidence:</span>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill confidence-${confidenceClass}" style="width: ${confidencePct}%"></div>
+                            </div>
+                            <span>${confidencePct}%</span>
+                        </div>
+                        ${change.human_approved ?
+                            '<span class="badge badge-success">Approved</span>' :
+                            `<button class="btn btn-success btn-sm" onclick="approveChange('${change.id}')">Approve</button>`
+                        }
+                    </div>
+                </div>
+                <div class="change-body">
+                    ${change.original_text ? `
+                        <div class="change-section">
+                            <div class="change-label">Original Text</div>
+                            <div class="change-text change-original">${escapeHtml(change.original_text)}</div>
+                        </div>
+                    ` : ''}
+                    <div class="change-section">
+                        <div class="change-label">Corrected Text</div>
+                        <div class="change-text change-corrected">${escapeHtml(change.corrected_text)}</div>
+                    </div>
+                    ${change.standard_citation ? `
+                        <div class="change-section">
+                            <div class="change-label">Citation</div>
+                            <div class="change-citation">${escapeHtml(change.standard_citation)}</div>
+                        </div>
+                    ` : ''}
+                    ${change.rationale ? `
+                        <div class="change-section">
+                            <div class="change-label">Rationale</div>
+                            <div class="change-text" style="background: var(--bg-secondary);">${escapeHtml(change.rationale)}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('changesList').innerHTML = `<div style="padding: var(--spacing-md);">${html}</div>`;
+}
+
+function updateDiffView() {
+    if (allChanges.length === 0) {
+        document.getElementById('originalContent').textContent = 'No changes to display';
+        document.getElementById('correctedContent').textContent = 'No changes to display';
+        return;
+    }
+
+    // Build original and corrected texts
+    let originalLines = [];
+    let correctedLines = [];
+
+    allChanges.forEach((change, idx) => {
+        const label = change.item_number || `Change ${idx + 1}`;
+
+        if (change.original_text) {
+            originalLines.push(`[${label}]`);
+            originalLines.push(change.original_text);
+            originalLines.push('');
+        }
+
+        correctedLines.push(`[${label}]`);
+        correctedLines.push(change.corrected_text);
+        correctedLines.push('');
+    });
+
+    document.getElementById('originalContent').textContent = originalLines.join('\n');
+    document.getElementById('correctedContent').textContent = correctedLines.join('\n');
+}
+
+function switchView(view) {
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === view);
+    });
+
+    document.getElementById('changesView').style.display = view === 'changes' ? 'block' : 'none';
+    document.getElementById('diffView').style.display = view === 'diff' ? 'block' : 'none';
+}
+
+async function approveChange(changeId) {
+    // For now, just update the UI (backend endpoint would be needed)
+    const change = allChanges.find(c => c.id === changeId);
+    if (change) {
+        change.human_approved = true;
+        renderChanges();
+        updateSummary(currentRemediation);
+        window.toast.success('Change approved');
+    }
+}
+
+async function approveAllChanges() {
+    allChanges.forEach(c => c.human_approved = true);
+    renderChanges();
+    updateSummary(currentRemediation);
+    window.toast.success('All changes approved');
+}
+
+function downloadRedline() {
+    if (currentRemediationId) {
+        window.location.href = `/api/institutions/${institutionId}/remediations/${currentRemediationId}/download/redline`;
+    }
+}
+
+function downloadFinal() {
+    if (currentRemediationId) {
+        window.location.href = `/api/institutions/${institutionId}/remediations/${currentRemediationId}/download/final`;
+    }
+}
+
+function showEmptyState() {
+    document.getElementById('changesList').innerHTML = `
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <h3>No Remediations Yet</h3>
+            <p>Run a compliance audit first, then start remediation from the Compliance page.</p>
+            <a href="/institutions/${institutionId}/compliance" class="btn btn-primary">Go to Compliance</a>
+        </div>
+    `;
+}
+
+function refreshRemediations() {
+    loadRemediations();
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Event listeners
+document.getElementById('remediationFilter').addEventListener('change', function() {
+    if (this.value) {
+        currentRemediationId = this.value;
+        loadRemediation(this.value);
+    }
+});
+
+// Load on page load
+loadRemediations();
+</script>
+{% endblock %}
