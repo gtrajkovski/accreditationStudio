@@ -28,13 +28,13 @@
 19. ✅ Work Queue + Autopilot
 20. ✅ Document Audit Flow UI
 
-### Phase 4: Remediation ← CURRENT
+### Phase 4: Remediation ✅ COMPLETE
 21. ✅ Remediation Agent (7 tools, redlines, finals, truth index)
 22. ✅ Document Workbench UI (remediation review, diff view, approvals)
 23. ✅ Consistency Agent (8 policy categories, cross-doc checking)
-24. 🔶 Checklist auto-filling
+24. ✅ Checklist Auto-Fill Agent (8 tools, evidence search, DOCX export)
 
-### Phase 5: Findings + Packets
+### Phase 5: Findings + Packets ← NEXT
 25. Findings Agent
 26. Narrative Agent
 27. Packet Agent

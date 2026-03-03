@@ -563,6 +563,38 @@ class WorkspaceManager:
 
         return sorted(files, key=lambda x: x["modified_at"], reverse=True)
 
+    def list_audits(
+        self,
+        institution_id: str,
+        limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """List audits for an institution.
+
+        Args:
+            institution_id: Institution identifier.
+            limit: Maximum number of audits to return.
+
+        Returns:
+            List of audit metadata dictionaries.
+        """
+        audit_files = self.list_files(institution_id, "audits", pattern="*.json")
+        audits = []
+
+        for file_info in audit_files[:limit]:
+            data = self.load_file(institution_id, f"audits/{file_info['name']}")
+            if data:
+                audits.append({
+                    "id": data.get("id"),
+                    "document_id": data.get("document_id"),
+                    "standards_library_id": data.get("standards_library_id"),
+                    "status": data.get("status"),
+                    "findings_count": len(data.get("findings", [])),
+                    "created_at": data.get("created_at"),
+                    "completed_at": data.get("completed_at"),
+                })
+
+        return audits
+
     def get_file_versions(
         self,
         institution_id: str,
