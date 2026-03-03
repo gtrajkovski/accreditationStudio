@@ -1,0 +1,1145 @@
+{% extends "base.html" %}
+
+{% block title %}Submission Organizer - {{ institution.name }} - AccreditAI{% endblock %}
+{% block header_title %}Submission Organizer{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-primary" onclick="showCreateModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M12 5v14M5 12h14"/>
+    </svg>
+    New Packet
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Status Overview -->
+<div class="dashboard-grid mb-lg" id="statusCards">
+    <div class="card">
+        <h3 class="card-title mb-md">Packets</h3>
+        <div class="stat-value" id="totalPackets">0</div>
+        <div class="text-muted">Total submission packets</div>
+    </div>
+    <div class="card">
+        <h3 class="card-title mb-md">Ready to Submit</h3>
+        <div class="stat-value text-success" id="readyPackets">0</div>
+        <div class="text-muted">Validated and exported</div>
+    </div>
+    <div class="card">
+        <h3 class="card-title mb-md">In Progress</h3>
+        <div class="stat-value text-warning" id="draftPackets">0</div>
+        <div class="text-muted">Drafts being assembled</div>
+    </div>
+</div>
+
+<!-- Packets List -->
+<div class="card" id="packetsCard">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">Submission Packets</h3>
+        <div class="filter-group">
+            <select id="statusFilter" class="form-control" style="width: auto;">
+                <option value="">All Status</option>
+                <option value="draft">Draft</option>
+                <option value="ready">Ready</option>
+                <option value="exported">Exported</option>
+                <option value="submitted">Submitted</option>
+            </select>
+        </div>
+    </div>
+    <div id="packetsList">
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+                <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/>
+            </svg>
+            <h3>No Submission Packets</h3>
+            <p>Create a new packet to start organizing your accreditation submission.</p>
+            <button class="btn btn-primary" onclick="showCreateModal()">Create First Packet</button>
+        </div>
+    </div>
+</div>
+
+<!-- Packet Detail Panel (shown when packet selected) -->
+<div id="packetDetail" class="card mt-lg" style="display: none;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h3 class="card-title" id="packetName">Packet Name</h3>
+            <span class="badge" id="packetStatus">Draft</span>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="validatePacket()" id="validateBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <path d="M9 11l3 3L22 4"/>
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                </svg>
+                Validate
+            </button>
+            <button class="btn btn-secondary" onclick="exportDocx()" id="exportDocxBtn" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                Export DOCX
+            </button>
+            <button class="btn btn-primary" onclick="exportZip()" id="exportZipBtn" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                Export ZIP
+            </button>
+        </div>
+    </div>
+
+    <!-- Packet Tabs -->
+    <div class="packet-tabs">
+        <button class="tab-btn active" data-tab="sections" onclick="switchTab('sections')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <path d="M14 2v6h6M16 13H8M16 17H8"/>
+            </svg>
+            Sections (<span id="sectionCount">0</span>)
+        </button>
+        <button class="tab-btn" data-tab="exhibits" onclick="switchTab('exhibits')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Exhibits (<span id="exhibitCount">0</span>)
+        </button>
+        <button class="tab-btn" data-tab="validation" onclick="switchTab('validation')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4M12 16h.01"/>
+            </svg>
+            Validation (<span id="issueCount">0</span>)
+        </button>
+    </div>
+
+    <!-- Sections Tab -->
+    <div id="sectionsTab" class="tab-content">
+        <div class="tab-actions mb-md">
+            <button class="btn btn-secondary btn-sm" onclick="showAddSectionModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Add Section
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="generateCover()">Generate Cover Page</button>
+            <button class="btn btn-secondary btn-sm" onclick="buildEvidenceIndex()">Build Evidence Index</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadFindingsModal()">Load Findings</button>
+        </div>
+        <div id="sectionsList" class="sortable-list">
+            <div class="empty-state">No sections added yet</div>
+        </div>
+    </div>
+
+    <!-- Exhibits Tab -->
+    <div id="exhibitsTab" class="tab-content" style="display: none;">
+        <div class="tab-actions mb-md">
+            <button class="btn btn-secondary btn-sm" onclick="showAddExhibitModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Add Exhibit
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="autoLinkExhibits()">Auto-Link from Documents</button>
+        </div>
+        <div id="exhibitsList" class="exhibit-grid">
+            <div class="empty-state">No exhibits added yet</div>
+        </div>
+    </div>
+
+    <!-- Validation Tab -->
+    <div id="validationTab" class="tab-content" style="display: none;">
+        <div id="validationStatus" class="validation-status">
+            <div class="validation-pending">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4M12 16h.01"/>
+                </svg>
+                <h4>Not Yet Validated</h4>
+                <p>Click "Validate" to check evidence coverage requirements.</p>
+            </div>
+        </div>
+        <div id="issuesList" style="display: none;"></div>
+    </div>
+</div>
+
+<!-- Create Packet Modal -->
+<div id="createModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideCreateModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Create Submission Packet</h3>
+            <button class="btn btn-ghost" onclick="hideCreateModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="packetNameInput">Packet Name</label>
+                <input type="text" id="packetNameInput" class="form-control" placeholder="e.g., ACCSC Renewal 2024">
+            </div>
+            <div class="form-group">
+                <label for="accreditorSelect">Accrediting Body</label>
+                <select id="accreditorSelect" class="form-control">
+                    <option value="">Select accreditor...</option>
+                    <option value="ACCSC">ACCSC</option>
+                    <option value="SACSCOC">SACSCOC</option>
+                    <option value="HLC">HLC</option>
+                    <option value="ABHES">ABHES</option>
+                    <option value="COE">COE</option>
+                    <option value="DEAC">DEAC</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="submissionTypeSelect">Submission Type</label>
+                <select id="submissionTypeSelect" class="form-control">
+                    <option value="response_to_findings">Response to Findings</option>
+                    <option value="renewal">Renewal</option>
+                    <option value="initial_accreditation">Initial Accreditation</option>
+                    <option value="substantive_change">Substantive Change</option>
+                    <option value="compliance_report">Compliance Report</option>
+                    <option value="annual_report">Annual Report</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="descriptionInput">Description (optional)</label>
+                <textarea id="descriptionInput" class="form-control" rows="2" placeholder="Brief description of this submission..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideCreateModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="createPacket()">Create Packet</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Section Modal -->
+<div id="addSectionModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideAddSectionModal()"></div>
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3>Add Narrative Section</h3>
+            <button class="btn btn-ghost" onclick="hideAddSectionModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="sectionTitle">Section Title</label>
+                <input type="text" id="sectionTitle" class="form-control" placeholder="e.g., Response to Finding I.A.1">
+            </div>
+            <div class="form-group">
+                <label for="standardRefs">Standard References (comma-separated)</label>
+                <input type="text" id="standardRefs" class="form-control" placeholder="e.g., I.A.1, I.A.2">
+            </div>
+            <div class="form-group">
+                <label for="sectionContent">Content</label>
+                <textarea id="sectionContent" class="form-control" rows="8" placeholder="Enter the narrative response..."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="evidenceRefs">Evidence Documents (comma-separated IDs)</label>
+                <input type="text" id="evidenceRefs" class="form-control" placeholder="e.g., doc_001, doc_002">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideAddSectionModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="addSection()">Add Section</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Exhibit Modal -->
+<div id="addExhibitModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideAddExhibitModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Exhibit</h3>
+            <button class="btn btn-ghost" onclick="hideAddExhibitModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="exhibitNumber">Exhibit Number</label>
+                <input type="text" id="exhibitNumber" class="form-control" placeholder="e.g., A-1, B-2">
+            </div>
+            <div class="form-group">
+                <label for="exhibitTitle">Title</label>
+                <input type="text" id="exhibitTitle" class="form-control" placeholder="e.g., 2024 Institutional Catalog">
+            </div>
+            <div class="form-group">
+                <label for="exhibitDescription">Description</label>
+                <textarea id="exhibitDescription" class="form-control" rows="2" placeholder="Brief description..."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="exhibitStandards">Standard References (comma-separated)</label>
+                <input type="text" id="exhibitStandards" class="form-control" placeholder="e.g., I.A.1, II.B.3">
+            </div>
+            <div class="form-group">
+                <label for="exhibitFile">File Path (in workspace)</label>
+                <input type="text" id="exhibitFile" class="form-control" placeholder="e.g., catalog/catalog_2024.pdf">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideAddExhibitModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="addExhibit()">Add Exhibit</button>
+        </div>
+    </div>
+</div>
+
+<!-- Load Findings Modal -->
+<div id="loadFindingsModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideLoadFindingsModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Load Findings into Packet</h3>
+            <button class="btn btn-ghost" onclick="hideLoadFindingsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="findingsReportSelect">Findings Report</label>
+                <select id="findingsReportSelect" class="form-control">
+                    <option value="">Select findings report...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="severityFilter">Severity Filter</label>
+                <select id="severityFilter" class="form-control">
+                    <option value="">All Severities</option>
+                    <option value="critical">Critical Only</option>
+                    <option value="significant">Significant & Above</option>
+                </select>
+            </div>
+            <p class="text-muted">This will create placeholder sections for each finding that needs a response.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideLoadFindingsModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="loadFindings()">Load Findings</button>
+        </div>
+    </div>
+</div>
+
+<!-- Cover Page Modal -->
+<div id="coverModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideCoverModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Generate Cover Page</h3>
+            <button class="btn btn-ghost" onclick="hideCoverModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="institutionNameInput">Institution Name</label>
+                <input type="text" id="institutionNameInput" class="form-control" value="{{ institution.name }}">
+            </div>
+            <div class="form-group">
+                <label for="submissionDateInput">Submission Date</label>
+                <input type="date" id="submissionDateInput" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="contactNameInput">Contact Name</label>
+                <input type="text" id="contactNameInput" class="form-control" placeholder="e.g., Jane Doe">
+            </div>
+            <div class="form-group">
+                <label for="contactTitleInput">Contact Title</label>
+                <input type="text" id="contactTitleInput" class="form-control" placeholder="e.g., Director of Compliance">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideCoverModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="generateCoverPage()">Generate</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-value {
+    font-size: 2.5em;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: var(--spacing-xs);
+}
+
+.packet-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.tab-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-card);
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: var(--bg-card);
+}
+
+.tab-content {
+    padding: var(--spacing-lg);
+}
+
+.tab-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.sortable-list {
+    min-height: 200px;
+}
+
+.section-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+    background: var(--bg-secondary);
+    cursor: grab;
+    transition: all 0.2s;
+}
+
+.section-item:hover {
+    border-color: var(--accent);
+    background: var(--bg-card);
+}
+
+.section-item.dragging {
+    opacity: 0.5;
+    border-style: dashed;
+}
+
+.section-drag-handle {
+    color: var(--text-muted);
+    cursor: grab;
+}
+
+.section-content {
+    flex: 1;
+}
+
+.section-title {
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.section-meta {
+    display: flex;
+    gap: var(--spacing-md);
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.section-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.exhibit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.exhibit-card {
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+}
+
+.exhibit-number {
+    font-size: 0.85em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.exhibit-title {
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.exhibit-description {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.exhibit-standards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+}
+
+.exhibit-standards .badge {
+    font-size: 0.75em;
+}
+
+.validation-status {
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.validation-pending {
+    color: var(--text-muted);
+}
+
+.validation-passed {
+    color: var(--success);
+}
+
+.validation-failed {
+    color: var(--danger);
+}
+
+.issue-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.issue-item.error {
+    border-left: 4px solid var(--danger);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.issue-item.warning {
+    border-left: 4px solid var(--warning);
+    background: rgba(251, 191, 36, 0.05);
+}
+
+.issue-icon {
+    flex-shrink: 0;
+}
+
+.issue-icon.error { color: var(--danger); }
+.issue-icon.warning { color: var(--warning); }
+
+.packet-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.packet-card:hover {
+    border-color: var(--accent);
+    background: var(--bg-secondary);
+}
+
+.packet-card.selected {
+    border-color: var(--accent);
+    background: var(--bg-card);
+}
+
+.packet-info {
+    flex: 1;
+}
+
+.packet-title {
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.packet-meta {
+    display: flex;
+    gap: var(--spacing-md);
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-draft { background: var(--bg-secondary); color: var(--text-muted); }
+.badge-ready { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+.badge-exported { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+.badge-submitted { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+.badge-validation_failed { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+}
+
+.modal-lg .modal-content {
+    max-width: 700px;
+}
+</style>
+
+<script>
+const institutionId = '{{ institution.id }}';
+let currentPacket = null;
+let packets = [];
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadPackets();
+    // Set default date
+    document.getElementById('submissionDateInput').valueAsDate = new Date();
+});
+
+// API calls
+async function apiCall(endpoint, method = 'GET', body = null) {
+    const options = {
+        method,
+        headers: { 'Content-Type': 'application/json' }
+    };
+    if (body) options.body = JSON.stringify(body);
+    const response = await fetch(endpoint, options);
+    return response.json();
+}
+
+// Load packets list
+async function loadPackets() {
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets`);
+        packets = data.packets || [];
+        renderPacketsList();
+        updateStats();
+    } catch (error) {
+        console.error('Error loading packets:', error);
+    }
+}
+
+function updateStats() {
+    document.getElementById('totalPackets').textContent = packets.length;
+    document.getElementById('readyPackets').textContent = packets.filter(p =>
+        ['ready', 'exported', 'submitted'].includes(p.status)).length;
+    document.getElementById('draftPackets').textContent = packets.filter(p =>
+        p.status === 'draft').length;
+}
+
+function renderPacketsList() {
+    const container = document.getElementById('packetsList');
+
+    if (packets.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+                    <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/>
+                </svg>
+                <h3>No Submission Packets</h3>
+                <p>Create a new packet to start organizing your accreditation submission.</p>
+                <button class="btn btn-primary" onclick="showCreateModal()">Create First Packet</button>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = packets.map(packet => `
+        <div class="packet-card ${currentPacket?.id === packet.id ? 'selected' : ''}"
+             onclick="selectPacket('${packet.id}')">
+            <div class="packet-info">
+                <div class="packet-title">${packet.name}</div>
+                <div class="packet-meta">
+                    <span>${packet.accrediting_body}</span>
+                    <span>${packet.total_sections || 0} sections</span>
+                    <span>${packet.total_exhibits || 0} exhibits</span>
+                </div>
+            </div>
+            <span class="badge badge-${packet.status}">${packet.status}</span>
+        </div>
+    `).join('');
+}
+
+// Select and load a packet
+async function selectPacket(packetId) {
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${packetId}`);
+        currentPacket = data;
+        renderPacketDetail();
+        renderPacketsList(); // Update selection
+    } catch (error) {
+        console.error('Error loading packet:', error);
+    }
+}
+
+function renderPacketDetail() {
+    if (!currentPacket) {
+        document.getElementById('packetDetail').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('packetDetail').style.display = 'block';
+    document.getElementById('packetName').textContent = currentPacket.name;
+    document.getElementById('packetStatus').textContent = currentPacket.status;
+    document.getElementById('packetStatus').className = `badge badge-${currentPacket.status}`;
+
+    // Update counts
+    document.getElementById('sectionCount').textContent = currentPacket.sections?.length || 0;
+    document.getElementById('exhibitCount').textContent = currentPacket.exhibits?.length || 0;
+    document.getElementById('issueCount').textContent = currentPacket.validation_issues?.length || 0;
+
+    // Enable/disable export buttons
+    const canExport = currentPacket.is_valid || currentPacket.status === 'ready';
+    document.getElementById('exportDocxBtn').disabled = !canExport;
+    document.getElementById('exportZipBtn').disabled = !canExport;
+
+    renderSections();
+    renderExhibits();
+    renderValidation();
+}
+
+function renderSections() {
+    const container = document.getElementById('sectionsList');
+    const sections = currentPacket.sections || [];
+
+    if (sections.length === 0) {
+        container.innerHTML = '<div class="empty-state">No sections added yet</div>';
+        return;
+    }
+
+    container.innerHTML = sections.map((section, idx) => `
+        <div class="section-item" draggable="true" data-id="${section.id}">
+            <div class="section-drag-handle">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 20px; height: 20px;">
+                    <path d="M8 6a2 2 0 114 0 2 2 0 01-4 0zm0 6a2 2 0 114 0 2 2 0 01-4 0zm0 6a2 2 0 114 0 2 2 0 01-4 0z"/>
+                </svg>
+            </div>
+            <div class="section-content">
+                <div class="section-title">${section.title}</div>
+                <div class="section-meta">
+                    <span>${section.section_type}</span>
+                    ${section.standard_refs?.length ? `<span>Standards: ${section.standard_refs.join(', ')}</span>` : ''}
+                    <span>${section.word_count || 0} words</span>
+                </div>
+            </div>
+            <div class="section-actions">
+                ${section.approved ?
+                    '<span class="badge badge-ready">Approved</span>' :
+                    `<button class="btn btn-success btn-sm" onclick="approveSection('${section.id}')">Approve</button>`
+                }
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderExhibits() {
+    const container = document.getElementById('exhibitsList');
+    const exhibits = currentPacket.exhibits || [];
+
+    if (exhibits.length === 0) {
+        container.innerHTML = '<div class="empty-state">No exhibits added yet</div>';
+        return;
+    }
+
+    container.innerHTML = exhibits.map(exhibit => `
+        <div class="exhibit-card">
+            <div class="exhibit-number">${exhibit.exhibit_number}</div>
+            <div class="exhibit-title">${exhibit.title}</div>
+            ${exhibit.description ? `<div class="exhibit-description">${exhibit.description}</div>` : ''}
+            <div class="exhibit-standards">
+                ${(exhibit.standard_refs || []).map(ref => `<span class="badge">${ref}</span>`).join('')}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderValidation() {
+    const statusContainer = document.getElementById('validationStatus');
+    const issuesList = document.getElementById('issuesList');
+
+    if (!currentPacket.validated_at) {
+        statusContainer.innerHTML = `
+            <div class="validation-pending">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4M12 16h.01"/>
+                </svg>
+                <h4>Not Yet Validated</h4>
+                <p>Click "Validate" to check evidence coverage requirements.</p>
+            </div>
+        `;
+        statusContainer.style.display = 'block';
+        issuesList.style.display = 'none';
+        return;
+    }
+
+    const issues = currentPacket.validation_issues || [];
+
+    if (currentPacket.is_valid) {
+        statusContainer.innerHTML = `
+            <div class="validation-passed">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px;">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <polyline points="22,4 12,14.01 9,11.01"/>
+                </svg>
+                <h4>Validation Passed</h4>
+                <p>Packet is ready for export.</p>
+            </div>
+        `;
+    } else {
+        const errors = issues.filter(i => i.severity === 'error').length;
+        const warnings = issues.filter(i => i.severity === 'warning').length;
+        statusContainer.innerHTML = `
+            <div class="validation-failed">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <h4>Validation Failed</h4>
+                <p>${errors} error(s), ${warnings} warning(s) found.</p>
+            </div>
+        `;
+    }
+    statusContainer.style.display = 'block';
+
+    if (issues.length > 0) {
+        issuesList.innerHTML = issues.map(issue => `
+            <div class="issue-item ${issue.severity}">
+                <div class="issue-icon ${issue.severity}">
+                    ${issue.severity === 'error' ?
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' :
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+                    }
+                </div>
+                <div>
+                    <strong>${issue.issue_type}</strong>
+                    <p style="margin: var(--spacing-xs) 0 0 0; color: var(--text-secondary);">${issue.message}</p>
+                </div>
+            </div>
+        `).join('');
+        issuesList.style.display = 'block';
+    } else {
+        issuesList.style.display = 'none';
+    }
+}
+
+// Tab switching
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+    document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+    document.getElementById(`${tab}Tab`).style.display = 'block';
+}
+
+// Modal functions
+function showCreateModal() {
+    document.getElementById('createModal').style.display = 'flex';
+}
+
+function hideCreateModal() {
+    document.getElementById('createModal').style.display = 'none';
+}
+
+function showAddSectionModal() {
+    document.getElementById('addSectionModal').style.display = 'flex';
+}
+
+function hideAddSectionModal() {
+    document.getElementById('addSectionModal').style.display = 'none';
+    // Clear form
+    document.getElementById('sectionTitle').value = '';
+    document.getElementById('standardRefs').value = '';
+    document.getElementById('sectionContent').value = '';
+    document.getElementById('evidenceRefs').value = '';
+}
+
+function showAddExhibitModal() {
+    document.getElementById('addExhibitModal').style.display = 'flex';
+}
+
+function hideAddExhibitModal() {
+    document.getElementById('addExhibitModal').style.display = 'none';
+}
+
+function loadFindingsModal() {
+    // Load available findings reports
+    loadFindingsReports();
+    document.getElementById('loadFindingsModal').style.display = 'flex';
+}
+
+function hideLoadFindingsModal() {
+    document.getElementById('loadFindingsModal').style.display = 'none';
+}
+
+function generateCover() {
+    document.getElementById('coverModal').style.display = 'flex';
+}
+
+function hideCoverModal() {
+    document.getElementById('coverModal').style.display = 'none';
+}
+
+// API actions
+async function createPacket() {
+    const name = document.getElementById('packetNameInput').value;
+    const accreditor = document.getElementById('accreditorSelect').value;
+    const submissionType = document.getElementById('submissionTypeSelect').value;
+    const description = document.getElementById('descriptionInput').value;
+
+    if (!name || !accreditor) {
+        alert('Please enter a name and select an accrediting body.');
+        return;
+    }
+
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets`, 'POST', {
+            name,
+            accrediting_body: accreditor,
+            submission_type: submissionType,
+            description
+        });
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        hideCreateModal();
+        await loadPackets();
+        await selectPacket(data.packet_id);
+    } catch (error) {
+        console.error('Error creating packet:', error);
+        alert('Failed to create packet');
+    }
+}
+
+async function addSection() {
+    if (!currentPacket) return;
+
+    const title = document.getElementById('sectionTitle').value;
+    const content = document.getElementById('sectionContent').value;
+    const standardRefs = document.getElementById('standardRefs').value.split(',').map(s => s.trim()).filter(s => s);
+    const evidenceRefs = document.getElementById('evidenceRefs').value.split(',').map(s => s.trim()).filter(s => s);
+
+    if (!title) {
+        alert('Please enter a section title.');
+        return;
+    }
+
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/sections`, 'POST', {
+            title,
+            content,
+            standard_refs: standardRefs,
+            evidence_refs: evidenceRefs
+        });
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        hideAddSectionModal();
+        await selectPacket(currentPacket.id);
+    } catch (error) {
+        console.error('Error adding section:', error);
+    }
+}
+
+async function addExhibit() {
+    if (!currentPacket) return;
+
+    const exhibitNumber = document.getElementById('exhibitNumber').value;
+    const title = document.getElementById('exhibitTitle').value;
+    const description = document.getElementById('exhibitDescription').value;
+    const standardRefs = document.getElementById('exhibitStandards').value.split(',').map(s => s.trim()).filter(s => s);
+    const filePath = document.getElementById('exhibitFile').value;
+
+    if (!exhibitNumber || !title) {
+        alert('Please enter exhibit number and title.');
+        return;
+    }
+
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/exhibits`, 'POST', {
+            exhibit_number: exhibitNumber,
+            title,
+            description,
+            standard_refs: standardRefs,
+            file_path: filePath
+        });
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        hideAddExhibitModal();
+        await selectPacket(currentPacket.id);
+    } catch (error) {
+        console.error('Error adding exhibit:', error);
+    }
+}
+
+async function generateCoverPage() {
+    if (!currentPacket) return;
+
+    const institutionName = document.getElementById('institutionNameInput').value;
+    const submissionDate = document.getElementById('submissionDateInput').value;
+    const contactName = document.getElementById('contactNameInput').value;
+    const contactTitle = document.getElementById('contactTitleInput').value;
+
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/cover`, 'POST', {
+            institution_name: institutionName,
+            submission_date: submissionDate,
+            contact_name: contactName,
+            contact_title: contactTitle
+        });
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        hideCoverModal();
+        await selectPacket(currentPacket.id);
+    } catch (error) {
+        console.error('Error generating cover:', error);
+    }
+}
+
+async function buildEvidenceIndex() {
+    if (!currentPacket) return;
+
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/sections`, 'POST', {
+            title: 'Evidence Index',
+            content: 'Building...'
+        });
+        // The API should handle building the evidence index
+        await selectPacket(currentPacket.id);
+    } catch (error) {
+        console.error('Error building evidence index:', error);
+    }
+}
+
+async function loadFindingsReports() {
+    // Try to load findings reports from workspace
+    const select = document.getElementById('findingsReportSelect');
+    // For now, show a placeholder - in production this would fetch from API
+    select.innerHTML = '<option value="">Select findings report...</option>';
+}
+
+async function loadFindings() {
+    if (!currentPacket) return;
+
+    const reportId = document.getElementById('findingsReportSelect').value;
+    const severity = document.getElementById('severityFilter').value;
+
+    if (!reportId) {
+        alert('Please select a findings report.');
+        return;
+    }
+
+    try {
+        const body = { findings_report_id: reportId };
+        if (severity) body.severity_filter = [severity];
+
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/findings`, 'POST', body);
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        hideLoadFindingsModal();
+        await selectPacket(currentPacket.id);
+    } catch (error) {
+        console.error('Error loading findings:', error);
+    }
+}
+
+async function validatePacket() {
+    if (!currentPacket) return;
+
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/validate`, 'POST');
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        await selectPacket(currentPacket.id);
+        switchTab('validation');
+        await loadPackets(); // Update status in list
+    } catch (error) {
+        console.error('Error validating packet:', error);
+    }
+}
+
+async function exportDocx() {
+    if (!currentPacket) return;
+
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/export/docx`, 'POST');
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        // Trigger download
+        window.location.href = `/api/institutions/${institutionId}/packets/${currentPacket.id}/download/docx`;
+        await loadPackets();
+    } catch (error) {
+        console.error('Error exporting DOCX:', error);
+    }
+}
+
+async function exportZip() {
+    if (!currentPacket) return;
+
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/export/zip`, 'POST');
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        // Trigger download
+        window.location.href = `/api/institutions/${institutionId}/packets/${currentPacket.id}/download/zip`;
+        await loadPackets();
+    } catch (error) {
+        console.error('Error exporting ZIP:', error);
+    }
+}
+
+async function approveSection(sectionId) {
+    // For now, just refresh - in production this would call an API
+    alert('Section approval requires API endpoint implementation');
+}
+
+async function autoLinkExhibits() {
+    alert('Auto-link from documents feature coming soon');
+}
+</script>
+{% endblock %}

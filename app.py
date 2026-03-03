@@ -277,6 +277,20 @@ def institution_workbench(id):
     )
 
 
+@app.route('/institutions/<id>/submissions')
+def institution_submissions(id):
+    """Submission organizer page for packet assembly."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/submissions.html',
+        institution=institution,
+        current_institution=institution,
+    )
+
+
 @app.route('/chat')
 def chat():
     """AI chat interface page."""
