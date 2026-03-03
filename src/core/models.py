@@ -1051,6 +1051,193 @@ class StandardsLibrary:
         )
 
 
+# =============================================================================
+# Evidence Mapping Models
+# =============================================================================
+
+
+@dataclass
+class CrosswalkEntry:
+    """Single row in a crosswalk table.
+
+    Maps a standard requirement to its supporting evidence from documents.
+    """
+    standard_ref: str = ""
+    section_reference: str = ""
+    category: str = ""
+    requirement: str = ""
+    evidence_found: bool = False
+    quality: str = "missing"  # strong, adequate, weak, missing
+    document_id: Optional[str] = None
+    document_name: Optional[str] = None
+    page: Optional[int] = None
+    snippet: Optional[str] = None
+    confidence: float = 0.0
+    exhibit_label: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "standard_ref": self.standard_ref,
+            "section_reference": self.section_reference,
+            "category": self.category,
+            "requirement": self.requirement,
+            "evidence_found": self.evidence_found,
+            "quality": self.quality,
+            "document_id": self.document_id,
+            "document_name": self.document_name,
+            "page": self.page,
+            "snippet": self.snippet,
+            "confidence": self.confidence,
+            "exhibit_label": self.exhibit_label,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CrosswalkEntry":
+        return cls(
+            standard_ref=data.get("standard_ref", ""),
+            section_reference=data.get("section_reference", ""),
+            category=data.get("category", ""),
+            requirement=data.get("requirement", ""),
+            evidence_found=data.get("evidence_found", False),
+            quality=data.get("quality", "missing"),
+            document_id=data.get("document_id"),
+            document_name=data.get("document_name"),
+            page=data.get("page"),
+            snippet=data.get("snippet"),
+            confidence=data.get("confidence", 0.0),
+            exhibit_label=data.get("exhibit_label"),
+        )
+
+
+@dataclass
+class EvidenceMapping:
+    """Maps a single standard to its supporting evidence.
+
+    Contains all evidence found for a requirement with quality assessment.
+    """
+    standard_id: str = ""
+    standard_number: str = ""
+    standard_text: str = ""
+    status: str = "missing"  # satisfied, partial, weak, missing
+    confidence: float = 0.0
+    evidence: List[Dict[str, Any]] = field(default_factory=list)
+    suggested_exhibit: Optional[str] = None
+    gap_notes: Optional[str] = None
+    created_at: str = field(default_factory=now_iso)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "standard_id": self.standard_id,
+            "standard_number": self.standard_number,
+            "standard_text": self.standard_text,
+            "status": self.status,
+            "confidence": self.confidence,
+            "evidence": self.evidence,
+            "suggested_exhibit": self.suggested_exhibit,
+            "gap_notes": self.gap_notes,
+            "created_at": self.created_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "EvidenceMapping":
+        return cls(
+            standard_id=data.get("standard_id", ""),
+            standard_number=data.get("standard_number", ""),
+            standard_text=data.get("standard_text", ""),
+            status=data.get("status", "missing"),
+            confidence=data.get("confidence", 0.0),
+            evidence=data.get("evidence", []),
+            suggested_exhibit=data.get("suggested_exhibit"),
+            gap_notes=data.get("gap_notes"),
+            created_at=data.get("created_at", now_iso()),
+        )
+
+
+@dataclass
+class EvidenceMap:
+    """Complete evidence map for an institution against a standards library.
+
+    Contains all standard-to-evidence mappings with coverage statistics.
+    """
+    id: str = field(default_factory=lambda: generate_id("evmap"))
+    institution_id: str = ""
+    standards_library_id: str = ""
+    mappings: List[EvidenceMapping] = field(default_factory=list)
+    coverage_stats: Dict[str, Any] = field(default_factory=dict)
+    created_at: str = field(default_factory=now_iso)
+    updated_at: str = field(default_factory=now_iso)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "institution_id": self.institution_id,
+            "standards_library_id": self.standards_library_id,
+            "mappings": [m.to_dict() if hasattr(m, 'to_dict') else m for m in self.mappings],
+            "coverage_stats": self.coverage_stats,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "EvidenceMap":
+        mappings_data = data.get("mappings", [])
+        mappings = [
+            EvidenceMapping.from_dict(m) if isinstance(m, dict) else m
+            for m in mappings_data
+        ]
+        return cls(
+            id=data.get("id", generate_id("evmap")),
+            institution_id=data.get("institution_id", ""),
+            standards_library_id=data.get("standards_library_id", ""),
+            mappings=mappings,
+            coverage_stats=data.get("coverage_stats", {}),
+            created_at=data.get("created_at", now_iso()),
+            updated_at=data.get("updated_at", now_iso()),
+        )
+
+
+@dataclass
+class EvidenceGap:
+    """An identified gap in evidence coverage.
+
+    Represents a standard that lacks sufficient evidence, with
+    severity classification and remediation suggestions.
+    """
+    standard_id: str = ""
+    standard_number: str = ""
+    standard_text: str = ""
+    severity: str = "advisory"  # critical, high, advisory
+    current_coverage: str = "missing"  # weak, missing
+    confidence: float = 0.0
+    suggestions: List[str] = field(default_factory=list)
+    related_doc_types: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "standard_id": self.standard_id,
+            "standard_number": self.standard_number,
+            "standard_text": self.standard_text,
+            "severity": self.severity,
+            "current_coverage": self.current_coverage,
+            "confidence": self.confidence,
+            "suggestions": self.suggestions,
+            "related_doc_types": self.related_doc_types,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "EvidenceGap":
+        return cls(
+            standard_id=data.get("standard_id", ""),
+            standard_number=data.get("standard_number", ""),
+            standard_text=data.get("standard_text", ""),
+            severity=data.get("severity", "advisory"),
+            current_coverage=data.get("current_coverage", "missing"),
+            confidence=data.get("confidence", 0.0),
+            suggestions=data.get("suggestions", []),
+            related_doc_types=data.get("related_doc_types", []),
+        )
+
+
 @dataclass
 class AgentResult:
     """Standardized result from any agent execution.
