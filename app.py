@@ -30,6 +30,7 @@ from src.api import (
     init_autopilot_bp,
 )
 from src.api.readiness import readiness_bp, init_readiness_bp
+from src.api.audits import audits_bp, init_audits_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 
 
@@ -57,6 +58,7 @@ init_settings_bp()
 init_readiness_bp(workspace_manager)
 init_work_queue_bp(workspace_manager)
 init_autopilot_bp(workspace_manager)
+init_audits_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -66,6 +68,7 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(readiness_bp)
 app.register_blueprint(work_queue_bp)
 app.register_blueprint(autopilot_bp)
+app.register_blueprint(audits_bp)
 
 
 # =============================================================================

@@ -4,58 +4,218 @@
 {% block header_title %}Compliance Status{% endblock %}
 
 {% block header_actions %}
-<button class="btn btn-primary" onclick="runComplianceCheck()">
+<select id="auditFilter" class="form-control" style="width: auto; display: inline-block; margin-right: var(--spacing-sm);">
+    <option value="">All Audits</option>
+</select>
+<button class="btn btn-secondary" onclick="refreshAudits()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
-        <path d="M9 11l3 3L22 4"/>
-        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        <path d="M23 4v6h-6M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
     </svg>
-    Run Compliance Check
+    Refresh
 </button>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-grid mb-lg">
+<!-- Summary Cards -->
+<div class="dashboard-grid mb-lg" id="summaryCards">
     <div class="card">
         <h3 class="card-title mb-md">Overall Compliance</h3>
         <div style="text-align: center; padding: var(--spacing-lg);">
-            <div style="font-size: 48px; font-weight: 700; color: var(--text-muted);">--</div>
-            <div class="text-muted">Not yet assessed</div>
+            <div id="complianceScore" style="font-size: 48px; font-weight: 700; color: var(--text-muted);">--</div>
+            <div id="complianceLabel" class="text-muted">Loading...</div>
         </div>
     </div>
-
     <div class="card">
-        <h3 class="card-title mb-md">Standards Progress</h3>
-        <div class="text-center text-muted" style="padding: var(--spacing-lg);">
-            <p>Run a compliance check to see progress.</p>
+        <h3 class="card-title mb-md">Findings Summary</h3>
+        <div id="findingsSummary" style="padding: var(--spacing-md);">
+            <div class="summary-row"><span class="badge badge-success">Compliant</span> <span id="countCompliant">0</span></div>
+            <div class="summary-row"><span class="badge badge-warning">Partial</span> <span id="countPartial">0</span></div>
+            <div class="summary-row"><span class="badge badge-danger">Non-Compliant</span> <span id="countNonCompliant">0</span></div>
         </div>
     </div>
 </div>
 
+<!-- Findings List -->
 <div class="card">
-    <div class="card-header">
-        <h3 class="card-title">Compliance by Standard</h3>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">Audit Findings</h3>
+        <div>
+            <select id="statusFilter" class="form-control" style="width: auto; display: inline-block;">
+                <option value="">All Statuses</option>
+                <option value="non_compliant">Non-Compliant</option>
+                <option value="partial">Partial</option>
+                <option value="compliant">Compliant</option>
+            </select>
+            <select id="severityFilter" class="form-control" style="width: auto; display: inline-block;">
+                <option value="">All Severities</option>
+                <option value="critical">Critical</option>
+                <option value="significant">Significant</option>
+                <option value="advisory">Advisory</option>
+            </select>
+        </div>
     </div>
-    <div class="text-center text-muted" style="padding: var(--spacing-xl);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
-            <path d="M9 11l3 3L22 4"/>
-            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-        </svg>
-        <h3 style="margin-bottom: var(--spacing-sm);">No Compliance Data</h3>
-        <p style="margin-bottom: var(--spacing-lg);">
-            Upload documents and run a compliance check to see your status against
-            {{ institution.accrediting_body.value }} standards.
-        </p>
-        <button class="btn btn-primary" onclick="runComplianceCheck()">
-            Run Compliance Check
-        </button>
+    <div id="findingsList">
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <p>Loading audits...</p>
+        </div>
     </div>
 </div>
+
+<style>
+.summary-row { display: flex; justify-content: space-between; padding: var(--spacing-xs) 0; }
+.finding-card { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--spacing-md); margin-bottom: var(--spacing-md); }
+.finding-card.critical { border-left: 4px solid var(--danger); }
+.finding-card.significant { border-left: 4px solid var(--warning); }
+.finding-card.advisory { border-left: 4px solid var(--accent); }
+.finding-header { display: flex; justify-content: space-between; margin-bottom: var(--spacing-sm); }
+.finding-item { font-weight: 600; }
+.finding-detail { color: var(--text-secondary); margin-bottom: var(--spacing-sm); }
+.finding-evidence { background: var(--bg-secondary); padding: var(--spacing-sm); border-radius: var(--radius-sm); font-size: 0.9em; margin-bottom: var(--spacing-sm); }
+.finding-recommendation { background: var(--bg-primary); padding: var(--spacing-sm); border-radius: var(--radius-sm); border-left: 3px solid var(--success); }
+.form-control { padding: var(--spacing-xs) var(--spacing-sm); border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); }
+</style>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-function runComplianceCheck() {
-    window.toast.info('Compliance checking requires documents. Upload documents first.');
+const institutionId = '{{ institution.id }}';
+let allFindings = [];
+let currentAuditId = null;
+
+async function loadAudits() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/audits`);
+        const audits = await res.json();
+
+        const select = document.getElementById('auditFilter');
+        select.innerHTML = '<option value="">All Audits</option>';
+
+        if (audits.length === 0) {
+            showEmptyState();
+            return;
+        }
+
+        audits.forEach(audit => {
+            const opt = document.createElement('option');
+            opt.value = audit.id;
+            opt.textContent = `${audit.id.slice(0,12)}... (${audit.status})`;
+            select.appendChild(opt);
+        });
+
+        // Load most recent audit by default
+        currentAuditId = audits[0].id;
+        select.value = currentAuditId;
+        await loadAuditFindings(currentAuditId);
+
+    } catch (err) {
+        console.error(err);
+        showEmptyState();
+    }
 }
+
+async function loadAuditFindings(auditId) {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/audits/${auditId}`);
+        if (!res.ok) throw new Error('Failed to load audit');
+        const audit = await res.json();
+
+        allFindings = audit.findings || [];
+        updateSummary(audit.summary || {});
+        renderFindings();
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById('findingsList').innerHTML = '<div class="text-center text-muted" style="padding: var(--spacing-xl);"><p>Failed to load findings</p></div>';
+    }
+}
+
+function updateSummary(summary) {
+    const total = summary.total || 0;
+    const compliant = summary.compliant || 0;
+    const partial = summary.partial || 0;
+    const nonCompliant = summary.non_compliant || 0;
+
+    document.getElementById('countCompliant').textContent = compliant;
+    document.getElementById('countPartial').textContent = partial;
+    document.getElementById('countNonCompliant').textContent = nonCompliant;
+
+    if (total > 0) {
+        const score = Math.round((compliant / total) * 100);
+        document.getElementById('complianceScore').textContent = score + '%';
+        document.getElementById('complianceScore').style.color = score >= 80 ? 'var(--success)' : score >= 50 ? 'var(--warning)' : 'var(--danger)';
+        document.getElementById('complianceLabel').textContent = `${compliant} of ${total} items compliant`;
+    } else {
+        document.getElementById('complianceScore').textContent = '--';
+        document.getElementById('complianceLabel').textContent = 'No findings';
+    }
+}
+
+function renderFindings() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const severityFilter = document.getElementById('severityFilter').value;
+
+    let filtered = allFindings;
+    if (statusFilter) filtered = filtered.filter(f => f.status === statusFilter);
+    if (severityFilter) filtered = filtered.filter(f => f.severity === severityFilter);
+
+    if (filtered.length === 0) {
+        document.getElementById('findingsList').innerHTML = '<div class="text-center text-muted" style="padding: var(--spacing-xl);"><p>No findings match filters</p></div>';
+        return;
+    }
+
+    // Sort by severity
+    const severityOrder = { critical: 0, significant: 1, advisory: 2, informational: 3 };
+    filtered.sort((a, b) => (severityOrder[a.severity] || 4) - (severityOrder[b.severity] || 4));
+
+    const html = filtered.map(f => `
+        <div class="finding-card ${f.severity}">
+            <div class="finding-header">
+                <span class="finding-item">${f.item_number}: ${f.item_description || ''}</span>
+                <span>
+                    <span class="badge badge-${f.status === 'compliant' ? 'success' : f.status === 'partial' ? 'warning' : 'danger'}">${f.status}</span>
+                    <span class="badge">${f.severity}</span>
+                </span>
+            </div>
+            ${f.finding_detail ? `<div class="finding-detail">${f.finding_detail}</div>` : ''}
+            ${f.evidence_in_document ? `<div class="finding-evidence"><strong>Evidence:</strong> "${f.evidence_in_document.slice(0, 300)}${f.evidence_in_document.length > 300 ? '...' : ''}"</div>` : ''}
+            ${f.recommendation ? `<div class="finding-recommendation"><strong>Recommendation:</strong> ${f.recommendation.slice(0, 500)}${f.recommendation.length > 500 ? '...' : ''}</div>` : ''}
+        </div>
+    `).join('');
+
+    document.getElementById('findingsList').innerHTML = `<div style="padding: var(--spacing-md);">${html}</div>`;
+}
+
+function showEmptyState() {
+    document.getElementById('complianceScore').textContent = '--';
+    document.getElementById('complianceLabel').textContent = 'No audits yet';
+    document.getElementById('findingsList').innerHTML = `
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+            <h3>No Compliance Data</h3>
+            <p>Upload documents and run audits from the Documents page.</p>
+            <a href="/institutions/${institutionId}/documents" class="btn btn-primary">Go to Documents</a>
+        </div>
+    `;
+}
+
+function refreshAudits() {
+    loadAudits();
+}
+
+document.getElementById('auditFilter').addEventListener('change', function() {
+    if (this.value) {
+        currentAuditId = this.value;
+        loadAuditFindings(this.value);
+    }
+});
+
+document.getElementById('statusFilter').addEventListener('change', renderFindings);
+document.getElementById('severityFilter').addEventListener('change', renderFindings);
+
+// Load on page load
+loadAudits();
 </script>
 {% endblock %}

@@ -20,18 +20,26 @@
             <tr>
                 <th>Title</th>
                 <th>Type</th>
+                <th>Language</th>
                 <th>Uploaded</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for doc in institution.documents %}
-            <tr>
-                <td>{{ doc.title }}</td>
-                <td><span class="badge badge-info">{{ doc.doc_type.value }}</span></td>
-                <td class="text-muted">{{ doc.created_at[:10] }}</td>
+            <tr data-document-id="{{ doc.id }}">
                 <td>
-                    <button class="btn btn-secondary btn-sm">View</button>
+                    <strong>{{ doc.original_filename or doc.id }}</strong>
+                    {% if doc.page_count %}<br><small class="text-muted">{{ doc.page_count }} pages</small>{% endif %}
+                </td>
+                <td><span class="badge badge-info">{{ doc.doc_type.value }}</span></td>
+                <td>{{ doc.language.value if doc.language else 'EN' }}</td>
+                <td class="text-muted">{{ doc.uploaded_at[:10] if doc.uploaded_at else '-' }}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm" onclick="viewDocument('{{ doc.id }}')">View</button>
+                    <button class="btn btn-primary btn-sm" onclick="auditDocument('{{ doc.id }}', '{{ doc.doc_type.value }}')">
+                        Audit
+                    </button>
                 </td>
             </tr>
             {% endfor %}
@@ -45,18 +53,199 @@
         </svg>
         <h3 style="margin-bottom: var(--spacing-sm);">No Documents Yet</h3>
         <p style="margin-bottom: var(--spacing-lg);">Upload documents to start your accreditation preparation.</p>
-        <button class="btn btn-primary" onclick="showUploadModal()">
-            Upload Your First Document
-        </button>
+        <button class="btn btn-primary" onclick="showUploadModal()">Upload Your First Document</button>
     </div>
     {% endif %}
 </div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideUploadModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Upload Document</h3>
+            <button class="btn btn-ghost" onclick="hideUploadModal()">&times;</button>
+        </div>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select File</label>
+                    <input type="file" id="fileInput" name="file" accept=".pdf,.docx,.doc,.txt,.md" required>
+                    <small class="text-muted">Supported: PDF, DOCX, DOC, TXT, MD</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideUploadModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="uploadBtn">Upload</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Audit Modal -->
+<div id="auditModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideAuditModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Run Compliance Audit</h3>
+            <button class="btn btn-ghost" onclick="hideAuditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Standards Library</label>
+                <select id="standardsSelect" class="form-control">
+                    <option value="std_accsc">ACCSC Substantive Standards</option>
+                    <option value="std_sacscoc">SACSCOC Principles</option>
+                    <option value="std_hlc">HLC Criteria</option>
+                    <option value="std_abhes">ABHES Manual</option>
+                    <option value="std_coe">COE Handbook</option>
+                </select>
+            </div>
+            <div id="auditProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <p id="progressText" class="text-muted mt-sm">Initializing...</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideAuditModal()" id="auditCancelBtn">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="startAudit()" id="auditStartBtn">Start Audit</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal-backdrop { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); }
+.modal-content { position: relative; background: var(--bg-card); border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); }
+.modal-header h3 { margin: 0; }
+.modal-body { padding: var(--spacing-lg); }
+.modal-footer { display: flex; justify-content: flex-end; gap: var(--spacing-sm); padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); }
+.form-group { margin-bottom: var(--spacing-md); }
+.form-group label { display: block; margin-bottom: var(--spacing-xs); font-weight: 500; }
+.form-control { width: 100%; padding: var(--spacing-sm); border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); }
+.progress-bar { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+.mt-sm { margin-top: var(--spacing-sm); }
+</style>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+const institutionId = '{{ institution.id }}';
+let currentDocId = null;
+
 function showUploadModal() {
-    window.toast.info('Document upload coming soon!');
+    document.getElementById('uploadModal').style.display = 'flex';
 }
+
+function hideUploadModal() {
+    document.getElementById('uploadModal').style.display = 'none';
+    document.getElementById('uploadForm').reset();
+}
+
+function viewDocument(docId) {
+    window.toast.info('Document viewer coming soon');
+}
+
+function auditDocument(docId, docType) {
+    currentDocId = docId;
+    document.getElementById('auditModal').style.display = 'flex';
+    document.getElementById('auditProgress').style.display = 'none';
+    document.getElementById('auditStartBtn').style.display = 'inline-block';
+}
+
+function hideAuditModal() {
+    document.getElementById('auditModal').style.display = 'none';
+    currentDocId = null;
+}
+
+async function startAudit() {
+    const standardsId = document.getElementById('standardsSelect').value;
+    document.getElementById('auditProgress').style.display = 'block';
+    document.getElementById('auditStartBtn').style.display = 'none';
+    document.getElementById('progressText').textContent = 'Starting audit...';
+    document.getElementById('progressFill').style.width = '5%';
+
+    try {
+        // Start audit
+        const startRes = await fetch(`/api/institutions/${institutionId}/audits`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ document_id: currentDocId, standards_library_id: standardsId })
+        });
+        const startData = await startRes.json();
+        if (!startRes.ok) throw new Error(startData.error || 'Failed to start audit');
+
+        const auditId = startData.audit_id;
+        document.getElementById('progressFill').style.width = '10%';
+        document.getElementById('progressText').textContent = 'Audit initialized. Running passes...';
+
+        // Stream audit progress
+        const evtSource = new EventSource(`/api/institutions/${institutionId}/audits/${auditId}/stream`);
+
+        evtSource.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'pass_started') {
+                const pct = 10 + (data.pass * 15);
+                document.getElementById('progressFill').style.width = pct + '%';
+                document.getElementById('progressText').textContent = `Running pass ${data.pass}: ${data.name}...`;
+            } else if (data.type === 'pass_completed') {
+                const msg = data.result?.message || `Pass ${data.pass} complete`;
+                document.getElementById('progressText').textContent = msg;
+            } else if (data.type === 'audit_completed') {
+                document.getElementById('progressFill').style.width = '100%';
+                document.getElementById('progressText').textContent = 'Audit complete!';
+                evtSource.close();
+                setTimeout(() => {
+                    hideAuditModal();
+                    window.toast.success('Audit complete! View results in Compliance page.');
+                    window.location.href = `/institutions/${institutionId}/compliance`;
+                }, 1000);
+            } else if (data.type === 'error') {
+                evtSource.close();
+                throw new Error(data.error);
+            }
+        };
+
+        evtSource.onerror = function() {
+            evtSource.close();
+            document.getElementById('progressText').textContent = 'Connection lost. Check Compliance page for results.';
+        };
+
+    } catch (err) {
+        window.toast.error(err.message);
+        document.getElementById('auditProgress').style.display = 'none';
+        document.getElementById('auditStartBtn').style.display = 'inline-block';
+    }
+}
+
+// Upload form
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+    btn.textContent = 'Uploading...';
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/documents/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        window.toast.success('Document uploaded successfully');
+        hideUploadModal();
+        location.reload();
+    } catch (err) {
+        window.toast.error(err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Upload';
+    }
+});
 </script>
 {% endblock %}
