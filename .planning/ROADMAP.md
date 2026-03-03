@@ -38,7 +38,7 @@
 25. ✅ Findings Agent
 26. ✅ Narrative Agent
 27. ✅ Packet Agent
-28. Submission Organizer UI
+28. ✅ Submission Organizer UI
 29. Action plan tracking
 
 ### Phase 6: Catalog + Exhibits + Faculty
