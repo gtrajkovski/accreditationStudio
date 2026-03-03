@@ -315,4 +315,17 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Document upload and audit trigger UI
 - ✅ Compliance findings display with filters
 
-Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`
+**Phase 4 (Remediation):** ✅ Complete
+- ✅ Remediation Agent (7 tools, redlines, finals, truth index)
+- ✅ Document Workbench UI (remediation review, diff view, approvals)
+- ✅ Consistency Agent (8 policy categories, cross-doc checking)
+- ✅ Checklist Auto-Fill Agent (8 tools, evidence search, DOCX export)
+
+**Phase 5 (Findings + Packets):** 🔶 In Progress
+- ✅ Findings Agent (aggregation, prioritization, action items)
+- ✅ Narrative Agent (issue responses, self-study sections)
+- ✅ Packet Agent (10 tools, validation, DOCX/ZIP export)
+- ❌ Submission Organizer UI
+- ❌ Action plan tracking
+
+Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`

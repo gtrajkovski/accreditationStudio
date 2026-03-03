@@ -33,6 +33,7 @@ from src.api.readiness import readiness_bp, init_readiness_bp
 from src.api.audits import audits_bp, init_audits_bp
 from src.api.remediation import remediation_bp, init_remediation_bp
 from src.api.checklists import checklists_bp, init_checklists_bp
+from src.api.packets import packets_bp, init_packets_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 
 
@@ -63,6 +64,7 @@ init_autopilot_bp(workspace_manager)
 init_audits_bp(workspace_manager)
 init_remediation_bp(workspace_manager)
 init_checklists_bp(workspace_manager)
+init_packets_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -75,6 +77,7 @@ app.register_blueprint(autopilot_bp)
 app.register_blueprint(audits_bp)
 app.register_blueprint(remediation_bp)
 app.register_blueprint(checklists_bp)
+app.register_blueprint(packets_bp)
 
 
 # =============================================================================

@@ -34,11 +34,11 @@
 23. ✅ Consistency Agent (8 policy categories, cross-doc checking)
 24. ✅ Checklist Auto-Fill Agent (8 tools, evidence search, DOCX export)
 
-### Phase 5: Findings + Packets ← NEXT
-25. Findings Agent
-26. Narrative Agent
-27. Packet Agent
-28. Submission Organizer
+### Phase 5: Findings + Packets ← IN PROGRESS
+25. ✅ Findings Agent
+26. ✅ Narrative Agent
+27. ✅ Packet Agent
+28. Submission Organizer UI
 29. Action plan tracking
 
 ### Phase 6: Catalog + Exhibits + Faculty
