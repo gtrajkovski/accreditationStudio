@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 
 {% block title %}{{ institution.name }} - AccreditAI{% endblock %}
-{% block header_title %}{{ institution.name }}{% endblock %}
 
 {% block header_actions %}
 <a href="{{ url_for('institution_documents', id=institution.id) }}" class="btn btn-secondary">
@@ -19,6 +19,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title=institution.name,
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <!-- Readiness Score Dashboard -->
 <div class="readiness-dashboard mb-lg" id="readiness-dashboard">
     <div class="readiness-score-card">

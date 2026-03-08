@@ -42,6 +42,7 @@ from src.api.achievements import achievements_bp, init_achievements_bp
 from src.api.interview_prep import interview_prep_bp, init_interview_prep_bp
 from src.api.ser import ser_bp, init_ser_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
+from src.services.readiness_service import compute_readiness
 
 
 # Initialize Flask app
@@ -210,6 +211,15 @@ def institution_create():
     )
 
 
+def _get_readiness_score(institution_id: str) -> int:
+    """Get readiness score for an institution (safe helper)."""
+    try:
+        readiness = compute_readiness(institution_id)
+        return readiness.get("total", 0)
+    except Exception:
+        return 0
+
+
 @app.route('/institutions/<id>')
 def institution_overview(id):
     """Institution overview page."""
@@ -225,6 +235,7 @@ def institution_overview(id):
         institution=institution,
         current_institution=institution,
         programs_json=programs_json,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -239,6 +250,7 @@ def institution_documents(id):
         'institutions/documents.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -253,6 +265,7 @@ def institution_compliance(id):
         'institutions/compliance.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -267,6 +280,7 @@ def institution_self_study(id):
         'institutions/self_study.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -281,6 +295,7 @@ def institution_autopilot(id):
         'institutions/autopilot.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -295,6 +310,7 @@ def institution_workbench(id):
         'institutions/workbench.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -309,6 +325,7 @@ def institution_submissions(id):
         'institutions/submissions.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -323,6 +340,7 @@ def institution_faculty(id):
         'institutions/faculty.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -337,6 +355,7 @@ def institution_catalog(id):
         'institutions/catalog.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -351,6 +370,7 @@ def institution_exhibits(id):
         'institutions/exhibits.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -365,6 +385,7 @@ def institution_achievements(id):
         'institutions/achievements.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -379,6 +400,7 @@ def institution_interview_prep(id):
         'institutions/interview_prep.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -393,6 +415,7 @@ def institution_ser(id):
         'institutions/ser_drafting.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
@@ -407,6 +430,7 @@ def institution_visit_readiness(id):
         'institutions/visit_readiness.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
     )
 
 
