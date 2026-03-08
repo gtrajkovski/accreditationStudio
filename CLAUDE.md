@@ -326,10 +326,16 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Submission Organizer UI (packet builder, validation, export)
 - ✅ Action Plan Tracking (items, deadlines, progress)
 
-**Phase 6 (Catalog + Exhibits + Faculty):** 🚧 In Progress
-- 🚧 Faculty Agent (credential tracking, qualification audits)
-- Catalog Agent + Builder UI
-- Exhibit registry + Evidence Agent
-- Achievement Agent
+**Phase 6 (Catalog + Exhibits + Faculty):** ✅ Complete
+- ✅ Faculty Agent (8 tools: credential tracking, license verification, qualification audits)
+- ✅ Catalog Agent (8 tools: section generation, audit, validation, export)
+- ✅ Evidence Agent (8 tools: exhibit validation, gap analysis, index building)
+- ✅ Achievement Agent (7 tools: outcome tracking, benchmark validation, trend analysis)
 
-Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`
+**Phase 7 (Visit Prep + Interview + Checklists):** 🔜 Next
+- Interview Prep Agent (role-specific prep documents)
+- Enhanced Checklist Agent
+- Mock visit / readiness assessment
+- SER drafting assistant
+
+Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`
