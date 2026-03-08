@@ -116,6 +116,7 @@ class AgentRegistry:
                 faculty_agent,
                 catalog_agent,
                 evidence_agent,
+                achievement_agent,
             )
         except ImportError:
             # Agents may not all exist yet

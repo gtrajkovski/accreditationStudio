@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Achievements - {{ institution.name }}{% endblock %}
+{% block header_title %}Student Achievements{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="validateRates()">Validate Rates</button>
+<button class="btn btn-secondary" onclick="analyzeTrends()">Analyze Trends</button>
+<button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid mb-lg">
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);"><h3 class="card-title mb-md">Programs</h3><div style="font-size:2rem;font-weight:700;" id="programCount">0</div></div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);"><h3 class="card-title mb-md">Avg Completion</h3><div style="font-size:2rem;font-weight:700;" class="text-success" id="avgCompletion">-</div></div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);"><h3 class="card-title mb-md">Avg Placement</h3><div style="font-size:2rem;font-weight:700;" class="text-success" id="avgPlacement">-</div></div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);"><h3 class="card-title mb-md">Issues</h3><div style="font-size:2rem;font-weight:700;" class="text-danger" id="issuesCount">-</div></div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3 class="card-title">Program Achievement Data</h3></div>
+    <div id="programList" style="padding:var(--spacing-md);"><p class="text-muted">Loading...</p></div>
+</div>
+
+<div id="addModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideModal()"></div>
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header"><h3>Record Achievement Data</h3><button class="btn btn-ghost" onclick="hideModal()">&times;</button></div>
+        <div class="modal-body">
+            <input type="hidden" id="modalProgramId">
+            <div class="form-group"><label>Year *</label><input type="number" id="dataYear" class="form-control" value="2024"></div>
+            <div class="form-group"><label>Completion Rate (%)</label><input type="number" id="dataCompletion" class="form-control" step="0.1"></div>
+            <div class="form-group"><label>Placement Rate (%)</label><input type="number" id="dataPlacement" class="form-control" step="0.1"></div>
+            <div class="form-group"><label>Licensure Rate (%)</label><input type="number" id="dataLicensure" class="form-control" step="0.1"></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" onclick="hideModal()">Cancel</button><button class="btn btn-primary" onclick="saveData()">Save</button></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = "{{ institution.id }}";
+document.addEventListener('DOMContentLoaded', loadPrograms);
+
+async function loadPrograms() {
+    const res = await fetch(`/api/institutions/${institutionId}/achievements/programs`);
+    const data = await res.json();
+    document.getElementById('programCount').textContent = data.total || 0;
+
+    const container = document.getElementById('programList');
+    if (!data.programs?.length) {
+        // Load institution programs instead
+        const instRes = await fetch(`/api/institutions/${institutionId}`);
+        const inst = await instRes.json();
+        const progs = inst.institution?.programs || [];
+        if (!progs.length) { container.innerHTML = '<p class="text-muted">No programs found.</p>'; return; }
+        container.innerHTML = progs.map(p => `
+            <div style="padding:var(--spacing-md);border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:var(--spacing-sm);">
+                <div style="display:flex;justify-content:space-between;"><strong>${p.name_en}</strong><button class="btn btn-sm btn-primary" onclick="showModal('${p.id}')">Add Data</button></div>
+                <div class="text-muted text-sm">No achievement data recorded</div>
+            </div>`).join('');
+        return;
+    }
+    container.innerHTML = data.programs.map(p => `
+        <div style="padding:var(--spacing-md);border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:var(--spacing-sm);">
+            <div style="display:flex;justify-content:space-between;"><strong>${p.program_name}</strong><button class="btn btn-sm btn-secondary" onclick="showModal('${p.program_id}')">Update</button></div>
+            <div class="text-muted text-sm">Years: ${p.years_available?.join(', ') || 'None'}</div>
+        </div>`).join('');
+}
+
+function showModal(progId) { document.getElementById('modalProgramId').value = progId; document.getElementById('addModal').style.display = 'flex'; }
+function hideModal() { document.getElementById('addModal').style.display = 'none'; }
+
+async function saveData() {
+    const progId = document.getElementById('modalProgramId').value;
+    const data = {
+        year: parseInt(document.getElementById('dataYear').value),
+        completion_rate: parseFloat(document.getElementById('dataCompletion').value) || null,
+        placement_rate: parseFloat(document.getElementById('dataPlacement').value) || null,
+        licensure_rate: parseFloat(document.getElementById('dataLicensure').value) || null,
+    };
+    await fetch(`/api/institutions/${institutionId}/achievements/programs/${progId}`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+    });
+    hideModal(); loadPrograms();
+}
+
+async function validateRates() {
+    const res = await fetch(`/api/institutions/${institutionId}/achievements/validate`);
+    const data = await res.json();
+    document.getElementById('issuesCount').textContent = data.issues_count || 0;
+    alert(data.is_compliant ? 'All rates meet benchmarks!' : `Found ${data.issues_count} issues below benchmarks.`);
+}
+
+async function analyzeTrends() {
+    const res = await fetch(`/api/institutions/${institutionId}/achievements/trends`);
+    const data = await res.json();
+    alert(data.declining_count ? `Found ${data.declining_count} declining trends.` : 'No declining trends detected.');
+}
+
+async function generateReport() {
+    const res = await fetch(`/api/institutions/${institutionId}/achievements/report`);
+    const data = await res.json();
+    if (data.report) {
+        document.getElementById('avgCompletion').textContent = (data.report.averages?.completion || '-') + '%';
+        document.getElementById('avgPlacement').textContent = (data.report.averages?.placement || '-') + '%';
+        alert('Report generated successfully!');
+    }
+}
+</script>
+{% endblock %}
