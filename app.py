@@ -215,7 +215,7 @@ def _get_readiness_score(institution_id: str) -> int:
     """Get readiness score for an institution (safe helper)."""
     try:
         readiness = compute_readiness(institution_id)
-        return readiness.get("total", 0)
+        return readiness.total
     except Exception:
         return 0
 
