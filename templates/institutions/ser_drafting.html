@@ -1,6 +1,6 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 {% block title %}SER Drafting - {{ institution.name }}{% endblock %}
-{% block header_title %}Self-Evaluation Report{% endblock %}
 
 {% block header_actions %}
 <select id="writingMode" class="form-control" style="width:auto;display:inline-block;">
@@ -12,6 +12,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title='Self-Evaluation Report',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('SER', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <div class="dashboard-grid mb-lg">
     <div class="card" style="text-align:center;padding:var(--spacing-lg);">
         <h3 class="card-title mb-md">Sections</h3>

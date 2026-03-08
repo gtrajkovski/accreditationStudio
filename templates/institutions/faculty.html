@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 
 {% block title %}Faculty Management - {{ institution.name }} - AccreditAI{% endblock %}
-{% block header_title %}Faculty Management{% endblock %}
 
 {% block header_actions %}
 <button class="btn btn-secondary" onclick="runComplianceCheck()">
@@ -20,6 +20,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title='Faculty Management',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Faculty', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <style>
 .faculty-card { padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: var(--spacing-sm); cursor: pointer; transition: all 0.2s; }
 .faculty-card:hover { border-color: var(--accent); background: var(--bg-secondary); }

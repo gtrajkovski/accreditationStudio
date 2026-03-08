@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 
 {% block title %}Compliance - {{ institution.name }} - AccreditAI{% endblock %}
-{% block header_title %}Compliance Status{% endblock %}
 
 {% block header_actions %}
 <select id="auditFilter" class="form-control" style="width: auto; display: inline-block; margin-right: var(--spacing-sm);">
@@ -17,6 +17,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title='Compliance Status',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Compliance', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <!-- Summary Cards -->
 <div class="dashboard-grid mb-lg" id="summaryCards">
     <div class="card">

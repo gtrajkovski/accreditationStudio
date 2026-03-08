@@ -193,7 +193,9 @@ def generate_ser_stream(institution_id: str):
         yield f"data: {json.dumps({'step': 1, 'total': total_sections + 2, 'message': 'Initializing SER structure...'})}\n\n"
 
         for i, section in enumerate(sections):
-            yield f"data: {json.dumps({'step': i + 2, 'total': total_sections + 2, 'message': f'Drafting {section[\"name\"]}...'})}\n\n"
+            section_name = section.get("name", f"Section {i+1}")
+            msg = f"Drafting {section_name}..."
+            yield f"data: {json.dumps({'step': i + 2, 'total': total_sections + 2, 'message': msg})}\n\n"
 
         result = agent._tool_generate_full({
             "institution_id": institution_id,

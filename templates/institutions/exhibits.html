@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 
 {% block title %}Exhibits - {{ institution.name }} - AccreditAI{% endblock %}
-{% block header_title %}Evidence & Exhibits{% endblock %}
 
 {% block header_actions %}
 <button class="btn btn-secondary" onclick="checkGaps()">Check Gaps</button>
@@ -10,6 +10,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title='Evidence & Exhibits',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Exhibits', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <style>
 .exhibit-card { padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: var(--spacing-sm); }
 .exhibit-card:hover { border-color: var(--accent); }

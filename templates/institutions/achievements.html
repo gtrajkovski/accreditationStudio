@@ -1,6 +1,6 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 {% block title %}Achievements - {{ institution.name }}{% endblock %}
-{% block header_title %}Student Achievements{% endblock %}
 
 {% block header_actions %}
 <button class="btn btn-secondary" onclick="validateRates()">Validate Rates</button>
@@ -9,6 +9,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title='Student Achievements',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Achievements', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <div class="dashboard-grid mb-lg">
     <div class="card" style="text-align:center;padding:var(--spacing-lg);"><h3 class="card-title mb-md">Programs</h3><div style="font-size:2rem;font-weight:700;" id="programCount">0</div></div>
     <div class="card" style="text-align:center;padding:var(--spacing-lg);"><h3 class="card-title mb-md">Avg Completion</h3><div style="font-size:2rem;font-weight:700;" class="text-success" id="avgCompletion">-</div></div>

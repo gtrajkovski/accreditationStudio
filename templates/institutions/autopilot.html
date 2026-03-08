@@ -1,29 +1,24 @@
 {% extends 'base.html' %}
+{% from 'macros/page_header.html' import page_header %}
 
 {% block title %}Autopilot - {{ institution.name }} - {{ t('app.name') }}{% endblock %}
 
+{% block header_actions %}
+<button class="btn btn-primary" onclick="runNow()" id="run-now-btn">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="5,3 19,12 5,21"/>
+    </svg>
+    Run Now
+</button>
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
-    <div class="page-header-content">
-        <nav class="breadcrumb">
-            <a href="{{ url_for('institutions_list') }}">Institutions</a>
-            <span>/</span>
-            <a href="{{ url_for('institution_overview', id=institution.id) }}">{{ institution.name }}</a>
-            <span>/</span>
-            <span>Autopilot</span>
-        </nav>
-        <h1>Autopilot Settings</h1>
-        <p class="text-muted">Schedule automatic maintenance: re-indexing, consistency checks, and readiness scoring</p>
-    </div>
-    <div class="page-header-actions">
-        <button class="btn btn-primary" onclick="runNow()" id="run-now-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="5,3 19,12 5,21"/>
-            </svg>
-            Run Now
-        </button>
-    </div>
-</div>
+{{ page_header(
+    title='Autopilot Settings',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Autopilot', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 
 <div class="autopilot-grid">
     <!-- Configuration Card -->

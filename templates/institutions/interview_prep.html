@@ -1,6 +1,6 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 {% block title %}Interview Prep - {{ institution.name }}{% endblock %}
-{% block header_title %}Interview Preparation{% endblock %}
 
 {% block header_actions %}
 <button class="btn btn-secondary" onclick="generateAll()">Generate All Roles</button>
@@ -8,6 +8,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title='Interview Preparation',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Interview Prep', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <div class="dashboard-grid mb-lg">
     <div class="card" style="text-align:center;padding:var(--spacing-lg);">
         <h3 class="card-title mb-md">Roles</h3>

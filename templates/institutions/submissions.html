@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 
 {% block title %}Submission Organizer - {{ institution.name }} - AccreditAI{% endblock %}
-{% block header_title %}Submission Organizer{% endblock %}
 
 {% block header_actions %}
 <button class="btn btn-primary" onclick="showCreateModal()">
@@ -13,6 +13,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title='Submission Organizer',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Submissions', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <!-- Status Overview -->
 <div class="dashboard-grid mb-lg" id="statusCards">
     <div class="card">

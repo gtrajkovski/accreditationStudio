@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 
 {% block title %}Catalog Builder - {{ institution.name }} - AccreditAI{% endblock %}
-{% block header_title %}Catalog Builder{% endblock %}
 
 {% block header_actions %}
 <button class="btn btn-secondary" onclick="showRequirements()">
@@ -20,6 +20,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title='Catalog Builder',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Catalog', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <style>
 .catalog-card { padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: var(--spacing-sm); cursor: pointer; transition: all 0.2s; }
 .catalog-card:hover { border-color: var(--accent); background: var(--bg-secondary); }

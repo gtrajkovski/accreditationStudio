@@ -1,7 +1,7 @@
 {% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
 
 {% block title %}Document Workbench - {{ institution.name }} - AccreditAI{% endblock %}
-{% block header_title %}Document Workbench{% endblock %}
 
 {% block header_actions %}
 <select id="remediationFilter" class="form-control" style="width: auto; display: inline-block; margin-right: var(--spacing-sm);">
@@ -17,6 +17,12 @@
 {% endblock %}
 
 {% block content %}
+{{ page_header(
+    title='Document Workbench',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Workbench', none)],
+    institution=institution,
+    score=readiness_score
+) }}
 <!-- Status Cards -->
 <div class="dashboard-grid mb-lg" id="statusCards">
     <div class="card">
