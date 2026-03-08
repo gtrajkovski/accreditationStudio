@@ -340,4 +340,10 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Visit readiness page with mock evaluation support
 - ✅ Database migration (0015_phase7.sql)
 
+**Post-Phase 7 Improvements:**
+- ✅ Dashboard session controls (pause/resume/cancel buttons)
+- ✅ PAUSED session status added to SessionStatus enum
+- ✅ New API endpoints: POST `/api/agents/sessions/<id>/pause`, `/resume`
+- ✅ Session cards UI with real-time status updates
+
 Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`
