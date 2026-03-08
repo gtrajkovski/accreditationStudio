@@ -18,7 +18,7 @@
 11. ✅ Semantic search (sentence-transformers + ChromaDB)
 12. ✅ Standards Library with ACCSC/SACSCOC/HLC/ABHES/COE presets
 13. ✅ Standards API (`src/api/standards.py`)
-14. 🔶 Search API blueprint (implementation ready, needs registration)
+14. ✅ Search API (semantic search via embeddings + ChromaDB)
 
 ### Phase 3: Audit Engine ✅ COMPLETE
 15. ✅ Agent Architecture (24 agents + registry + AgentResult model)
@@ -41,22 +41,22 @@
 28. ✅ Submission Organizer UI
 29. ✅ Action plan tracking
 
-### Phase 6: Catalog + Exhibits + Faculty
-30. Catalog Agent + Builder UI
-31. Exhibit registry + Evidence Agent
-32. Faculty Agent
-33. Achievement Agent
+### Phase 6: Catalog + Exhibits + Faculty ✅ COMPLETE
+30. ✅ Catalog Agent + Builder UI
+31. ✅ Exhibit registry + Evidence Agent
+32. ✅ Faculty Agent
+33. ✅ Achievement Agent
 
-### Phase 7: Visit Prep
-34. Checklist Agent
-35. Interview Prep Agent
-36. Mock visit / readiness assessment
-37. SER drafting
+### Phase 7: Visit Prep ✅ COMPLETE
+34. ✅ Checklist Agent (enhanced with validation)
+35. ✅ Interview Prep Agent
+36. ✅ Mock visit / readiness assessment
+37. ✅ SER Drafting Agent
 
-### Phase 8: Post-Visit + Ongoing
-38. Team report response writer
-39. Compliance calendar
-40. Document review scheduler
+### Phase 8: Post-Visit + Ongoing ✅ COMPLETE
+38. ✅ Team Report Response Agent
+39. ✅ Compliance Calendar Agent
+40. ✅ Document Review Scheduler
 
 ---
 
