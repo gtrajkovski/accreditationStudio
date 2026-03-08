@@ -119,18 +119,41 @@
         </div>
 
         {% if active_sessions %}
-        <div class="flex flex-col gap-md">
+        <div class="flex flex-col gap-md" id="active-sessions-list">
             {% for session in active_sessions[:5] %}
-            <div class="flex items-center justify-between" style="padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--border-subtle);">
-                <div>
-                    <div style="font-weight: 500;">{{ session.agent_type }}</div>
+            <div class="session-card" data-session-id="{{ session.id }}" data-status="{{ session.status }}">
+                <div class="session-info">
+                    <div class="session-header">
+                        <span class="session-type">{{ session.agent_type }}</span>
+                        <span class="badge badge-{{ 'info' if session.status == 'running' else ('paused' if session.status == 'paused' else 'warning') }}">
+                            {{ session.status }}
+                        </span>
+                    </div>
                     <div class="text-muted" style="font-size: var(--font-size-sm);">
                         {{ session.institution_name }}
                     </div>
                 </div>
-                <span class="badge badge-{{ 'info' if session.status == 'running' else 'warning' }}">
-                    {{ session.status }}
-                </span>
+                <div class="session-actions">
+                    {% if session.status == 'running' %}
+                    <button class="btn btn-sm btn-secondary" onclick="pauseSession('{{ session.id }}')" title="Pause">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="cancelSession('{{ session.id }}')" title="Cancel">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    {% elif session.status == 'paused' or session.status == 'waiting_for_human' %}
+                    <button class="btn btn-sm btn-primary" onclick="resumeSession('{{ session.id }}')" title="Resume">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="cancelSession('{{ session.id }}')" title="Cancel">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    {% elif session.status in ['pending'] %}
+                    <button class="btn btn-sm btn-primary" onclick="startSession('{{ session.id }}')" title="Start">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                    </button>
+                    {% endif %}
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -172,9 +195,132 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<style>
+.session-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    transition: border-color 0.2s;
+}
+.session-card:hover {
+    border-color: var(--accent);
+}
+.session-info {
+    flex: 1;
+}
+.session-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: 2px;
+}
+.session-type {
+    font-weight: 500;
+}
+.session-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+.session-actions .btn {
+    padding: 4px 8px;
+}
+</style>
 <script>
 function showHelp() {
     window.toast.info('Help documentation coming soon!');
+}
+
+async function pauseSession(sessionId) {
+    try {
+        const res = await fetch(`/api/agents/sessions/${sessionId}/pause`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            window.toast.success('Session paused');
+            updateSessionUI(sessionId, 'paused');
+        } else {
+            window.toast.error(data.error || 'Failed to pause session');
+        }
+    } catch (e) {
+        window.toast.error('Failed to pause session');
+    }
+}
+
+async function resumeSession(sessionId) {
+    try {
+        const res = await fetch(`/api/agents/sessions/${sessionId}/resume`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            window.toast.success('Session resuming...');
+            // Connect to SSE stream
+            window.location.href = `/chat?session=${sessionId}&resume=true`;
+        } else {
+            window.toast.error(data.error || 'Failed to resume session');
+        }
+    } catch (e) {
+        window.toast.error('Failed to resume session');
+    }
+}
+
+async function cancelSession(sessionId) {
+    if (!confirm('Cancel this session?')) return;
+    try {
+        const res = await fetch(`/api/agents/sessions/${sessionId}/cancel`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            window.toast.success('Session cancelled');
+            // Remove from list
+            const card = document.querySelector(`[data-session-id="${sessionId}"]`);
+            if (card) card.remove();
+        } else {
+            window.toast.error(data.error || 'Failed to cancel session');
+        }
+    } catch (e) {
+        window.toast.error('Failed to cancel session');
+    }
+}
+
+async function startSession(sessionId) {
+    window.location.href = `/chat?session=${sessionId}`;
+}
+
+function updateSessionUI(sessionId, newStatus) {
+    const card = document.querySelector(`[data-session-id="${sessionId}"]`);
+    if (!card) return;
+
+    card.dataset.status = newStatus;
+    const badge = card.querySelector('.badge');
+    if (badge) {
+        badge.textContent = newStatus;
+        badge.className = 'badge badge-' + (newStatus === 'running' ? 'info' : (newStatus === 'paused' ? 'paused' : 'warning'));
+    }
+
+    // Update buttons
+    const actions = card.querySelector('.session-actions');
+    if (actions) {
+        if (newStatus === 'paused') {
+            actions.innerHTML = `
+                <button class="btn btn-sm btn-primary" onclick="resumeSession('${sessionId}')" title="Resume">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="cancelSession('${sessionId}')" title="Cancel">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            `;
+        } else if (newStatus === 'running') {
+            actions.innerHTML = `
+                <button class="btn btn-sm btn-secondary" onclick="pauseSession('${sessionId}')" title="Pause">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="cancelSession('${sessionId}')" title="Cancel">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            `;
+        }
+    }
 }
 </script>
 {% endblock %}

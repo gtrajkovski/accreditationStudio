@@ -344,6 +344,58 @@ def cancel_session(session_id: str):
     }), 200
 
 
+@agents_bp.route('/api/agents/sessions/<session_id>/pause', methods=['POST'])
+def pause_session(session_id: str):
+    """Pause a running session.
+
+    Returns:
+        JSON with updated session status.
+    """
+    session = _active_sessions.get(session_id)
+    if not session:
+        return jsonify({"error": "Session not found"}), 404
+
+    if session.status != SessionStatus.RUNNING:
+        return jsonify({
+            "error": f"Cannot pause session in state: {session.status.value}"
+        }), 400
+
+    session.status = SessionStatus.PAUSED
+    _save_session(session)
+
+    return jsonify({
+        "success": True,
+        "session_id": session_id,
+        "status": session.status.value,
+        "message": "Session paused.",
+    }), 200
+
+
+@agents_bp.route('/api/agents/sessions/<session_id>/resume', methods=['POST'])
+def resume_session(session_id: str):
+    """Resume a paused or waiting session.
+
+    Returns:
+        JSON with stream URL to continue execution.
+    """
+    session = _active_sessions.get(session_id)
+    if not session:
+        return jsonify({"error": "Session not found"}), 404
+
+    resumable_states = (SessionStatus.PAUSED, SessionStatus.WAITING_FOR_HUMAN)
+    if session.status not in resumable_states:
+        return jsonify({
+            "error": f"Cannot resume session in state: {session.status.value}"
+        }), 400
+
+    return jsonify({
+        "success": True,
+        "session_id": session_id,
+        "stream_url": f"/api/agents/sessions/{session_id}/stream?resume=true",
+        "message": "Ready to resume. Connect to stream_url.",
+    }), 200
+
+
 @agents_bp.route('/api/agents/sessions/<session_id>/stats', methods=['GET'])
 def get_session_stats(session_id: str):
     """Get execution statistics for a session.

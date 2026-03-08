@@ -512,6 +512,11 @@ a:hover {
   color: var(--not-assessed);
 }
 
+.badge-paused {
+  background-color: var(--warning-bg);
+  color: var(--warning);
+}
+
 /* ============================================
    Chips - "Certified Authority" Status Indicators
    ============================================ */

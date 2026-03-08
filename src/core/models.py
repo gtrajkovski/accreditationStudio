@@ -162,6 +162,7 @@ class SessionStatus(str, Enum):
     """Agent session status."""
     PENDING = "pending"
     RUNNING = "running"
+    PAUSED = "paused"
     WAITING_FOR_HUMAN = "waiting_for_human"
     COMPLETED = "completed"
     FAILED = "failed"
