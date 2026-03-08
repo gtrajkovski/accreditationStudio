@@ -115,6 +115,7 @@ class AgentRegistry:
                 # Phase 6
                 faculty_agent,
                 catalog_agent,
+                evidence_agent,
             )
         except ImportError:
             # Agents may not all exist yet

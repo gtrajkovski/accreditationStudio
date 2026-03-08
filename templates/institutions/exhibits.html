@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Exhibits - {{ institution.name }} - AccreditAI{% endblock %}
+{% block header_title %}Evidence & Exhibits{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="checkGaps()">Check Gaps</button>
+<button class="btn btn-secondary" onclick="buildIndex()">Build Index</button>
+<button class="btn btn-primary" onclick="showAddModal()">Add Exhibit</button>
+{% endblock %}
+
+{% block content %}
+<style>
+.exhibit-card { padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: var(--spacing-sm); }
+.exhibit-card:hover { border-color: var(--accent); }
+.gap-item { padding: var(--spacing-sm); background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--danger); margin-bottom: var(--spacing-xs); border-radius: var(--radius-sm); }
+.covered-item { padding: var(--spacing-sm); background: rgba(74, 222, 128, 0.1); border-left: 3px solid var(--success); margin-bottom: var(--spacing-xs); border-radius: var(--radius-sm); }
+</style>
+
+<div class="dashboard-grid mb-lg">
+    <div class="card" style="text-align: center; padding: var(--spacing-lg);">
+        <h3 class="card-title mb-md">Total Exhibits</h3>
+        <div style="font-size: 2rem; font-weight: 700;" id="totalExhibits">0</div>
+    </div>
+    <div class="card" style="text-align: center; padding: var(--spacing-lg);">
+        <h3 class="card-title mb-md">Coverage</h3>
+        <div style="font-size: 2rem; font-weight: 700;" class="text-success" id="coverage">-</div>
+    </div>
+    <div class="card" style="text-align: center; padding: var(--spacing-lg);">
+        <h3 class="card-title mb-md">Gaps</h3>
+        <div style="font-size: 2rem; font-weight: 700;" class="text-danger" id="gapsCount">-</div>
+    </div>
+    <div class="card" style="text-align: center; padding: var(--spacing-lg);">
+        <h3 class="card-title mb-md">Validated</h3>
+        <div style="font-size: 2rem; font-weight: 700;" id="validatedCount">0</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 350px; gap: var(--spacing-lg);">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Exhibits</h3>
+        </div>
+        <div style="padding: var(--spacing-sm);">
+            <select id="categoryFilter" class="form-control" onchange="loadExhibits()">
+                <option value="">All Categories</option>
+                <option value="admissions">Admissions</option>
+                <option value="catalog">Catalog</option>
+                <option value="faculty">Faculty</option>
+                <option value="financial">Financial</option>
+                <option value="outcomes">Outcomes</option>
+                <option value="compliance">Compliance</option>
+                <option value="safety">Safety</option>
+            </select>
+        </div>
+        <div id="exhibitList" style="padding: var(--spacing-md); max-height: 500px; overflow-y: auto;">
+            <p class="text-muted text-center">Loading...</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Requirements</h3>
+        </div>
+        <div id="requirementsList" style="padding: var(--spacing-md); max-height: 600px; overflow-y: auto;">
+            <p class="text-muted">Select a category to see requirements</p>
+        </div>
+    </div>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideAddModal()"></div>
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Add Exhibit</h3>
+            <button class="btn btn-ghost" onclick="hideAddModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Title *</label>
+                <input type="text" id="addTitle" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Exhibit Number</label>
+                <input type="text" id="addNumber" class="form-control" placeholder="e.g., A-1, B-3">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="addCategory" class="form-control">
+                    <option value="general">General</option>
+                    <option value="admissions">Admissions</option>
+                    <option value="catalog">Catalog</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="financial">Financial</option>
+                    <option value="outcomes">Outcomes</option>
+                    <option value="compliance">Compliance</option>
+                    <option value="safety">Safety</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="addDescription" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideAddModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="addExhibit()">Add Exhibit</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = "{{ institution.id }}";
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadExhibits();
+    loadRequirements();
+});
+
+async function loadExhibits() {
+    const category = document.getElementById('categoryFilter').value;
+    let url = `/api/institutions/${institutionId}/exhibits`;
+    if (category) url += `?category=${category}`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    document.getElementById('totalExhibits').textContent = data.total || 0;
+
+    const validated = (data.by_status?.ai_reviewed || 0) + (data.by_status?.approved || 0);
+    document.getElementById('validatedCount').textContent = validated;
+
+    const container = document.getElementById('exhibitList');
+    const exhibits = data.exhibits || [];
+
+    if (exhibits.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No exhibits yet. Add your first exhibit.</p>';
+        return;
+    }
+
+    container.innerHTML = exhibits.map(e => `
+        <div class="exhibit-card">
+            <div style="display: flex; justify-content: space-between;">
+                <strong>${e.exhibit_number ? e.exhibit_number + ': ' : ''}${e.title}</strong>
+                <span class="badge badge-${getStatusBadge(e.status)}">${e.status}</span>
+            </div>
+            <div class="text-muted text-sm">${e.category || 'general'}</div>
+            ${e.description ? `<div class="text-sm mt-xs">${e.description.substring(0, 100)}...</div>` : ''}
+            <div class="mt-sm">
+                <button class="btn btn-secondary btn-sm" onclick="validateExhibit('${e.id}')">Validate</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function getStatusBadge(status) {
+    const map = {
+        'not_started': 'secondary',
+        'collecting': 'warning',
+        'uploaded': 'info',
+        'ai_reviewed': 'success',
+        'flagged': 'danger',
+        'approved': 'success'
+    };
+    return map[status] || 'secondary';
+}
+
+async function loadRequirements() {
+    const res = await fetch(`/api/institutions/${institutionId}/exhibits/requirements`);
+    const data = await res.json();
+
+    const container = document.getElementById('requirementsList');
+    const reqs = data.requirements || [];
+
+    let html = `<p class="text-muted mb-md">${data.total_required} required items</p>`;
+
+    const byCategory = {};
+    reqs.forEach(r => {
+        if (!byCategory[r.category]) byCategory[r.category] = [];
+        byCategory[r.category].push(r);
+    });
+
+    for (const [cat, items] of Object.entries(byCategory)) {
+        html += `<div class="mb-md"><strong>${cat.charAt(0).toUpperCase() + cat.slice(1)}</strong></div>`;
+        items.forEach(r => {
+            html += `<div class="${r.required ? 'gap-item' : 'covered-item'}" style="background: var(--bg-secondary); border-left-color: ${r.required ? 'var(--warning)' : 'var(--text-muted)'};">
+                ${r.name}
+                <span class="badge badge-${r.required ? 'warning' : 'secondary'}" style="float: right;">${r.required ? 'Required' : 'Optional'}</span>
+            </div>`;
+        });
+    }
+
+    container.innerHTML = html;
+}
+
+async function checkGaps() {
+    const res = await fetch(`/api/institutions/${institutionId}/exhibits/gaps`);
+    const data = await res.json();
+
+    document.getElementById('coverage').textContent = data.coverage_score + '%';
+    document.getElementById('gapsCount').textContent = data.total_gaps;
+
+    if (data.gaps?.length) {
+        alert(`Found ${data.total_gaps} gaps:\n\n${data.gaps.map(g => `- ${g.requirement} (${g.category})`).join('\n')}`);
+    } else {
+        alert('No evidence gaps found!');
+    }
+}
+
+async function buildIndex() {
+    const res = await fetch(`/api/institutions/${institutionId}/exhibits/index`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({submission_type: 'self_study'})
+    });
+    const data = await res.json();
+    alert(`Index built: ${data.total_exhibits} exhibits, ${data.standards_covered} standards covered`);
+}
+
+async function validateExhibit(id) {
+    const res = await fetch(`/api/institutions/${institutionId}/exhibits/${id}/validate`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    });
+    const data = await res.json();
+
+    let msg = data.is_valid ? 'Exhibit is valid!' : 'Validation issues found:';
+    if (data.issues?.length) msg += '\n\n' + data.issues.map(i => `- ${i.message}`).join('\n');
+    if (data.warnings?.length) msg += '\n\nWarnings:\n' + data.warnings.map(w => `- ${w.message}`).join('\n');
+
+    alert(msg);
+    loadExhibits();
+}
+
+function showAddModal() { document.getElementById('addModal').style.display = 'flex'; }
+function hideAddModal() { document.getElementById('addModal').style.display = 'none'; }
+
+async function addExhibit() {
+    const data = {
+        title: document.getElementById('addTitle').value,
+        exhibit_number: document.getElementById('addNumber').value,
+        category: document.getElementById('addCategory').value,
+        description: document.getElementById('addDescription').value,
+    };
+
+    if (!data.title) {
+        alert('Title is required');
+        return;
+    }
+
+    const res = await fetch(`/api/institutions/${institutionId}/exhibits`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    hideAddModal();
+    loadExhibits();
+}
+</script>
+{% endblock %}
