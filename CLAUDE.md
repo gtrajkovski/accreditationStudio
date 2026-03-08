@@ -114,8 +114,6 @@ def init_institutions_bp(workspace_manager):
     _workspace_manager = workspace_manager
 ```
 
-Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`
-
 ### Database & Migrations
 
 SQLite database with versioned migrations in `src/db/migrations/`. Migrations are numbered sequentially (`0001_core.sql`, `0002_docs.sql`, etc.).
@@ -309,7 +307,7 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Agent registry with dynamic dispatch
 - ✅ Evidence Guardian (Tier 0 governance)
 - ✅ Readiness Score service with sub-scores
-- ✅ Database migrations (13 migrations)
+- ✅ Database migrations (14 migrations)
 - ✅ Compliance Audit Agent (5-pass multi-tool audit engine)
 - ✅ Audit API with SSE streaming
 - ✅ Document upload and audit trigger UI
@@ -328,4 +326,10 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Submission Organizer UI (packet builder, validation, export)
 - ✅ Action Plan Tracking (items, deadlines, progress)
 
-Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`
+**Phase 6 (Catalog + Exhibits + Faculty):** 🚧 In Progress
+- 🚧 Faculty Agent (credential tracking, qualification audits)
+- Catalog Agent + Builder UI
+- Exhibit registry + Evidence Agent
+- Achievement Agent
+
+Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`
