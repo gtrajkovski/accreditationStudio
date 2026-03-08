@@ -114,6 +114,7 @@ class AgentRegistry:
                 site_visit_prep,
                 # Phase 6
                 faculty_agent,
+                catalog_agent,
             )
         except ImportError:
             # Agents may not all exist yet

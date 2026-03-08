@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+
+{% block title %}Catalog Builder - {{ institution.name }} - AccreditAI{% endblock %}
+{% block header_title %}Catalog Builder{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="showRequirements()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+    </svg>
+    Requirements
+</button>
+<button class="btn btn-primary" onclick="showCreateModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M12 5v14M5 12h14"/>
+    </svg>
+    New Catalog
+</button>
+{% endblock %}
+
+{% block content %}
+<style>
+.catalog-card { padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: var(--spacing-sm); cursor: pointer; transition: all 0.2s; }
+.catalog-card:hover { border-color: var(--accent); background: var(--bg-secondary); }
+.catalog-card.selected { border-color: var(--accent); background: var(--bg-secondary); }
+.section-item { padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-sm); margin-bottom: var(--spacing-xs); display: flex; justify-content: space-between; align-items: center; }
+.section-item.missing { border-left: 3px solid var(--danger); }
+.section-item.complete { border-left: 3px solid var(--success); }
+.section-content { padding: var(--spacing-md); background: var(--bg-primary); border-radius: var(--radius-md); margin-top: var(--spacing-md); max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-family: inherit; line-height: 1.6; }
+.progress-bar { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: var(--success); transition: width 0.3s; }
+.stat-card { text-align: center; padding: var(--spacing-lg); }
+.stat-card .stat-value { font-size: 2rem; font-weight: 700; }
+.generating { opacity: 0.6; pointer-events: none; }
+</style>
+
+<!-- Status Overview -->
+<div class="dashboard-grid mb-lg">
+    <div class="card stat-card">
+        <h3 class="card-title mb-md">Catalogs</h3>
+        <div class="stat-value" id="totalCatalogs">0</div>
+        <div class="text-muted">Total drafts</div>
+    </div>
+    <div class="card stat-card">
+        <h3 class="card-title mb-md">Sections</h3>
+        <div class="stat-value text-success" id="sectionsComplete">0</div>
+        <div class="text-muted">Completed</div>
+    </div>
+    <div class="card stat-card">
+        <h3 class="card-title mb-md">Required</h3>
+        <div class="stat-value text-warning" id="sectionsRequired">0</div>
+        <div class="text-muted">For {{ institution.accrediting_body }}</div>
+    </div>
+    <div class="card stat-card">
+        <h3 class="card-title mb-md">Validation</h3>
+        <div class="stat-value" id="validationStatus">-</div>
+        <div class="text-muted">Status</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 300px 1fr; gap: var(--spacing-lg);">
+    <!-- Catalog List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Catalogs</h3>
+        </div>
+        <div id="catalogList" style="padding: var(--spacing-sm); max-height: 500px; overflow-y: auto;">
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <p>No catalogs yet</p>
+                <button class="btn btn-primary btn-sm" onclick="showCreateModal()">Create First Catalog</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Catalog Detail Panel -->
+    <div class="card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 class="card-title" id="detailTitle">Select a Catalog</h3>
+                <span class="badge" id="detailStatus" style="display: none;">Status</span>
+            </div>
+            <div class="btn-group" id="detailActions" style="display: none;">
+                <button class="btn btn-secondary btn-sm" onclick="auditCatalog()">Audit</button>
+                <button class="btn btn-secondary btn-sm" onclick="validateCatalog()">Validate</button>
+                <button class="btn btn-primary btn-sm" onclick="exportCatalog()">Export</button>
+            </div>
+        </div>
+
+        <div id="detailContent" style="padding: var(--spacing-md);">
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin-bottom: var(--spacing-md);">
+                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+                </svg>
+                <p>Select a catalog to view and edit sections</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Catalog Modal -->
+<div id="createModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideCreateModal()"></div>
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Create New Catalog</h3>
+            <button class="btn btn-ghost" onclick="hideCreateModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Language</label>
+                <select id="createLanguage" class="form-control">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="bilingual">Bilingual</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Mode</label>
+                <select id="createMode" class="form-control">
+                    <option value="true">Draft (faster, includes notes)</option>
+                    <option value="false">Final (formal tone)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Sections to Generate</label>
+                <select id="createSections" class="form-control">
+                    <option value="all">All Required Sections</option>
+                    <option value="core">Core Sections Only</option>
+                    <option value="custom">Select Specific...</option>
+                </select>
+            </div>
+            <p class="text-muted text-sm">This will generate catalog content from your institution data, programs, and policies.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideCreateModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="createCatalog()" id="createBtn">Create Catalog</button>
+        </div>
+    </div>
+</div>
+
+<!-- Requirements Modal -->
+<div id="requirementsModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideRequirements()"></div>
+    <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h3>Catalog Requirements</h3>
+            <button class="btn btn-ghost" onclick="hideRequirements()">&times;</button>
+        </div>
+        <div class="modal-body" id="requirementsContent">
+            <p class="text-muted">Loading requirements...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Section Edit Modal -->
+<div id="sectionModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideSectionModal()"></div>
+    <div class="modal-content" style="max-width: 800px; max-height: 90vh;">
+        <div class="modal-header">
+            <h3 id="sectionModalTitle">Edit Section</h3>
+            <button class="btn btn-ghost" onclick="hideSectionModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+            <textarea id="sectionContent" class="form-control" style="min-height: 400px; font-family: inherit; line-height: 1.6;"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="regenerateSection()">Regenerate</button>
+            <button class="btn btn-secondary" onclick="hideSectionModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveSection()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = "{{ institution.id }}";
+const accreditor = "{{ institution.accrediting_body }}";
+let catalogs = [];
+let selectedCatalog = null;
+let currentSectionId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadCatalogs();
+    loadRequirementsCount();
+});
+
+async function loadCatalogs() {
+    const res = await fetch(`/api/institutions/${institutionId}/catalog`);
+    const data = await res.json();
+
+    catalogs = data.catalogs || [];
+    document.getElementById('totalCatalogs').textContent = catalogs.length;
+    renderCatalogList();
+}
+
+async function loadRequirementsCount() {
+    const res = await fetch(`/api/institutions/${institutionId}/catalog/requirements?accreditor=${accreditor}`);
+    const data = await res.json();
+
+    document.getElementById('sectionsRequired').textContent = data.total_required || 0;
+}
+
+function renderCatalogList() {
+    const container = document.getElementById('catalogList');
+
+    if (catalogs.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <p>No catalogs yet</p>
+                <button class="btn btn-primary btn-sm" onclick="showCreateModal()">Create First Catalog</button>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = catalogs.map(c => `
+        <div class="catalog-card ${selectedCatalog?.id === c.id ? 'selected' : ''}" onclick="selectCatalog('${c.id}')">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <div style="font-weight: 600;">${c.title || 'Untitled Catalog'}</div>
+                    <div class="text-muted text-sm">${c.language === 'en' ? 'English' : c.language === 'es' ? 'Spanish' : 'Bilingual'}</div>
+                </div>
+                <span class="badge badge-${c.status === 'draft' ? 'warning' : 'success'}">${c.status}</span>
+            </div>
+            <div class="text-muted text-sm mt-xs">${c.sections_count || 0} sections</div>
+        </div>
+    `).join('');
+}
+
+async function selectCatalog(catalogId) {
+    const res = await fetch(`/api/institutions/${institutionId}/catalog/${catalogId}`);
+    const data = await res.json();
+
+    if (data.error) {
+        alert(data.error);
+        return;
+    }
+
+    selectedCatalog = data.catalog;
+    renderCatalogList();
+    renderCatalogDetail();
+}
+
+function renderCatalogDetail() {
+    const c = selectedCatalog;
+    document.getElementById('detailTitle').textContent = c.title || 'Untitled Catalog';
+    document.getElementById('detailStatus').textContent = c.status;
+    document.getElementById('detailStatus').className = `badge badge-${c.status === 'draft' ? 'warning' : 'success'}`;
+    document.getElementById('detailStatus').style.display = 'inline-block';
+    document.getElementById('detailActions').style.display = 'flex';
+
+    const sections = c.sections || {};
+    const sectionCount = Object.keys(sections).length;
+    document.getElementById('sectionsComplete').textContent = sectionCount;
+
+    // Calculate progress
+    const progress = Math.round((sectionCount / 30) * 100); // Approximate total sections
+
+    document.getElementById('detailContent').innerHTML = `
+        <div class="mb-md">
+            <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-xs);">
+                <span>Completion</span>
+                <span>${sectionCount} sections</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-bar-fill" style="width: ${progress}%"></div>
+            </div>
+        </div>
+
+        <h4 class="mb-sm">Sections</h4>
+        <div id="sectionsList">
+            ${Object.entries(sections).map(([id, section]) => `
+                <div class="section-item complete" onclick="viewSection('${id}')">
+                    <div>
+                        <strong>${section.name || id}</strong>
+                        <div class="text-muted text-sm">${section.word_count || 0} words</div>
+                    </div>
+                    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); editSection('${id}')">Edit</button>
+                </div>
+            `).join('')}
+        </div>
+
+        <div class="mt-md">
+            <button class="btn btn-secondary btn-sm" onclick="addSection()">+ Add Section</button>
+        </div>
+    `;
+}
+
+function viewSection(sectionId) {
+    if (!selectedCatalog) return;
+
+    const section = selectedCatalog.sections[sectionId];
+    if (!section) return;
+
+    const content = section.content || '';
+
+    // Show inline preview
+    const existing = document.getElementById('sectionPreview');
+    if (existing) existing.remove();
+
+    const preview = document.createElement('div');
+    preview.id = 'sectionPreview';
+    preview.className = 'section-content';
+    preview.innerHTML = `<h4>${section.name || sectionId}</h4><hr style="margin: var(--spacing-sm) 0; border-color: var(--border-color);">${content.replace(/\n/g, '<br>')}`;
+
+    document.getElementById('detailContent').appendChild(preview);
+}
+
+function editSection(sectionId) {
+    if (!selectedCatalog) return;
+
+    const section = selectedCatalog.sections[sectionId];
+    currentSectionId = sectionId;
+
+    document.getElementById('sectionModalTitle').textContent = `Edit: ${section?.name || sectionId}`;
+    document.getElementById('sectionContent').value = section?.content || '';
+    document.getElementById('sectionModal').style.display = 'flex';
+}
+
+async function saveSection() {
+    if (!selectedCatalog || !currentSectionId) return;
+
+    const content = document.getElementById('sectionContent').value;
+
+    const res = await fetch(`/api/institutions/${institutionId}/catalog/${selectedCatalog.id}/sections/${currentSectionId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ content })
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    hideSectionModal();
+    selectCatalog(selectedCatalog.id);
+}
+
+async function regenerateSection() {
+    if (!selectedCatalog || !currentSectionId) return;
+
+    if (!confirm('Regenerate this section? Current content will be replaced.')) return;
+
+    const res = await fetch(`/api/institutions/${institutionId}/catalog/${selectedCatalog.id}/sections/${currentSectionId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ draft_mode: true })
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    document.getElementById('sectionContent').value = result.content || '';
+}
+
+function hideSectionModal() {
+    document.getElementById('sectionModal').style.display = 'none';
+    currentSectionId = null;
+}
+
+// Modal functions
+function showCreateModal() { document.getElementById('createModal').style.display = 'flex'; }
+function hideCreateModal() { document.getElementById('createModal').style.display = 'none'; }
+
+async function createCatalog() {
+    const language = document.getElementById('createLanguage').value;
+    const draftMode = document.getElementById('createMode').value === 'true';
+
+    const btn = document.getElementById('createBtn');
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+
+    const res = await fetch(`/api/institutions/${institutionId}/catalog`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            language,
+            draft_mode: draftMode,
+        })
+    });
+
+    const result = await res.json();
+    btn.disabled = false;
+    btn.textContent = 'Create Catalog';
+
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    alert(`Catalog created with ${result.sections_generated} sections!`);
+    hideCreateModal();
+    loadCatalogs();
+
+    // Select the new catalog
+    setTimeout(() => selectCatalog(result.catalog_id), 500);
+}
+
+async function showRequirements() {
+    document.getElementById('requirementsModal').style.display = 'flex';
+
+    const res = await fetch(`/api/institutions/${institutionId}/catalog/requirements?accreditor=${accreditor}&include_federal=true`);
+    const data = await res.json();
+
+    let html = `<h4>${data.accreditor} Catalog Requirements</h4>`;
+    html += `<p class="text-muted mb-md">${data.total_required} required sections</p>`;
+
+    html += '<div class="mb-md"><strong>Accreditor Requirements:</strong></div>';
+    html += data.sections.map(s => `
+        <div class="section-item ${s.required ? '' : 'text-muted'}">
+            <span>${s.name}</span>
+            <span class="badge badge-${s.required ? 'warning' : 'secondary'}">${s.required ? 'Required' : 'Optional'}</span>
+        </div>
+    `).join('');
+
+    if (data.federal_requirements?.length) {
+        html += '<div class="mt-md mb-md"><strong>Federal Requirements:</strong></div>';
+        html += data.federal_requirements.map(s => `
+            <div class="section-item">
+                <span>${s.name}</span>
+                <span class="badge badge-danger">Federal</span>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('requirementsContent').innerHTML = html;
+}
+
+function hideRequirements() {
+    document.getElementById('requirementsModal').style.display = 'none';
+}
+
+async function auditCatalog() {
+    if (!selectedCatalog) return;
+
+    const res = await fetch(`/api/institutions/${institutionId}/catalog/${selectedCatalog.id}/audit`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ accreditor_code: accreditor })
+    });
+
+    const result = await res.json();
+
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    let msg = `Compliance Score: ${result.compliance_score}%\n\n`;
+    if (result.missing_sections?.length) {
+        msg += `Missing Sections:\n- ${result.missing_sections.join('\n- ')}\n\n`;
+    }
+    if (result.incomplete_sections?.length) {
+        msg += `Incomplete Sections:\n- ${result.incomplete_sections.join('\n- ')}`;
+    }
+    if (!result.missing_sections?.length && !result.incomplete_sections?.length) {
+        msg += 'No issues found!';
+    }
+
+    alert(msg);
+}
+
+async function validateCatalog() {
+    if (!selectedCatalog) return;
+
+    const res = await fetch(`/api/institutions/${institutionId}/catalog/${selectedCatalog.id}/validate`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ validation_level: 'standard' })
+    });
+
+    const result = await res.json();
+
+    document.getElementById('validationStatus').textContent = result.is_valid ? 'Valid' : 'Issues';
+    document.getElementById('validationStatus').className = `stat-value ${result.is_valid ? 'text-success' : 'text-danger'}`;
+
+    let msg = result.is_valid ? 'Catalog is valid!\n\n' : 'Validation issues found:\n\n';
+    if (result.issues?.length) {
+        msg += result.issues.join('\n');
+    }
+    if (result.warnings?.length) {
+        msg += '\n\nWarnings:\n' + result.warnings.join('\n');
+    }
+
+    alert(msg);
+}
+
+async function exportCatalog() {
+    if (!selectedCatalog) return;
+
+    const res = await fetch(`/api/institutions/${institutionId}/catalog/${selectedCatalog.id}/export`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ format: 'docx' })
+    });
+
+    const result = await res.json();
+
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    alert(`Exported ${result.sections_exported} sections.\n\nNote: ${result.note}`);
+}
+
+function addSection() {
+    const sectionId = prompt('Enter section ID (e.g., mission, programs, tuition):');
+    if (!sectionId) return;
+
+    currentSectionId = sectionId;
+    document.getElementById('sectionModalTitle').textContent = `Add: ${sectionId}`;
+    document.getElementById('sectionContent').value = '';
+    document.getElementById('sectionModal').style.display = 'flex';
+}
+</script>
+{% endblock %}
