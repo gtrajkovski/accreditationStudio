@@ -35,6 +35,7 @@ from src.api.remediation import remediation_bp, init_remediation_bp
 from src.api.checklists import checklists_bp, init_checklists_bp
 from src.api.packets import packets_bp, init_packets_bp
 from src.api.action_plans import action_plans_bp, init_action_plans_bp
+from src.api.faculty import faculty_bp, init_faculty_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 
 
@@ -67,6 +68,7 @@ init_remediation_bp(workspace_manager)
 init_checklists_bp(workspace_manager)
 init_packets_bp(workspace_manager)
 init_action_plans_bp(workspace_manager)
+init_faculty_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -81,6 +83,7 @@ app.register_blueprint(remediation_bp)
 app.register_blueprint(checklists_bp)
 app.register_blueprint(packets_bp)
 app.register_blueprint(action_plans_bp)
+app.register_blueprint(faculty_bp)
 
 
 # =============================================================================
@@ -289,6 +292,20 @@ def institution_submissions(id):
 
     return render_template(
         'institutions/submissions.html',
+        institution=institution,
+        current_institution=institution,
+    )
+
+
+@app.route('/institutions/<id>/faculty')
+def institution_faculty(id):
+    """Faculty credential management page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/faculty.html',
         institution=institution,
         current_institution=institution,
     )

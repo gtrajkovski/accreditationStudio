@@ -1,0 +1,681 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Management - {{ institution.name }} - AccreditAI{% endblock %}
+{% block header_title %}Faculty Management{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="runComplianceCheck()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+    </svg>
+    Check Compliance
+</button>
+<button class="btn btn-primary" onclick="showAddModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M12 5v14M5 12h14"/>
+    </svg>
+    Add Faculty
+</button>
+{% endblock %}
+
+{% block content %}
+<style>
+.faculty-card { padding: var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: var(--spacing-sm); cursor: pointer; transition: all 0.2s; }
+.faculty-card:hover { border-color: var(--accent); background: var(--bg-secondary); }
+.faculty-card.selected { border-color: var(--accent); background: var(--bg-secondary); }
+.faculty-info { display: flex; justify-content: space-between; align-items: center; }
+.faculty-name { font-weight: 600; font-size: 1rem; }
+.faculty-meta { color: var(--text-muted); font-size: 0.85rem; }
+.credential-item { padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-sm); margin-bottom: var(--spacing-xs); }
+.license-item { padding: var(--spacing-sm); border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin-bottom: var(--spacing-xs); }
+.license-item.expiring { border-color: var(--warning); background: rgba(251, 191, 36, 0.1); }
+.license-item.expired { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
+.detail-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: var(--spacing-md); }
+.detail-tab { padding: var(--spacing-sm) var(--spacing-md); border: none; background: none; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+.detail-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.stat-card { text-align: center; }
+.stat-card .stat-value { font-size: 2rem; font-weight: 700; }
+</style>
+
+<!-- Status Overview -->
+<div class="dashboard-grid mb-lg">
+    <div class="card stat-card">
+        <h3 class="card-title mb-md">Total Faculty</h3>
+        <div class="stat-value" id="totalFaculty">0</div>
+        <div class="text-muted">Active members</div>
+    </div>
+    <div class="card stat-card">
+        <h3 class="card-title mb-md">Compliant</h3>
+        <div class="stat-value text-success" id="compliantCount">0</div>
+        <div class="text-muted">Fully verified</div>
+    </div>
+    <div class="card stat-card">
+        <h3 class="card-title mb-md">Expiring Licenses</h3>
+        <div class="stat-value text-warning" id="expiringCount">0</div>
+        <div class="text-muted">Within 90 days</div>
+    </div>
+    <div class="card stat-card">
+        <h3 class="card-title mb-md">Issues</h3>
+        <div class="stat-value text-danger" id="issuesCount">0</div>
+        <div class="text-muted">Needs attention</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 350px 1fr; gap: var(--spacing-lg);">
+    <!-- Faculty List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Faculty Members</h3>
+        </div>
+        <div style="padding: var(--spacing-sm);">
+            <select id="statusFilter" class="form-control mb-sm" style="width: 100%;">
+                <option value="all">All Status</option>
+                <option value="compliant">Compliant</option>
+                <option value="pending_verification">Pending Verification</option>
+                <option value="expiring_soon">Expiring Soon</option>
+                <option value="expired">Expired</option>
+                <option value="non_compliant">Non-Compliant</option>
+            </select>
+            <select id="employmentFilter" class="form-control" style="width: 100%;">
+                <option value="all">All Employment Types</option>
+                <option value="fulltime">Full-Time</option>
+                <option value="parttime">Part-Time</option>
+                <option value="adjunct">Adjunct</option>
+            </select>
+        </div>
+        <div id="facultyList" style="max-height: 500px; overflow-y: auto; padding: var(--spacing-sm);">
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <p>No faculty members yet</p>
+                <button class="btn btn-primary btn-sm" onclick="showAddModal()">Add First Faculty</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Faculty Detail Panel -->
+    <div class="card" id="detailPanel">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 class="card-title" id="detailName">Select a Faculty Member</h3>
+                <span class="badge" id="detailStatus" style="display: none;">Status</span>
+            </div>
+            <div class="btn-group" id="detailActions" style="display: none;">
+                <button class="btn btn-secondary btn-sm" onclick="showEditModal()">Edit</button>
+                <button class="btn btn-secondary btn-sm" onclick="showAddCredentialModal()">Add Credential</button>
+                <button class="btn btn-secondary btn-sm" onclick="showAddLicenseModal()">Add License</button>
+                <button class="btn btn-secondary btn-sm" onclick="showAddAssignmentModal()">Add Assignment</button>
+            </div>
+        </div>
+
+        <div id="detailContent" style="padding: var(--spacing-md);">
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; margin-bottom: var(--spacing-md);">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <p>Select a faculty member to view details</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Faculty Modal -->
+<div id="addModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideAddModal()"></div>
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Add Faculty Member</h3>
+            <button class="btn btn-ghost" onclick="hideAddModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>First Name *</label>
+                <input type="text" id="addFirstName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Last Name *</label>
+                <input type="text" id="addLastName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="addEmail" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="addTitle" class="form-control" placeholder="e.g., Program Director, Instructor">
+            </div>
+            <div class="form-group">
+                <label>Department</label>
+                <input type="text" id="addDepartment" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Employment Type</label>
+                <select id="addEmploymentType" class="form-control">
+                    <option value="fulltime">Full-Time</option>
+                    <option value="parttime">Part-Time</option>
+                    <option value="adjunct">Adjunct</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideAddModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="addFaculty()">Add Faculty</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Credential Modal -->
+<div id="credentialModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideCredentialModal()"></div>
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Add Academic Credential</h3>
+            <button class="btn btn-ghost" onclick="hideCredentialModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Credential Type</label>
+                <select id="credType" class="form-control">
+                    <option value="degree">Degree</option>
+                    <option value="certification">Certification</option>
+                    <option value="industry_experience">Industry Experience</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Title *</label>
+                <input type="text" id="credTitle" class="form-control" placeholder="e.g., Master of Science in Nursing">
+            </div>
+            <div class="form-group">
+                <label>Field of Study</label>
+                <input type="text" id="credField" class="form-control" placeholder="e.g., Nursing">
+            </div>
+            <div class="form-group">
+                <label>Institution Name</label>
+                <input type="text" id="credInstitution" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Year Awarded</label>
+                <input type="number" id="credYear" class="form-control" min="1950" max="2030">
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="credTranscript"> Transcript on File</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideCredentialModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="addCredential()">Add Credential</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add License Modal -->
+<div id="licenseModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideLicenseModal()"></div>
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Add Professional License</h3>
+            <button class="btn btn-ghost" onclick="hideLicenseModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>License Type *</label>
+                <input type="text" id="licType" class="form-control" placeholder="e.g., RN, CPA, PE">
+            </div>
+            <div class="form-group">
+                <label>License Number</label>
+                <input type="text" id="licNumber" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Issuing Authority</label>
+                <input type="text" id="licAuthority" class="form-control" placeholder="e.g., Puerto Rico Board of Nursing">
+            </div>
+            <div class="form-group">
+                <label>State Code</label>
+                <input type="text" id="licState" class="form-control" placeholder="e.g., PR, FL" maxlength="2">
+            </div>
+            <div class="form-group">
+                <label>Expiration Date</label>
+                <input type="date" id="licExpiration" class="form-control">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideLicenseModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="addLicense()">Add License</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Assignment Modal -->
+<div id="assignmentModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideAssignmentModal()"></div>
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Add Teaching Assignment</h3>
+            <button class="btn btn-ghost" onclick="hideAssignmentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Course Code *</label>
+                <input type="text" id="assignCourseCode" class="form-control" placeholder="e.g., NUR101">
+            </div>
+            <div class="form-group">
+                <label>Course Name *</label>
+                <input type="text" id="assignCourseName" class="form-control" placeholder="e.g., Fundamentals of Nursing">
+            </div>
+            <div class="form-group">
+                <label>Qualification Basis</label>
+                <select id="assignQualBasis" class="form-control">
+                    <option value="degree">Degree</option>
+                    <option value="license">License</option>
+                    <option value="experience">Industry Experience</option>
+                    <option value="combination">Combination</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" id="assignStartDate" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea id="assignNotes" class="form-control" rows="2" placeholder="Qualification justification notes"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideAssignmentModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="addAssignment()">Add Assignment</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = "{{ institution.id }}";
+let facultyList = [];
+let selectedFaculty = null;
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadFaculty();
+    loadExpiringLicenses();
+
+    document.getElementById('statusFilter').addEventListener('change', loadFaculty);
+    document.getElementById('employmentFilter').addEventListener('change', loadFaculty);
+});
+
+async function loadFaculty() {
+    const status = document.getElementById('statusFilter').value;
+    const employment = document.getElementById('employmentFilter').value;
+
+    let url = `/api/institutions/${institutionId}/faculty?active_only=true`;
+    if (status !== 'all') url += `&status=${status}`;
+    if (employment !== 'all') url += `&employment_type=${employment}`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    facultyList = data.faculty || [];
+    renderFacultyList();
+    updateStats(data);
+}
+
+async function loadExpiringLicenses() {
+    const res = await fetch(`/api/institutions/${institutionId}/faculty/expiring-licenses?days=90`);
+    const data = await res.json();
+    document.getElementById('expiringCount').textContent = data.count || 0;
+}
+
+function updateStats(data) {
+    document.getElementById('totalFaculty').textContent = data.total || 0;
+
+    const compliant = facultyList.filter(f => f.compliance_status === 'compliant').length;
+    const issues = facultyList.filter(f => ['non_compliant', 'expired'].includes(f.compliance_status)).length;
+
+    document.getElementById('compliantCount').textContent = compliant;
+    document.getElementById('issuesCount').textContent = issues;
+}
+
+function renderFacultyList() {
+    const container = document.getElementById('facultyList');
+
+    if (facultyList.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <p>No faculty members found</p>
+                <button class="btn btn-primary btn-sm" onclick="showAddModal()">Add Faculty</button>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = facultyList.map(f => `
+        <div class="faculty-card ${selectedFaculty?.id === f.id ? 'selected' : ''}" onclick="selectFaculty('${f.id}')">
+            <div class="faculty-info">
+                <div>
+                    <div class="faculty-name">${f.name}</div>
+                    <div class="faculty-meta">${f.title || f.department || f.employment_type}</div>
+                </div>
+                <span class="badge badge-${getStatusBadge(f.compliance_status)}">${formatStatus(f.compliance_status)}</span>
+            </div>
+            <div class="faculty-meta mt-xs">
+                ${f.credential_count} credentials, ${f.license_count} licenses
+                ${f.expiring_licenses > 0 ? `<span class="text-warning">(${f.expiring_licenses} expiring)</span>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function getStatusBadge(status) {
+    const map = {
+        'compliant': 'success',
+        'pending_verification': 'warning',
+        'expiring_soon': 'warning',
+        'expired': 'danger',
+        'non_compliant': 'danger',
+        'needs_review': 'warning'
+    };
+    return map[status] || 'secondary';
+}
+
+function formatStatus(status) {
+    return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+async function selectFaculty(id) {
+    const res = await fetch(`/api/institutions/${institutionId}/faculty/${id}`);
+    const data = await res.json();
+
+    if (data.error) {
+        alert(data.error);
+        return;
+    }
+
+    selectedFaculty = data.faculty;
+    renderFacultyList();
+    renderFacultyDetail();
+}
+
+function renderFacultyDetail() {
+    const f = selectedFaculty;
+    document.getElementById('detailName').textContent = `${f.first_name} ${f.last_name}`;
+    document.getElementById('detailStatus').textContent = formatStatus(f.compliance_status);
+    document.getElementById('detailStatus').className = `badge badge-${getStatusBadge(f.compliance_status)}`;
+    document.getElementById('detailStatus').style.display = 'inline-block';
+    document.getElementById('detailActions').style.display = 'flex';
+
+    const issues = f.compliance_issues || [];
+    const issuesHtml = issues.length > 0
+        ? `<div class="alert alert-warning mb-md">${issues.map(i => `<div>- ${i}</div>`).join('')}</div>`
+        : '';
+
+    document.getElementById('detailContent').innerHTML = `
+        ${issuesHtml}
+        <div class="detail-tabs">
+            <button class="detail-tab active" onclick="showTab('profile')">Profile</button>
+            <button class="detail-tab" onclick="showTab('credentials')">Credentials (${f.academic_credentials?.length || 0})</button>
+            <button class="detail-tab" onclick="showTab('licenses')">Licenses (${f.professional_licenses?.length || 0})</button>
+            <button class="detail-tab" onclick="showTab('assignments')">Assignments (${f.teaching_assignments?.length || 0})</button>
+        </div>
+
+        <div id="profileTab" class="tab-panel active">
+            <table style="width: 100%;">
+                <tr><td class="text-muted" style="width: 140px;">Email</td><td>${f.email || '-'}</td></tr>
+                <tr><td class="text-muted">Phone</td><td>${f.phone || '-'}</td></tr>
+                <tr><td class="text-muted">Title</td><td>${f.title || '-'}</td></tr>
+                <tr><td class="text-muted">Department</td><td>${f.department || '-'}</td></tr>
+                <tr><td class="text-muted">Employment</td><td>${formatStatus(f.employment_type)}</td></tr>
+                <tr><td class="text-muted">Start Date</td><td>${f.employment_start_date || '-'}</td></tr>
+                <tr><td class="text-muted">Experience</td><td>${f.work_experience_years} years</td></tr>
+            </table>
+        </div>
+
+        <div id="credentialsTab" class="tab-panel">
+            ${(f.academic_credentials || []).map(c => `
+                <div class="credential-item">
+                    <div style="display: flex; justify-content: space-between;">
+                        <strong>${c.title}</strong>
+                        <span class="badge badge-${c.verified ? 'success' : 'warning'}">${c.verified ? 'Verified' : 'Unverified'}</span>
+                    </div>
+                    <div class="text-muted">${c.field_of_study || ''} - ${c.institution_name || ''} ${c.year_awarded ? `(${c.year_awarded})` : ''}</div>
+                </div>
+            `).join('') || '<p class="text-muted">No credentials recorded</p>'}
+        </div>
+
+        <div id="licensesTab" class="tab-panel">
+            ${(f.professional_licenses || []).map(l => {
+                const isExpiring = l.expiration_date && new Date(l.expiration_date) < new Date(Date.now() + 90*24*60*60*1000);
+                const isExpired = l.expiration_date && new Date(l.expiration_date) < new Date();
+                return `
+                <div class="license-item ${isExpired ? 'expired' : (isExpiring ? 'expiring' : '')}">
+                    <div style="display: flex; justify-content: space-between;">
+                        <strong>${l.license_type}</strong>
+                        <span class="badge badge-${l.status === 'active' ? 'success' : 'danger'}">${l.status}</span>
+                    </div>
+                    <div class="text-muted">#${l.license_number || 'N/A'} - ${l.issuing_authority || l.state_code || ''}</div>
+                    ${l.expiration_date ? `<div class="text-muted">Expires: ${l.expiration_date}</div>` : ''}
+                    <button class="btn btn-sm btn-secondary mt-xs" onclick="verifyLicense('${l.id}')">Verify Online</button>
+                </div>
+            `}).join('') || '<p class="text-muted">No licenses recorded</p>'}
+        </div>
+
+        <div id="assignmentsTab" class="tab-panel">
+            ${(f.teaching_assignments || []).map(a => `
+                <div class="credential-item">
+                    <div style="display: flex; justify-content: space-between;">
+                        <strong>${a.course_code}: ${a.course_name}</strong>
+                        <div>
+                            <span class="badge badge-${a.is_qualified ? 'success' : 'danger'}">${a.is_qualified ? 'Qualified' : 'Not Qualified'}</span>
+                            <button class="btn btn-ghost btn-sm" onclick="removeAssignment('${a.id}')" title="Remove">×</button>
+                        </div>
+                    </div>
+                    <div class="text-muted">Basis: ${a.qualification_basis || 'Not specified'}</div>
+                    ${a.qualification_notes ? `<div class="text-muted" style="font-size: 0.8rem;">${a.qualification_notes}</div>` : ''}
+                </div>
+            `).join('') || '<p class="text-muted">No teaching assignments</p>'}
+        </div>
+    `;
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(tab + 'Tab').classList.add('active');
+}
+
+// Modal functions
+function showAddModal() { document.getElementById('addModal').style.display = 'flex'; }
+function hideAddModal() { document.getElementById('addModal').style.display = 'none'; }
+function showAddCredentialModal() { document.getElementById('credentialModal').style.display = 'flex'; }
+function hideCredentialModal() { document.getElementById('credentialModal').style.display = 'none'; }
+function showAddLicenseModal() { document.getElementById('licenseModal').style.display = 'flex'; }
+function hideLicenseModal() { document.getElementById('licenseModal').style.display = 'none'; }
+function showAddAssignmentModal() { document.getElementById('assignmentModal').style.display = 'flex'; }
+function hideAssignmentModal() { document.getElementById('assignmentModal').style.display = 'none'; }
+
+async function addFaculty() {
+    const data = {
+        first_name: document.getElementById('addFirstName').value,
+        last_name: document.getElementById('addLastName').value,
+        email: document.getElementById('addEmail').value,
+        title: document.getElementById('addTitle').value,
+        department: document.getElementById('addDepartment').value,
+        employment_type: document.getElementById('addEmploymentType').value
+    };
+
+    if (!data.first_name || !data.last_name) {
+        alert('First and last name are required');
+        return;
+    }
+
+    const res = await fetch(`/api/institutions/${institutionId}/faculty`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    hideAddModal();
+    loadFaculty();
+}
+
+async function addCredential() {
+    if (!selectedFaculty) return;
+
+    const data = {
+        credential_type: document.getElementById('credType').value,
+        title: document.getElementById('credTitle').value,
+        field_of_study: document.getElementById('credField').value,
+        institution_name: document.getElementById('credInstitution').value,
+        year_awarded: parseInt(document.getElementById('credYear').value) || null,
+        transcript_on_file: document.getElementById('credTranscript').checked
+    };
+
+    if (!data.title) {
+        alert('Title is required');
+        return;
+    }
+
+    const res = await fetch(`/api/institutions/${institutionId}/faculty/${selectedFaculty.id}/credentials`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    hideCredentialModal();
+    selectFaculty(selectedFaculty.id);
+}
+
+async function addLicense() {
+    if (!selectedFaculty) return;
+
+    const data = {
+        license_type: document.getElementById('licType').value,
+        license_number: document.getElementById('licNumber').value,
+        issuing_authority: document.getElementById('licAuthority').value,
+        state_code: document.getElementById('licState').value.toUpperCase(),
+        expiration_date: document.getElementById('licExpiration').value || null
+    };
+
+    if (!data.license_type) {
+        alert('License type is required');
+        return;
+    }
+
+    const res = await fetch(`/api/institutions/${institutionId}/faculty/${selectedFaculty.id}/licenses`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    hideLicenseModal();
+    selectFaculty(selectedFaculty.id);
+    loadExpiringLicenses();
+}
+
+async function addAssignment() {
+    if (!selectedFaculty) return;
+
+    const data = {
+        course_code: document.getElementById('assignCourseCode').value,
+        course_name: document.getElementById('assignCourseName').value,
+        qualification_basis: document.getElementById('assignQualBasis').value,
+        start_date: document.getElementById('assignStartDate').value || null,
+        qualification_notes: document.getElementById('assignNotes').value
+    };
+
+    if (!data.course_code || !data.course_name) {
+        alert('Course code and name are required');
+        return;
+    }
+
+    const res = await fetch(`/api/institutions/${institutionId}/faculty/${selectedFaculty.id}/assignments`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    hideAssignmentModal();
+    selectFaculty(selectedFaculty.id);
+}
+
+async function removeAssignment(assignmentId) {
+    if (!selectedFaculty) return;
+    if (!confirm('Remove this teaching assignment?')) return;
+
+    const res = await fetch(`/api/institutions/${institutionId}/faculty/${selectedFaculty.id}/assignments/${assignmentId}`, {
+        method: 'DELETE'
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    selectFaculty(selectedFaculty.id);
+}
+
+async function verifyLicense(licenseId) {
+    if (!selectedFaculty) return;
+
+    const res = await fetch(`/api/institutions/${institutionId}/faculty/${selectedFaculty.id}/verify-licenses`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({license_id: licenseId})
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    alert(result.verification_result || 'Verification complete');
+    selectFaculty(selectedFaculty.id);
+}
+
+async function runComplianceCheck() {
+    const res = await fetch(`/api/institutions/${institutionId}/faculty/check-qualifications`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({faculty_id: 'all'})
+    });
+
+    const result = await res.json();
+    if (result.error) {
+        alert(result.error);
+        return;
+    }
+
+    alert(`Checked ${result.faculty_checked} faculty members. Found ${result.total_issues} issues.`);
+    loadFaculty();
+    if (selectedFaculty) selectFaculty(selectedFaculty.id);
+}
+</script>
+{% endblock %}

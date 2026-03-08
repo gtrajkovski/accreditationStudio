@@ -92,6 +92,12 @@ class AgentType(Enum):
     CALENDAR_DEADLINE = "calendar_deadline"  # Legacy
     EVIDENCE_MAPPER = "evidence_mapper"  # Legacy
 
+    # Phase 6 - Catalog, Exhibits, Faculty, Achievements
+    FACULTY = "faculty"
+    ACHIEVEMENT = "achievement"
+    EVIDENCE = "evidence"
+    CATALOG = "catalog"
+
 
 class BaseAgent(ABC):
     """Abstract base class for all agents.

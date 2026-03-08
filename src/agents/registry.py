@@ -112,6 +112,8 @@ class AgentRegistry:
                 packet_assembler,
                 calendar_deadline,
                 site_visit_prep,
+                # Phase 6
+                faculty_agent,
             )
         except ImportError:
             # Agents may not all exist yet
