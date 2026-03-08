@@ -6,6 +6,15 @@
     <meta name="locale" content="{{ locale }}">
     <title>{% block title %}{{ t('app.name') }}{% endblock %}</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+
+    <!-- Google Fonts - "Certified Authority" Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Epilogue:wght@400;500;600&display=swap" rel="stylesheet">
+
     <!-- CSS Files -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
@@ -40,8 +49,8 @@
             </div>
 
             <nav class="sidebar-nav">
+                <!-- 1. Command Center -->
                 <div class="nav-section">
-                    <div class="nav-section-title">Overview</div>
                     <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -49,100 +58,127 @@
                             <rect x="3" y="14" width="7" height="7" rx="1"/>
                             <rect x="14" y="14" width="7" height="7" rx="1"/>
                         </svg>
-                        Dashboard
+                        Command Center
                     </a>
-                    <a href="{{ url_for('institutions_list') }}" class="nav-item {% if request.endpoint and 'institutions' in request.endpoint %}active{% endif %}">
+                </div>
+
+                <!-- 2. Work Queue (elevated) -->
+                <div class="nav-section">
+                    <a href="{{ url_for('work_queue') }}" class="nav-item nav-item-featured {% if request.endpoint == 'work_queue' %}active{% endif %}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
-                            <path d="M9 9h1M9 13h1M9 17h1"/>
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                         </svg>
-                        Institutions
+                        Work Queue
+                        <span class="nav-badge" id="work-queue-badge" style="display: none;">0</span>
                     </a>
                 </div>
 
                 {% if current_institution %}
+                <!-- 3. Programs -->
                 <div class="nav-section">
-                    <div class="nav-section-title">{{ current_institution.name[:20] }}</div>
-                    <a href="{{ url_for('institution_overview', id=current_institution.id) }}" class="nav-item">
+                    <a href="{{ url_for('institution_overview', id=current_institution.id) }}" class="nav-item {% if request.endpoint == 'institution_overview' %}active{% endif %}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 16v-4M12 8h.01"/>
+                            <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+                            <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
                         </svg>
-                        Overview
+                        Programs
                     </a>
-                    <a href="{{ url_for('institution_documents', id=current_institution.id) }}" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+                </div>
+
+                <!-- 4. Compliance Hub (collapsible) -->
+                <div class="nav-section nav-collapsible" data-nav-group="compliance">
+                    <button class="nav-group-toggle" type="button" aria-expanded="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-group-icon">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                         </svg>
-                        Documents
-                    </a>
-                    <a href="{{ url_for('institution_compliance', id=current_institution.id) }}" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 11l3 3L22 4"/>
-                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                        Compliance Hub
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-chevron">
+                            <path d="M6 9l6 6 6-6"/>
                         </svg>
-                        Compliance
-                    </a>
-                    <a href="{{ url_for('institution_workbench', id=current_institution.id) }}" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </button>
+                    <div class="nav-group-items">
+                        <a href="{{ url_for('institution_compliance', id=current_institution.id) }}" class="nav-item nav-item-nested">
+                            Audits
+                        </a>
+                        <a href="{{ url_for('institution_documents', id=current_institution.id) }}" class="nav-item nav-item-nested">
+                            Documents
+                        </a>
+                        <a href="{{ url_for('institution_workbench', id=current_institution.id) }}" class="nav-item nav-item-nested">
+                            Workbench
+                        </a>
+                        <a href="{{ url_for('institution_self_study', id=current_institution.id) }}" class="nav-item nav-item-nested">
+                            Action Plans
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 5. Evidence Vault (collapsible) -->
+                <div class="nav-section nav-collapsible" data-nav-group="evidence">
+                    <button class="nav-group-toggle" type="button" aria-expanded="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-group-icon">
+                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
                         </svg>
-                        Workbench
-                    </a>
-                    <a href="{{ url_for('institution_self_study', id=current_institution.id) }}" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
-                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+                        Evidence Vault
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-chevron">
+                            <path d="M6 9l6 6 6-6"/>
                         </svg>
-                        Self-Study
-                    </a>
-                    <a href="{{ url_for('institution_submissions', id=current_institution.id) }}" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/>
+                    </button>
+                    <div class="nav-group-items">
+                        <a href="{{ url_for('institution_exhibits', id=current_institution.id) }}" class="nav-item nav-item-nested">
+                            Exhibits
+                        </a>
+                        <a href="{{ url_for('institution_achievements', id=current_institution.id) }}" class="nav-item nav-item-nested">
+                            Achievements
+                        </a>
+                        <a href="{{ url_for('institution_faculty', id=current_institution.id) }}" class="nav-item nav-item-nested">
+                            Faculty
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 6. Submission Center (collapsible) - Phase 7 Home -->
+                <div class="nav-section nav-collapsible" data-nav-group="submission">
+                    <button class="nav-group-toggle" type="button" aria-expanded="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-group-icon">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                         </svg>
-                        Submissions
-                    </a>
-                    <a href="{{ url_for('institution_faculty', id=current_institution.id) }}" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                        Submission Center
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-chevron">
+                            <path d="M6 9l6 6 6-6"/>
                         </svg>
-                        Faculty
-                    </a>
-                    <a href="{{ url_for('institution_catalog', id=current_institution.id) }}" class="nav-item">
+                    </button>
+                    <div class="nav-group-items">
+                        <a href="{{ url_for('institution_submissions', id=current_institution.id) }}" class="nav-item nav-item-nested">
+                            Packets
+                        </a>
+                        <a href="{{ url_for('institution_catalog', id=current_institution.id) }}" class="nav-item nav-item-nested">
+                            Catalog
+                        </a>
+                        <a href="#" class="nav-item nav-item-nested nav-item-coming-soon">
+                            Visit Prep
+                            <span class="chip chip-pending" style="font-size: 9px; padding: 1px 6px;">Soon</span>
+                        </a>
+                        <a href="#" class="nav-item nav-item-nested nav-item-coming-soon">
+                            SER Draft
+                            <span class="chip chip-pending" style="font-size: 9px; padding: 1px 6px;">Soon</span>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <!-- No institution selected -->
+                <div class="nav-section">
+                    <div class="nav-section-title">Get Started</div>
+                    <a href="{{ url_for('institutions_list') }}" class="nav-item">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
-                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+                            <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
+                            <path d="M9 9h1M9 13h1M9 17h1"/>
                         </svg>
-                        Catalog
-                    </a>
-                    <a href="{{ url_for('institution_exhibits', id=current_institution.id) }}" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-                        </svg>
-                        Exhibits
-                    </a>
-                    <a href="{{ url_for('institution_achievements', id=current_institution.id) }}" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                            <path d="M22 4L12 14.01l-3-3"/>
-                        </svg>
-                        Achievements
-                    </a>
-                    <a href="{{ url_for('institution_autopilot', id=current_institution.id) }}" class="nav-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12,6 12,12 16,14"/>
-                        </svg>
-                        Autopilot
+                        Select Institution
                     </a>
                 </div>
                 {% endif %}
 
+                <!-- AI Assistant Section -->
                 <div class="nav-section">
                     <div class="nav-section-title">AI Assistant</div>
                     <a href="{{ url_for('chat') }}" class="nav-item {% if request.endpoint == 'chat' %}active{% endif %}">
@@ -157,14 +193,6 @@
                             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
                         </svg>
                         Agent Sessions
-                    </a>
-                    <a href="{{ url_for('work_queue') }}" class="nav-item {% if request.endpoint == 'work_queue' %}active{% endif %}">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
-                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-                            <path d="M9 14l2 2 4-4"/>
-                        </svg>
-                        Work Queue
                     </a>
                 </div>
             </nav>
@@ -292,6 +320,51 @@
         document.addEventListener('click', () => {
             document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
         });
+
+        // Collapsible nav groups with localStorage persistence
+        (function() {
+            const NAV_STATE_KEY = 'accreditai_nav_state';
+
+            // Load saved state
+            function loadNavState() {
+                try {
+                    return JSON.parse(localStorage.getItem(NAV_STATE_KEY)) || {};
+                } catch {
+                    return {};
+                }
+            }
+
+            // Save state
+            function saveNavState(state) {
+                localStorage.setItem(NAV_STATE_KEY, JSON.stringify(state));
+            }
+
+            // Initialize collapsible groups
+            const groups = document.querySelectorAll('.nav-collapsible');
+            const state = loadNavState();
+
+            groups.forEach(group => {
+                const groupName = group.dataset.navGroup;
+                const toggle = group.querySelector('.nav-group-toggle');
+
+                // Apply saved state
+                if (state[groupName] === false) {
+                    group.classList.add('collapsed');
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+
+                // Toggle handler
+                toggle.addEventListener('click', () => {
+                    const isCollapsed = group.classList.toggle('collapsed');
+                    toggle.setAttribute('aria-expanded', !isCollapsed);
+
+                    // Save state
+                    const currentState = loadNavState();
+                    currentState[groupName] = !isCollapsed;
+                    saveNavState(currentState);
+                });
+            });
+        })();
     </script>
 
     {% block extra_scripts %}{% endblock %}

@@ -39,6 +39,8 @@ from src.api.faculty import faculty_bp, init_faculty_bp
 from src.api.catalog import catalog_bp, init_catalog_bp
 from src.api.exhibits import exhibits_bp, init_exhibits_bp
 from src.api.achievements import achievements_bp, init_achievements_bp
+from src.api.interview_prep import interview_prep_bp, init_interview_prep_bp
+from src.api.ser import ser_bp, init_ser_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 
 
@@ -75,6 +77,8 @@ init_faculty_bp(workspace_manager)
 init_catalog_bp(workspace_manager)
 init_exhibits_bp(workspace_manager)
 init_achievements_bp(workspace_manager)
+init_interview_prep_bp(workspace_manager)
+init_ser_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -93,6 +97,8 @@ app.register_blueprint(faculty_bp)
 app.register_blueprint(catalog_bp)
 app.register_blueprint(exhibits_bp)
 app.register_blueprint(achievements_bp)
+app.register_blueprint(interview_prep_bp)
+app.register_blueprint(ser_bp)
 
 
 # =============================================================================
@@ -357,6 +363,48 @@ def institution_achievements(id):
 
     return render_template(
         'institutions/achievements.html',
+        institution=institution,
+        current_institution=institution,
+    )
+
+
+@app.route('/institutions/<id>/interview-prep')
+def institution_interview_prep(id):
+    """Interview preparation page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/interview_prep.html',
+        institution=institution,
+        current_institution=institution,
+    )
+
+
+@app.route('/institutions/<id>/ser')
+def institution_ser(id):
+    """Self-Evaluation Report drafting page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/ser_drafting.html',
+        institution=institution,
+        current_institution=institution,
+    )
+
+
+@app.route('/institutions/<id>/visit-readiness')
+def institution_visit_readiness(id):
+    """Visit readiness and mock evaluation page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/visit_readiness.html',
         institution=institution,
         current_institution=institution,
     )

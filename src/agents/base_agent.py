@@ -98,6 +98,10 @@ class AgentType(Enum):
     EVIDENCE = "evidence"
     CATALOG = "catalog"
 
+    # Phase 7 - Visit Prep, Interview, SER Drafting
+    INTERVIEW_PREP = "interview_prep"
+    SER_DRAFTING = "ser_drafting"
+
 
 class BaseAgent(ABC):
     """Abstract base class for all agents.

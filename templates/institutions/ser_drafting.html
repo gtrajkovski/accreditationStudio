@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% block title %}SER Drafting - {{ institution.name }}{% endblock %}
+{% block header_title %}Self-Evaluation Report{% endblock %}
+
+{% block header_actions %}
+<select id="writingMode" class="form-control" style="width:auto;display:inline-block;">
+    <option value="draft">Draft Mode</option>
+    <option value="submission">Submission Mode</option>
+</select>
+<button class="btn btn-secondary" onclick="validateAll()">Validate All</button>
+<button class="btn btn-primary" onclick="exportSER()">Export SER</button>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid mb-lg">
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Sections</h3>
+        <div style="font-size:2rem;font-weight:700;" id="sectionCount">0</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Complete</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-success" id="completeCount">0</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Word Count</h3>
+        <div style="font-size:2rem;font-weight:700;" id="wordCount">0</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Citations</h3>
+        <div style="font-size:2rem;font-weight:700;" id="citationCount">0</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">SER Sections</h3>
+        <button class="btn btn-primary" onclick="generateFull()">Generate Full SER</button>
+    </div>
+    <div id="sectionsList" style="padding:var(--spacing-md);">
+        <p class="text-muted">Loading sections...</p>
+    </div>
+</div>
+
+<!-- Section Editor Modal -->
+<div id="editorModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideModal()"></div>
+    <div class="modal-content" style="max-width:900px;max-height:90vh;overflow-y:auto;">
+        <div class="modal-header">
+            <h3 id="editorTitle">Edit Section</h3>
+            <button class="btn btn-ghost" onclick="hideModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="currentSectionId">
+            <div class="form-group">
+                <label>Section Content</label>
+                <textarea id="sectionContent" class="form-control" rows="15" style="font-family:monospace;"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Auto-Fill Data</label>
+                <div id="autoFillData" class="text-muted text-sm" style="padding:var(--spacing-sm);background:var(--bg-secondary);border-radius:var(--radius-sm);max-height:150px;overflow-y:auto;">
+                    Click "Load Auto-Fill" to populate available data.
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="loadAutoFill()">Load Auto-Fill</button>
+            <button class="btn btn-secondary" onclick="regenerateSection()">Regenerate</button>
+            <button class="btn btn-secondary" onclick="validateSection()">Validate</button>
+            <button class="btn btn-primary" onclick="saveSection()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Generation Progress Modal -->
+<div id="progressModal" class="modal" style="display:none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3>Generating SER</h3>
+        </div>
+        <div class="modal-body">
+            <div id="progressSteps"></div>
+            <div class="progress-bar" style="margin-top:var(--spacing-md);">
+                <div id="progressBar" style="width:0%;height:8px;background:var(--accent);border-radius:4px;transition:width 0.3s;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = "{{ institution.id }}";
+let currentSER = null;
+let sections = [];
+
+document.addEventListener('DOMContentLoaded', loadSections);
+
+async function loadSections() {
+    // Get available sections for accreditor
+    const res = await fetch(`/api/institutions/${institutionId}/ser/sections?accreditor_code=ACCSC`);
+    const data = await res.json();
+
+    sections = data.sections || [];
+    document.getElementById('sectionCount').textContent = sections.length;
+
+    const container = document.getElementById('sectionsList');
+
+    if (!sections.length) {
+        container.innerHTML = '<p class="text-muted">No SER sections defined for this accreditor.</p>';
+        return;
+    }
+
+    container.innerHTML = sections.map((section, idx) => {
+        const isComplete = section.is_complete;
+        const statusBadge = isComplete
+            ? '<span class="chip chip-compliant">Complete</span>'
+            : '<span class="chip chip-pending">Not Started</span>';
+
+        return `
+        <div style="padding:var(--spacing-md);border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:var(--spacing-sm);">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <strong>${section.id || idx + 1}. ${section.name}</strong>
+                    <div class="text-muted text-sm">${section.description || ''}</div>
+                    ${section.word_count ? `<div class="text-sm">${section.word_count} words</div>` : ''}
+                </div>
+                <div style="display:flex;gap:var(--spacing-sm);align-items:center;">
+                    ${statusBadge}
+                    <button class="btn btn-sm btn-secondary" onclick="editSection('${section.id}')">Edit</button>
+                    <button class="btn btn-sm btn-primary" onclick="draftSection('${section.id}')">Draft</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Update stats
+    const complete = sections.filter(s => s.is_complete).length;
+    document.getElementById('completeCount').textContent = complete;
+
+    const totalWords = sections.reduce((sum, s) => sum + (s.word_count || 0), 0);
+    document.getElementById('wordCount').textContent = totalWords;
+}
+
+async function draftSection(sectionId) {
+    const mode = document.getElementById('writingMode').value;
+
+    document.getElementById('progressModal').style.display = 'flex';
+    document.getElementById('progressSteps').innerHTML = `<p>Drafting section ${sectionId}...</p>`;
+    document.getElementById('progressBar').style.width = '50%';
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/ser/draft/sections/${sectionId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                accreditor_code: 'ACCSC',
+                writing_mode: mode
+            })
+        });
+
+        const data = await res.json();
+
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressSteps').innerHTML = '<p>Complete!</p>';
+
+        setTimeout(() => {
+            document.getElementById('progressModal').style.display = 'none';
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                loadSections();
+                editSection(sectionId);
+            }
+        }, 500);
+
+    } catch (e) {
+        document.getElementById('progressModal').style.display = 'none';
+        alert('Failed: ' + e.message);
+    }
+}
+
+function editSection(sectionId) {
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return;
+
+    document.getElementById('currentSectionId').value = sectionId;
+    document.getElementById('editorTitle').textContent = `Edit: ${section.name}`;
+    document.getElementById('sectionContent').value = section.content || '';
+    document.getElementById('autoFillData').textContent = 'Click "Load Auto-Fill" to populate available data.';
+    document.getElementById('editorModal').style.display = 'flex';
+}
+
+function hideModal() {
+    document.getElementById('editorModal').style.display = 'none';
+}
+
+async function loadAutoFill() {
+    const sectionId = document.getElementById('currentSectionId').value;
+    const res = await fetch(`/api/institutions/${institutionId}/ser/auto-fill?section_id=${sectionId}`);
+    const data = await res.json();
+
+    const container = document.getElementById('autoFillData');
+    if (data.data) {
+        container.innerHTML = `<pre>${JSON.stringify(data.data, null, 2)}</pre>`;
+    } else {
+        container.textContent = 'No auto-fill data available for this section.';
+    }
+}
+
+async function regenerateSection() {
+    const sectionId = document.getElementById('currentSectionId').value;
+    await draftSection(sectionId);
+}
+
+async function validateSection() {
+    const sectionId = document.getElementById('currentSectionId').value;
+    const res = await fetch(`/api/institutions/${institutionId}/ser/draft/sections/${sectionId}/validate`);
+    const data = await res.json();
+
+    if (data.is_valid) {
+        alert('Section is valid!');
+    } else {
+        alert('Validation issues:\n' + (data.issues || []).join('\n'));
+    }
+}
+
+async function saveSection() {
+    const sectionId = document.getElementById('currentSectionId').value;
+    const content = document.getElementById('sectionContent').value;
+
+    // Update local section
+    const section = sections.find(s => s.id === sectionId);
+    if (section) {
+        section.content = content;
+        section.word_count = content.split(/\s+/).filter(w => w).length;
+    }
+
+    hideModal();
+    loadSections();
+    alert('Section saved locally. Generate full SER to persist.');
+}
+
+async function generateFull() {
+    const mode = document.getElementById('writingMode').value;
+
+    document.getElementById('progressModal').style.display = 'flex';
+    document.getElementById('progressBar').style.width = '0%';
+
+    try {
+        const response = await fetch(`/api/institutions/${institutionId}/ser/stream`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                accreditor_code: 'ACCSC',
+                writing_mode: mode
+            })
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const text = decoder.decode(value);
+            const lines = text.split('\n').filter(l => l.startsWith('data: '));
+
+            for (const line of lines) {
+                try {
+                    const data = JSON.parse(line.slice(6));
+                    const pct = (data.step / data.total) * 100;
+                    document.getElementById('progressBar').style.width = pct + '%';
+                    document.getElementById('progressSteps').innerHTML = `<p>${data.message}</p>`;
+
+                    if (data.result) {
+                        currentSER = data.result;
+                        document.getElementById('progressModal').style.display = 'none';
+                        loadSections();
+                    }
+                } catch (e) {}
+            }
+        }
+    } catch (e) {
+        document.getElementById('progressModal').style.display = 'none';
+        alert('Generation failed: ' + e.message);
+    }
+}
+
+async function validateAll() {
+    let issues = [];
+    for (const section of sections) {
+        const res = await fetch(`/api/institutions/${institutionId}/ser/draft/sections/${section.id}/validate`);
+        const data = await res.json();
+        if (!data.is_valid) {
+            issues.push(`${section.name}: ${(data.issues || []).join(', ')}`);
+        }
+    }
+
+    if (issues.length) {
+        alert('Validation issues found:\n\n' + issues.join('\n\n'));
+    } else {
+        alert('All sections validated successfully!');
+    }
+}
+
+async function exportSER() {
+    if (!currentSER?.ser_id) {
+        alert('Please generate the SER first.');
+        return;
+    }
+
+    const res = await fetch(`/api/institutions/${institutionId}/ser/${currentSER.ser_id}/export?format=docx`);
+    const data = await res.json();
+
+    if (data.export_path) {
+        alert('SER exported to: ' + data.export_path);
+    } else if (data.error) {
+        alert('Export error: ' + data.error);
+    }
+}
+</script>
+{% endblock %}

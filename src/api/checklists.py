@@ -463,3 +463,242 @@ def approve_all_items(institution_id: str, checklist_id: str):
         "approved_count": approved_count,
         "total_items": checklist.total_items,
     })
+
+
+# =============================================================================
+# Phase 7 Enhanced Endpoints
+# =============================================================================
+
+@checklists_bp.route(
+    "/<institution_id>/checklists/<checklist_id>/validate",
+    methods=["POST"]
+)
+def validate_checklist(institution_id: str, checklist_id: str):
+    """Validate checklist claims against actual document content.
+
+    Body:
+    {
+        "item_numbers": ["1.1", "1.2"],  // optional, empty for all
+        "strict_mode": false  // optional
+    }
+    """
+    if not _workspace_manager:
+        return jsonify({"error": "Service not initialized"}), 500
+
+    data = request.get_json() or {}
+
+    # Load checklist and create agent
+    checklist_data, checklist_path = _find_checklist(institution_id, checklist_id)
+    if not checklist_data:
+        return jsonify({"error": "Checklist not found"}), 404
+
+    try:
+        from src.agents.checklist_agent import ChecklistAgent
+
+        session = AgentSession(
+            agent_type="checklist",
+            institution_id=institution_id,
+            status=SessionStatus.RUNNING,
+        )
+
+        agent = ChecklistAgent(session, _workspace_manager)
+
+        # Load checklist into agent
+        agent._current_checklist = FilledChecklist.from_dict(checklist_data)
+
+        # Run validation
+        result = agent._tool_validate_against_documents({
+            "item_numbers": data.get("item_numbers", []),
+            "strict_mode": data.get("strict_mode", False),
+        })
+
+        if "error" in result:
+            return jsonify(result), 400
+
+        # Save updated checklist
+        if agent._current_checklist:
+            _workspace_manager.save_file(
+                institution_id,
+                checklist_path,
+                agent._current_checklist.to_dict()
+            )
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@checklists_bp.route(
+    "/<institution_id>/checklists/<checklist_id>/page-references",
+    methods=["POST"]
+)
+def generate_page_references(institution_id: str, checklist_id: str):
+    """Generate page references for checklist evidence.
+
+    Body:
+    {
+        "item_numbers": ["1.1", "1.2"],  // optional, empty for all
+        "include_excerpts": true  // optional
+    }
+    """
+    if not _workspace_manager:
+        return jsonify({"error": "Service not initialized"}), 500
+
+    data = request.get_json() or {}
+
+    checklist_data, checklist_path = _find_checklist(institution_id, checklist_id)
+    if not checklist_data:
+        return jsonify({"error": "Checklist not found"}), 404
+
+    try:
+        from src.agents.checklist_agent import ChecklistAgent
+
+        session = AgentSession(
+            agent_type="checklist",
+            institution_id=institution_id,
+            status=SessionStatus.RUNNING,
+        )
+
+        agent = ChecklistAgent(session, _workspace_manager)
+        agent._current_checklist = FilledChecklist.from_dict(checklist_data)
+
+        result = agent._tool_generate_page_references({
+            "item_numbers": data.get("item_numbers", []),
+            "include_excerpts": data.get("include_excerpts", True),
+        })
+
+        if "error" in result:
+            return jsonify(result), 400
+
+        # Save updated checklist
+        if agent._current_checklist:
+            _workspace_manager.save_file(
+                institution_id,
+                checklist_path,
+                agent._current_checklist.to_dict()
+            )
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@checklists_bp.route(
+    "/<institution_id>/checklists/<checklist_id>/export-linked",
+    methods=["POST"]
+)
+def export_with_evidence_links(institution_id: str, checklist_id: str):
+    """Export checklist with hyperlinked evidence references.
+
+    Body:
+    {
+        "format": "docx",  // docx, pdf, json
+        "include_appendix": true,
+        "group_by": "category"  // category, status, section
+    }
+    """
+    if not _workspace_manager:
+        return jsonify({"error": "Service not initialized"}), 500
+
+    data = request.get_json() or {}
+
+    checklist_data, checklist_path = _find_checklist(institution_id, checklist_id)
+    if not checklist_data:
+        return jsonify({"error": "Checklist not found"}), 404
+
+    try:
+        from src.agents.checklist_agent import ChecklistAgent
+
+        session = AgentSession(
+            agent_type="checklist",
+            institution_id=institution_id,
+            status=SessionStatus.RUNNING,
+        )
+
+        agent = ChecklistAgent(session, _workspace_manager)
+        agent._current_checklist = FilledChecklist.from_dict(checklist_data)
+
+        result = agent._tool_export_with_evidence_links({
+            "format": data.get("format", "docx"),
+            "include_appendix": data.get("include_appendix", True),
+            "group_by": data.get("group_by", "category"),
+        })
+
+        if "error" in result:
+            return jsonify(result), 400
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@checklists_bp.route(
+    "/<institution_id>/checklists/<checklist_id>/completion-status",
+    methods=["GET"]
+)
+def check_completion_status(institution_id: str, checklist_id: str):
+    """Get detailed completion progress by category.
+
+    Query params:
+    - category: specific category to check (optional)
+    - include_blockers: true/false (default: true)
+    """
+    if not _workspace_manager:
+        return jsonify({"error": "Service not initialized"}), 500
+
+    category = request.args.get("category")
+    include_blockers = request.args.get("include_blockers", "true").lower() == "true"
+
+    checklist_data, _ = _find_checklist(institution_id, checklist_id)
+    if not checklist_data:
+        return jsonify({"error": "Checklist not found"}), 404
+
+    try:
+        from src.agents.checklist_agent import ChecklistAgent
+
+        session = AgentSession(
+            agent_type="checklist",
+            institution_id=institution_id,
+            status=SessionStatus.RUNNING,
+        )
+
+        agent = ChecklistAgent(session, _workspace_manager)
+        agent._current_checklist = FilledChecklist.from_dict(checklist_data)
+
+        result = agent._tool_check_completion_status({
+            "category": category,
+            "include_blockers": include_blockers,
+        })
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+def _find_checklist(institution_id: str, checklist_id: str):
+    """Helper to find a checklist in workspace.
+
+    Returns (checklist_data, checklist_path) or (None, None) if not found.
+    """
+    # Check institution-level
+    checklist_data = _workspace_manager.load_file(
+        institution_id, f"checklists/{checklist_id}.json"
+    )
+    if checklist_data:
+        return checklist_data, f"checklists/{checklist_id}.json"
+
+    # Check program-level
+    institution = _workspace_manager.load_institution(institution_id)
+    if institution:
+        for program in institution.programs:
+            checklist_data = _workspace_manager.load_file(
+                institution_id, f"programs/{program.id}/checklists/{checklist_id}.json"
+            )
+            if checklist_data:
+                return checklist_data, f"programs/{program.id}/checklists/{checklist_id}.json"
+
+    return None, None

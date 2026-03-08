@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}Visit Readiness - {{ institution.name }}{% endblock %}
+{% block header_title %}Visit Readiness Assessment{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="refreshReadiness()">Refresh Score</button>
+<button class="btn btn-primary" onclick="runMockEval()">Run Mock Evaluation</button>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid mb-lg">
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Readiness Score</h3>
+        <div id="readinessRing" style="margin:0 auto;">
+            {% from "macros/readiness_ring.html" import readiness_ring with context %}
+            {{ readiness_ring(0, {}, 120) }}
+        </div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Documents</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-success" id="docScore">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Compliance</h3>
+        <div style="font-size:2rem;font-weight:700;" id="complianceScore">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Evidence</h3>
+        <div style="font-size:2rem;font-weight:700;" id="evidenceScore">-</div>
+    </div>
+</div>
+
+<div class="card mb-lg">
+    <div class="card-header">
+        <h3 class="card-title">Predicted Findings</h3>
+        <span class="chip chip-pending" id="findingsCount">0 predicted</span>
+    </div>
+    <div id="findingsList" style="padding:var(--spacing-md);">
+        <p class="text-muted">Run a mock evaluation to see predicted findings.</p>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-lg);">
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Strengths</h3></div>
+        <div id="strengthsList" style="padding:var(--spacing-md);">
+            <p class="text-muted">No strengths identified yet.</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Concerns</h3></div>
+        <div id="concernsList" style="padding:var(--spacing-md);">
+            <p class="text-muted">No concerns identified yet.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Mock Eval Progress Modal -->
+<div id="progressModal" class="modal" style="display:none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3>Running Mock Evaluation</h3>
+        </div>
+        <div class="modal-body">
+            <div id="progressSteps">
+                <p>Simulating evaluator review...</p>
+            </div>
+            <div class="progress-bar" style="margin-top:var(--spacing-md);">
+                <div id="progressBar" style="width:0%;height:8px;background:var(--accent);border-radius:4px;transition:width 0.3s;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluation Detail Modal -->
+<div id="evalModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideEvalModal()"></div>
+    <div class="modal-content" style="max-width:800px;max-height:90vh;overflow-y:auto;">
+        <div class="modal-header">
+            <h3>Mock Evaluation Report</h3>
+            <button class="btn btn-ghost" onclick="hideEvalModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="evalContent">
+            <p class="text-muted">Loading...</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideEvalModal()">Close</button>
+            <button class="btn btn-primary" onclick="exportReport()">Export Report</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = "{{ institution.id }}";
+let currentEvalId = null;
+
+document.addEventListener('DOMContentLoaded', loadReadiness);
+
+async function loadReadiness() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/readiness`);
+        const data = await res.json();
+
+        // Update scores
+        document.getElementById('docScore').textContent = (data.documents || 0) + '%';
+        document.getElementById('docScore').className = getScoreClass(data.documents);
+
+        document.getElementById('complianceScore').textContent = (data.compliance || 0) + '%';
+        document.getElementById('complianceScore').className = getScoreClass(data.compliance);
+
+        document.getElementById('evidenceScore').textContent = (data.evidence || 0) + '%';
+        document.getElementById('evidenceScore').className = getScoreClass(data.evidence);
+
+        // Update ring
+        updateReadinessRing(data.total || 0, {
+            documents: data.documents || 0,
+            compliance: data.compliance || 0,
+            evidence: data.evidence || 0,
+            consistency: data.consistency || 0
+        });
+
+    } catch (e) {
+        console.error('Failed to load readiness:', e);
+    }
+}
+
+function getScoreClass(score) {
+    if (score >= 80) return 'text-success';
+    if (score >= 60) return 'text-warning';
+    return 'text-danger';
+}
+
+function updateReadinessRing(score, subScores) {
+    const ring = document.getElementById('readinessRing');
+    const color = score >= 80 ? '#4ade80' : score >= 60 ? '#fbbf24' : '#ef4444';
+
+    ring.innerHTML = `
+    <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border-color)" stroke-width="8"/>
+        <circle cx="60" cy="60" r="50" fill="none" stroke="${color}" stroke-width="8"
+            stroke-dasharray="${Math.PI * 100}" stroke-dashoffset="${Math.PI * 100 * (1 - score/100)}"
+            transform="rotate(-90 60 60)" style="transition: stroke-dashoffset 0.8s ease-out;"/>
+        <text x="60" y="55" text-anchor="middle" style="font-size:28px;font-weight:700;fill:var(--text-primary);">${score}</text>
+        <text x="60" y="75" text-anchor="middle" style="font-size:12px;fill:var(--text-muted);">/ 100</text>
+    </svg>
+    `;
+}
+
+async function refreshReadiness() {
+    await loadReadiness();
+}
+
+async function runMockEval() {
+    document.getElementById('progressModal').style.display = 'flex';
+    document.getElementById('progressBar').style.width = '0%';
+
+    const steps = [
+        'Loading institution data...',
+        'Analyzing compliance status...',
+        'Reviewing evidence documentation...',
+        'Identifying potential findings...',
+        'Generating evaluator report...'
+    ];
+
+    try {
+        // Simulate progress
+        for (let i = 0; i < steps.length; i++) {
+            document.getElementById('progressSteps').innerHTML = `<p>${steps[i]}</p>`;
+            document.getElementById('progressBar').style.width = ((i + 1) / steps.length * 100) + '%';
+            await new Promise(r => setTimeout(r, 800));
+        }
+
+        // Call mock evaluation API
+        const res = await fetch(`/api/institutions/${institutionId}/mock-evaluation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accreditor_code: 'ACCSC' })
+        });
+
+        const data = await res.json();
+        currentEvalId = data.id;
+
+        document.getElementById('progressModal').style.display = 'none';
+
+        // Update UI with results
+        if (data.predicted_findings) {
+            displayFindings(data.predicted_findings);
+        }
+        if (data.strengths) {
+            displayStrengths(data.strengths);
+        }
+        if (data.concerns) {
+            displayConcerns(data.concerns);
+        }
+
+        // Refresh readiness score
+        if (data.readiness_score !== undefined) {
+            updateReadinessRing(Math.round(data.readiness_score), data.area_scores || {});
+        }
+
+    } catch (e) {
+        document.getElementById('progressModal').style.display = 'none';
+        alert('Mock evaluation failed: ' + e.message);
+    }
+}
+
+function displayFindings(findings) {
+    const container = document.getElementById('findingsList');
+    document.getElementById('findingsCount').textContent = findings.length + ' predicted';
+
+    if (!findings.length) {
+        container.innerHTML = '<p class="text-success">No findings predicted. Institution appears ready!</p>';
+        return;
+    }
+
+    container.innerHTML = findings.map(f => {
+        const severityClass = {
+            critical: 'chip-critical',
+            significant: 'chip-significant',
+            advisory: 'chip-advisory'
+        }[f.severity] || 'chip-pending';
+
+        return `
+        <div style="padding:var(--spacing-md);border-left:3px solid ${f.severity === 'critical' ? 'var(--danger)' : f.severity === 'significant' ? 'var(--warning)' : 'var(--accent)'};margin-bottom:var(--spacing-sm);background:var(--bg-secondary);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-xs);">
+                <strong>${f.standard_ref || 'General'}</strong>
+                <span class="chip ${severityClass}">${f.severity || 'Unknown'}</span>
+            </div>
+            <p>${f.description || f.issue || 'No description'}</p>
+            ${f.confidence ? `<div class="text-muted text-sm">Confidence: ${Math.round(f.confidence * 100)}%</div>` : ''}
+        </div>`;
+    }).join('');
+}
+
+function displayStrengths(strengths) {
+    const container = document.getElementById('strengthsList');
+    if (!strengths.length) {
+        container.innerHTML = '<p class="text-muted">No strengths identified.</p>';
+        return;
+    }
+    container.innerHTML = '<ul style="margin:0;padding-left:var(--spacing-lg);">' +
+        strengths.map(s => `<li style="margin-bottom:var(--spacing-xs);">${s}</li>`).join('') +
+        '</ul>';
+}
+
+function displayConcerns(concerns) {
+    const container = document.getElementById('concernsList');
+    if (!concerns.length) {
+        container.innerHTML = '<p class="text-muted">No concerns identified.</p>';
+        return;
+    }
+    container.innerHTML = '<ul style="margin:0;padding-left:var(--spacing-lg);">' +
+        concerns.map(c => `<li style="margin-bottom:var(--spacing-xs);color:var(--warning);">${c}</li>`).join('') +
+        '</ul>';
+}
+
+function hideEvalModal() {
+    document.getElementById('evalModal').style.display = 'none';
+}
+
+async function exportReport() {
+    if (!currentEvalId) {
+        alert('No evaluation to export.');
+        return;
+    }
+
+    const res = await fetch(`/api/institutions/${institutionId}/mock-evaluation/${currentEvalId}/report`);
+    const data = await res.json();
+
+    if (data.export_path) {
+        alert('Report exported to: ' + data.export_path);
+    } else {
+        alert('Export not available.');
+    }
+}
+</script>
+{% endblock %}

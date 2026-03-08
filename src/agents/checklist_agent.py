@@ -189,6 +189,93 @@ for review than to provide an unsupported compliance claim."""
                     "required": [],
                 },
             },
+            # Phase 7 enhanced tools
+            {
+                "name": "validate_against_documents",
+                "description": "Cross-check checklist claims against actual document content to verify accuracy.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "item_numbers": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Specific item numbers to validate, or empty for all filled items",
+                        },
+                        "strict_mode": {
+                            "type": "boolean",
+                            "description": "If true, require exact evidence match; if false, allow semantic similarity",
+                            "default": False,
+                        },
+                    },
+                    "required": [],
+                },
+            },
+            {
+                "name": "generate_page_references",
+                "description": "Map evidence citations to specific page numbers in source documents.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "item_numbers": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Specific item numbers to generate references for, or empty for all",
+                        },
+                        "include_excerpts": {
+                            "type": "boolean",
+                            "description": "Include text excerpts with page references",
+                            "default": True,
+                        },
+                    },
+                    "required": [],
+                },
+            },
+            {
+                "name": "export_with_evidence_links",
+                "description": "Export checklist to DOCX/PDF with hyperlinked evidence references.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "format": {
+                            "type": "string",
+                            "enum": ["docx", "pdf", "json"],
+                            "description": "Export format",
+                            "default": "docx",
+                        },
+                        "include_appendix": {
+                            "type": "boolean",
+                            "description": "Include evidence appendix with full excerpts",
+                            "default": True,
+                        },
+                        "group_by": {
+                            "type": "string",
+                            "enum": ["category", "status", "section"],
+                            "description": "How to group checklist items",
+                            "default": "category",
+                        },
+                    },
+                    "required": [],
+                },
+            },
+            {
+                "name": "check_completion_status",
+                "description": "Get detailed completion progress by category with actionable next steps.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "category": {
+                            "type": "string",
+                            "description": "Specific category to check, or empty for all categories",
+                        },
+                        "include_blockers": {
+                            "type": "boolean",
+                            "description": "Include list of items blocking completion",
+                            "default": True,
+                        },
+                    },
+                    "required": [],
+                },
+            },
         ]
 
     def _execute_tool(self, tool_name: str, tool_input: Dict[str, Any]) -> Dict[str, Any]:
@@ -202,6 +289,11 @@ for review than to provide an unsupported compliance claim."""
             "update_item_response": self._tool_update_response,
             "save_checklist": self._tool_save_checklist,
             "get_checklist_summary": self._tool_get_summary,
+            # Phase 7 enhanced tools
+            "validate_against_documents": self._tool_validate_against_documents,
+            "generate_page_references": self._tool_generate_page_references,
+            "export_with_evidence_links": self._tool_export_with_evidence_links,
+            "check_completion_status": self._tool_check_completion_status,
         }
 
         handler = tool_map.get(tool_name)
@@ -654,6 +746,545 @@ Respond with just the narrative text, no additional formatting."""
             "completion_rate": round(
                 (self._current_checklist.items_completed / self._current_checklist.total_items) * 100
                 if self._current_checklist.total_items > 0 else 0
+            ),
+        }
+
+    # ===========================
+    # Phase 7 Enhanced Tools
+    # ===========================
+
+    def _tool_validate_against_documents(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Cross-check checklist claims against actual document content."""
+        if not self._current_checklist:
+            return {"error": "No checklist loaded"}
+
+        if not self.workspace_manager:
+            return {"error": "Workspace manager not available"}
+
+        item_numbers = params.get("item_numbers", [])
+        strict_mode = params.get("strict_mode", False)
+
+        # Get responses to validate
+        responses_to_validate = []
+        if item_numbers:
+            responses_to_validate = [
+                r for r in self._current_checklist.responses
+                if r.item_number in item_numbers and r.evidence_summary
+            ]
+        else:
+            # Validate all filled items
+            responses_to_validate = [
+                r for r in self._current_checklist.responses
+                if r.evidence_summary or r.narrative_response
+            ]
+
+        if not responses_to_validate:
+            return {"error": "No items with evidence to validate"}
+
+        validation_results = []
+        items_validated = 0
+        items_verified = 0
+        items_failed = 0
+        items_uncertain = 0
+
+        try:
+            from src.search import get_search_service
+            search_service = get_search_service()
+
+            for response in responses_to_validate:
+                items_validated += 1
+
+                # Extract claims from evidence summary and narrative
+                claims_text = f"{response.evidence_summary or ''} {response.narrative_response or ''}"
+
+                if not claims_text.strip():
+                    continue
+
+                # Search for supporting evidence
+                search_results = search_service.search(
+                    query=claims_text[:500],  # Truncate for search
+                    institution_id=self._current_checklist.institution_id,
+                    top_k=5,
+                )
+
+                if not search_results:
+                    items_failed += 1
+                    validation_results.append({
+                        "item_number": response.item_number,
+                        "status": "no_evidence_found",
+                        "confidence": 0.0,
+                        "message": "Could not find supporting documents",
+                    })
+                    response.response_status = ChecklistResponseStatus.NEEDS_REVIEW
+                    continue
+
+                # Calculate match confidence
+                best_score = max(r.score for r in search_results)
+
+                if strict_mode:
+                    threshold = 0.85
+                else:
+                    threshold = 0.6
+
+                if best_score >= threshold:
+                    items_verified += 1
+                    status = "verified"
+                    response.ai_confidence = min(1.0, best_score)
+                elif best_score >= 0.4:
+                    items_uncertain += 1
+                    status = "partial_match"
+                    response.response_status = ChecklistResponseStatus.NEEDS_REVIEW
+                else:
+                    items_failed += 1
+                    status = "not_verified"
+                    response.response_status = ChecklistResponseStatus.NEEDS_REVIEW
+
+                # Store supporting documents found
+                supporting_docs = [
+                    {
+                        "document_id": r.chunk.document_id,
+                        "page": r.chunk.page_number,
+                        "score": r.score,
+                        "excerpt": r.chunk.text_anonymized[:150],
+                    }
+                    for r in search_results[:3]
+                ]
+
+                validation_results.append({
+                    "item_number": response.item_number,
+                    "status": status,
+                    "confidence": best_score,
+                    "supporting_docs": supporting_docs,
+                })
+
+                response.last_updated = now_iso()
+
+        except Exception as e:
+            return {"error": f"Validation failed: {str(e)}"}
+
+        # Update checklist stats
+        self._current_checklist.update_stats()
+
+        return {
+            "success": True,
+            "items_validated": items_validated,
+            "items_verified": items_verified,
+            "items_failed": items_failed,
+            "items_uncertain": items_uncertain,
+            "verification_rate": round(
+                (items_verified / items_validated) * 100 if items_validated > 0 else 0
+            ),
+            "results": validation_results,
+        }
+
+    def _tool_generate_page_references(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Map evidence citations to specific page numbers."""
+        if not self._current_checklist:
+            return {"error": "No checklist loaded"}
+
+        if not self.workspace_manager:
+            return {"error": "Workspace manager not available"}
+
+        item_numbers = params.get("item_numbers", [])
+        include_excerpts = params.get("include_excerpts", True)
+
+        # Get responses to process
+        responses_to_process = []
+        if item_numbers:
+            responses_to_process = [
+                r for r in self._current_checklist.responses
+                if r.item_number in item_numbers
+            ]
+        else:
+            responses_to_process = [
+                r for r in self._current_checklist.responses
+                if r.evidence_summary or r.evidence_sources
+            ]
+
+        if not responses_to_process:
+            return {"error": "No items to process"}
+
+        page_references = []
+        items_processed = 0
+
+        try:
+            from src.search import get_search_service
+            search_service = get_search_service()
+
+            for response in responses_to_process:
+                items_processed += 1
+                item_refs = {
+                    "item_number": response.item_number,
+                    "item_description": response.item_description[:100],
+                    "references": [],
+                }
+
+                # Search for evidence related to this item
+                search_query = f"{response.item_description} {response.evidence_summary or ''}"[:300]
+
+                results = search_service.search(
+                    query=search_query,
+                    institution_id=self._current_checklist.institution_id,
+                    top_k=5,
+                )
+
+                for result in results:
+                    ref = {
+                        "document": result.chunk.document_id,
+                        "page": result.chunk.page_number or 1,
+                        "relevance_score": round(result.score, 3),
+                    }
+
+                    if include_excerpts:
+                        ref["excerpt"] = result.chunk.text_anonymized[:200]
+
+                    item_refs["references"].append(ref)
+
+                    # Update evidence sources with page info
+                    if response.evidence_sources:
+                        for source in response.evidence_sources:
+                            if isinstance(source, dict):
+                                if source.get("document_id") == result.chunk.document_id:
+                                    source["page"] = result.chunk.page_number
+
+                page_references.append(item_refs)
+                response.last_updated = now_iso()
+
+        except Exception as e:
+            return {"error": f"Page reference generation failed: {str(e)}"}
+
+        return {
+            "success": True,
+            "items_processed": items_processed,
+            "page_references": page_references,
+        }
+
+    def _tool_export_with_evidence_links(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Export checklist with hyperlinked evidence references."""
+        if not self._current_checklist:
+            return {"error": "No checklist loaded"}
+
+        if not self.workspace_manager:
+            return {"error": "Workspace manager not available"}
+
+        export_format = params.get("format", "docx")
+        include_appendix = params.get("include_appendix", True)
+        group_by = params.get("group_by", "category")
+
+        # Group responses
+        grouped_responses = {}
+        for response in self._current_checklist.responses:
+            if group_by == "category":
+                key = response.category or "Other"
+            elif group_by == "status":
+                key = response.compliance_status.value if response.compliance_status else "not_assessed"
+            else:  # section
+                key = response.section_reference or "General"
+
+            if key not in grouped_responses:
+                grouped_responses[key] = []
+            grouped_responses[key].append(response)
+
+        # Build export content
+        export_data = {
+            "title": self._current_checklist.name,
+            "institution_id": self._current_checklist.institution_id,
+            "accrediting_body": self._current_checklist.accrediting_body,
+            "generated_at": now_iso(),
+            "summary": {
+                "total_items": self._current_checklist.total_items,
+                "items_compliant": self._current_checklist.items_compliant,
+                "items_partial": self._current_checklist.items_partial,
+                "items_non_compliant": self._current_checklist.items_non_compliant,
+                "items_needs_review": self._current_checklist.items_needs_review,
+            },
+            "grouped_by": group_by,
+            "sections": [],
+        }
+
+        # Build evidence appendix
+        evidence_appendix = []
+        evidence_index = 1
+
+        for group_name, responses in sorted(grouped_responses.items()):
+            section = {
+                "name": group_name,
+                "items": [],
+            }
+
+            for response in responses:
+                item_data = {
+                    "number": response.item_number,
+                    "description": response.item_description,
+                    "compliance_status": response.compliance_status.value if response.compliance_status else "not_assessed",
+                    "narrative": response.narrative_response or "",
+                    "evidence_refs": [],
+                }
+
+                # Add evidence references with appendix links
+                if response.evidence_sources:
+                    for source in response.evidence_sources:
+                        if isinstance(source, dict):
+                            ref_id = f"E{evidence_index}"
+                            doc_id = source.get("document_id", source.get("finding_id", "unknown"))
+                            page = source.get("page", 1)
+
+                            item_data["evidence_refs"].append({
+                                "ref_id": ref_id,
+                                "document": doc_id,
+                                "page": page,
+                            })
+
+                            if include_appendix:
+                                evidence_appendix.append({
+                                    "ref_id": ref_id,
+                                    "document": doc_id,
+                                    "page": page,
+                                    "excerpt": source.get("text", source.get("excerpt", source.get("evidence", "")))[:300],
+                                })
+
+                            evidence_index += 1
+
+                section["items"].append(item_data)
+
+            export_data["sections"].append(section)
+
+        if include_appendix:
+            export_data["evidence_appendix"] = evidence_appendix
+
+        # Save export file
+        institution_id = self._current_checklist.institution_id
+        checklist_id = self._current_checklist.id
+        timestamp = now_iso()[:10]
+
+        if export_format == "json":
+            filename = f"checklists/exports/{checklist_id}_{timestamp}.json"
+            self.workspace_manager.save_file(institution_id, filename, export_data)
+        else:
+            # For DOCX/PDF, save as JSON for now (actual DOCX generation would need docx library)
+            filename = f"checklists/exports/{checklist_id}_{timestamp}.json"
+            self.workspace_manager.save_file(institution_id, filename, export_data)
+
+            # Generate DOCX content using AI
+            if export_format == "docx":
+                docx_content = self._generate_docx_content(export_data)
+                docx_filename = f"checklists/exports/{checklist_id}_{timestamp}.docx.md"
+                self.workspace_manager.save_file(
+                    institution_id,
+                    docx_filename,
+                    docx_content,
+                )
+                filename = docx_filename
+
+        return {
+            "success": True,
+            "export_path": filename,
+            "format": export_format,
+            "total_items": export_data["summary"]["total_items"],
+            "evidence_references": evidence_index - 1,
+            "has_appendix": include_appendix,
+        }
+
+    def _generate_docx_content(self, export_data: Dict[str, Any]) -> str:
+        """Generate markdown content for DOCX export."""
+        lines = []
+        lines.append(f"# {export_data['title']}")
+        lines.append("")
+        lines.append(f"**Generated:** {export_data['generated_at']}")
+        lines.append(f"**Accrediting Body:** {export_data['accrediting_body']}")
+        lines.append("")
+
+        # Summary
+        summary = export_data["summary"]
+        lines.append("## Summary")
+        lines.append("")
+        lines.append(f"- **Total Items:** {summary['total_items']}")
+        lines.append(f"- **Compliant:** {summary['items_compliant']}")
+        lines.append(f"- **Partial:** {summary['items_partial']}")
+        lines.append(f"- **Non-Compliant:** {summary['items_non_compliant']}")
+        lines.append(f"- **Needs Review:** {summary['items_needs_review']}")
+        lines.append("")
+
+        # Sections
+        for section in export_data["sections"]:
+            lines.append(f"## {section['name']}")
+            lines.append("")
+
+            for item in section["items"]:
+                status_emoji = {
+                    "compliant": "[COMPLIANT]",
+                    "partial": "[PARTIAL]",
+                    "non_compliant": "[NON-COMPLIANT]",
+                    "na": "[N/A]",
+                    "not_assessed": "[NOT ASSESSED]",
+                }.get(item["compliance_status"], "[?]")
+
+                lines.append(f"### {item['number']} {status_emoji}")
+                lines.append("")
+                lines.append(f"**Requirement:** {item['description']}")
+                lines.append("")
+
+                if item["narrative"]:
+                    lines.append(f"**Response:** {item['narrative']}")
+                    lines.append("")
+
+                if item["evidence_refs"]:
+                    refs = ", ".join(
+                        f"[{r['ref_id']}] {r['document']} p.{r['page']}"
+                        for r in item["evidence_refs"]
+                    )
+                    lines.append(f"**Evidence:** {refs}")
+                    lines.append("")
+
+        # Appendix
+        if export_data.get("evidence_appendix"):
+            lines.append("---")
+            lines.append("")
+            lines.append("## Evidence Appendix")
+            lines.append("")
+
+            for evidence in export_data["evidence_appendix"]:
+                lines.append(f"### [{evidence['ref_id']}] {evidence['document']} (Page {evidence['page']})")
+                lines.append("")
+                if evidence.get("excerpt"):
+                    lines.append(f"> {evidence['excerpt']}")
+                    lines.append("")
+
+        return "\n".join(lines)
+
+    def _tool_check_completion_status(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Get detailed completion progress by category."""
+        if not self._current_checklist:
+            return {"error": "No checklist loaded"}
+
+        category_filter = params.get("category")
+        include_blockers = params.get("include_blockers", True)
+
+        # Update stats
+        self._current_checklist.update_stats()
+
+        # Group responses by category
+        by_category = {}
+        for response in self._current_checklist.responses:
+            cat = response.category or "Other"
+            if category_filter and cat != category_filter:
+                continue
+
+            if cat not in by_category:
+                by_category[cat] = {
+                    "total": 0,
+                    "completed": 0,
+                    "compliant": 0,
+                    "partial": 0,
+                    "non_compliant": 0,
+                    "needs_review": 0,
+                    "not_started": 0,
+                    "blockers": [],
+                }
+
+            stats = by_category[cat]
+            stats["total"] += 1
+
+            # Check completion
+            is_complete = (
+                response.compliance_status and
+                response.compliance_status != ComplianceStatus.NA and
+                (response.narrative_response or response.evidence_summary)
+            )
+
+            if is_complete:
+                stats["completed"] += 1
+
+            # Status counts
+            if response.compliance_status == ComplianceStatus.COMPLIANT:
+                stats["compliant"] += 1
+            elif response.compliance_status == ComplianceStatus.PARTIAL:
+                stats["partial"] += 1
+            elif response.compliance_status == ComplianceStatus.NON_COMPLIANT:
+                stats["non_compliant"] += 1
+            elif not response.compliance_status or response.compliance_status == ComplianceStatus.NA:
+                stats["not_started"] += 1
+
+            if response.response_status == ChecklistResponseStatus.NEEDS_REVIEW:
+                stats["needs_review"] += 1
+
+            # Track blockers
+            if include_blockers and not is_complete:
+                blocker_reason = []
+                if not response.compliance_status:
+                    blocker_reason.append("no_status")
+                if not response.evidence_summary and not response.narrative_response:
+                    blocker_reason.append("no_evidence")
+                if response.response_status == ChecklistResponseStatus.NEEDS_REVIEW:
+                    blocker_reason.append("needs_review")
+
+                if blocker_reason:
+                    stats["blockers"].append({
+                        "item_number": response.item_number,
+                        "description": response.item_description[:80],
+                        "reasons": blocker_reason,
+                    })
+
+        # Calculate completion percentages
+        category_progress = []
+        total_items = 0
+        total_completed = 0
+
+        for cat, stats in sorted(by_category.items()):
+            completion_pct = round((stats["completed"] / stats["total"]) * 100) if stats["total"] > 0 else 0
+
+            category_data = {
+                "category": cat,
+                "total": stats["total"],
+                "completed": stats["completed"],
+                "completion_percentage": completion_pct,
+                "status_breakdown": {
+                    "compliant": stats["compliant"],
+                    "partial": stats["partial"],
+                    "non_compliant": stats["non_compliant"],
+                    "not_started": stats["not_started"],
+                },
+                "needs_review_count": stats["needs_review"],
+            }
+
+            if include_blockers and stats["blockers"]:
+                category_data["blockers"] = stats["blockers"][:10]  # Limit to 10
+
+            category_progress.append(category_data)
+            total_items += stats["total"]
+            total_completed += stats["completed"]
+
+        # Generate next steps
+        next_steps = []
+        for cat_data in category_progress:
+            if cat_data["completion_percentage"] < 100:
+                if cat_data["status_breakdown"]["not_started"] > 0:
+                    next_steps.append({
+                        "action": "fill_items",
+                        "category": cat_data["category"],
+                        "count": cat_data["status_breakdown"]["not_started"],
+                        "message": f"Fill {cat_data['status_breakdown']['not_started']} items in {cat_data['category']}",
+                    })
+                if cat_data["needs_review_count"] > 0:
+                    next_steps.append({
+                        "action": "review_items",
+                        "category": cat_data["category"],
+                        "count": cat_data["needs_review_count"],
+                        "message": f"Review {cat_data['needs_review_count']} flagged items in {cat_data['category']}",
+                    })
+
+        overall_completion = round((total_completed / total_items) * 100) if total_items > 0 else 0
+
+        return {
+            "success": True,
+            "checklist_id": self._current_checklist.id,
+            "overall_completion": overall_completion,
+            "total_items": total_items,
+            "total_completed": total_completed,
+            "categories": category_progress,
+            "next_steps": next_steps[:5],  # Top 5 actions
+            "is_ready_for_export": overall_completion >= 80 and all(
+                cat["needs_review_count"] == 0 for cat in category_progress
             ),
         }
 

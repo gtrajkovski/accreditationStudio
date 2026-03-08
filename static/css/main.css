@@ -1,4 +1,5 @@
 /* AccreditAI - Main Styles */
+/* "Certified Authority" Design System - Phase 7 */
 
 /* ============================================
    Reset & Base
@@ -22,6 +23,34 @@ body {
   color: var(--text-primary);
   background-color: var(--bg-base);
   min-height: 100vh;
+  /* Subtle dot-grid background texture */
+  background-image: url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='1' cy='1' r='1' fill='rgba(201,168,76,0.06)'/%3E%3C/svg%3E");
+}
+
+/* ============================================
+   Typography - "Certified Authority"
+   ============================================ */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+}
+
+h2 {
+  font-size: var(--font-size-2xl);
+}
+
+h3 {
+  font-size: var(--font-size-xl);
+}
+
+h4 {
+  font-size: var(--font-size-lg);
 }
 
 a {
@@ -115,6 +144,7 @@ a:hover {
   font-size: var(--font-size-xs);
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-caps);
   color: var(--text-muted);
   padding: var(--spacing-xs) var(--spacing-sm);
   margin-bottom: var(--spacing-xs);
@@ -147,6 +177,101 @@ a:hover {
   flex-shrink: 0;
 }
 
+/* Featured nav item (Work Queue) */
+.nav-item-featured {
+  background: var(--accent-muted);
+  border: 1px solid var(--border-accent);
+}
+
+.nav-item-featured:hover {
+  background: rgba(201, 168, 76, 0.25);
+}
+
+/* Nav badge for counts */
+.nav-badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: var(--bg-base);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  min-width: 18px;
+  text-align: center;
+}
+
+/* Collapsible nav groups */
+.nav-collapsible {
+  margin-bottom: var(--spacing-xs);
+}
+
+.nav-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.nav-group-toggle:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-group-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.nav-chevron {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  transition: transform var(--transition-fast);
+}
+
+.nav-collapsible.collapsed .nav-chevron {
+  transform: rotate(-90deg);
+}
+
+.nav-group-items {
+  overflow: hidden;
+  max-height: 500px;
+  transition: max-height var(--transition-normal) var(--transition-timing);
+}
+
+.nav-collapsible.collapsed .nav-group-items {
+  max-height: 0;
+}
+
+.nav-item-nested {
+  padding-left: calc(var(--spacing-md) + 28px);
+  font-size: var(--font-size-sm);
+}
+
+.nav-item-coming-soon {
+  opacity: 0.6;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.nav-item-coming-soon:hover {
+  background: none;
+  color: var(--text-secondary);
+}
+
 /* ============================================
    Header
    ============================================ */
@@ -163,13 +288,19 @@ a:hover {
 }
 
 /* ============================================
-   Cards
+   Cards - "Certified Authority" Style
    ============================================ */
 .card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.2);
 }
 
 .card-header {
@@ -180,13 +311,14 @@ a:hover {
 }
 
 .card-title {
-  font-size: var(--font-size-lg);
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
   font-weight: 600;
 }
 
 .card-subtitle {
   font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 /* ============================================
@@ -381,6 +513,118 @@ a:hover {
 }
 
 /* ============================================
+   Chips - "Certified Authority" Status Indicators
+   ============================================ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.chip-critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.chip-significant {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+  border-color: rgba(251, 146, 60, 0.3);
+}
+
+.chip-advisory {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.chip-compliant {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.chip-pending {
+  background: var(--accent-muted);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
+.chip-partial {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.chip-non-compliant {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Regulatory source chips */
+.chip-accreditor {
+  background: rgba(167, 139, 250, 0.15);
+  color: var(--accreditor);
+  border-color: rgba(167, 139, 250, 0.3);
+}
+
+.chip-federal {
+  background: rgba(244, 114, 182, 0.15);
+  color: var(--federal);
+  border-color: rgba(244, 114, 182, 0.3);
+}
+
+.chip-state {
+  background: rgba(251, 146, 60, 0.15);
+  color: var(--state);
+  border-color: rgba(251, 146, 60, 0.3);
+}
+
+.chip-professional {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--professional);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+/* Finding row with severity bar */
+.finding-row {
+  position: relative;
+  padding-left: 12px;
+}
+
+.finding-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 2px;
+}
+
+.finding-row.severity-critical::before {
+  background-color: var(--severity-critical);
+}
+
+.finding-row.severity-significant::before {
+  background-color: var(--severity-significant);
+}
+
+.finding-row.severity-advisory::before {
+  background-color: var(--severity-advisory);
+}
+
+/* ============================================
    Progress Indicators
    ============================================ */
 .progress-bar {
@@ -406,6 +650,294 @@ a:hover {
 
 .progress-fill.error {
   background-color: var(--error);
+}
+
+/* ============================================
+   Readiness Ring - "Certified Authority"
+   ============================================ */
+.readiness-ring-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.readiness-ring-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.readiness-ring {
+  transform: rotate(0deg);
+}
+
+.readiness-ring-progress {
+  stroke-dashoffset: var(--circumference);
+  animation: ring-fill 0.8s ease-out forwards;
+}
+
+@keyframes ring-fill {
+  to {
+    stroke-dashoffset: var(--target-offset);
+  }
+}
+
+.readiness-ring-label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.readiness-ring-score {
+  font-family: var(--font-display);
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.readiness-ring-max {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* Mini ring */
+.readiness-ring-mini .readiness-ring-score {
+  font-size: var(--font-size-sm);
+}
+
+/* Medium ring */
+.readiness-ring-medium .readiness-ring-score {
+  font-size: var(--font-size-xl);
+}
+
+/* Sub-score gauges */
+.readiness-sub-scores {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+}
+
+.readiness-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.readiness-gauge-track {
+  width: 8px;
+  height: 48px;
+  background: var(--border-subtle);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.readiness-gauge-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  background: var(--gauge-color);
+  border-radius: 4px;
+  animation: gauge-fill 0.6s ease-out forwards;
+  animation-delay: var(--gauge-delay);
+}
+
+@keyframes gauge-fill {
+  to {
+    height: var(--gauge-height);
+  }
+}
+
+.readiness-gauge-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+/* ============================================
+   Page Header - "Certified Authority"
+   ============================================ */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.page-header-content {
+  flex: 1;
+}
+
+.page-header-institution {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-caps);
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-xs);
+}
+
+.page-header-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.page-header-subtitle {
+  font-size: var(--font-size-base);
+  color: var(--text-muted);
+}
+
+.page-header-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.breadcrumb-link {
+  color: var(--text-muted);
+  transition: color var(--transition-fast);
+}
+
+.breadcrumb-link:hover {
+  color: var(--accent);
+}
+
+.breadcrumb-separator {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.breadcrumb-current {
+  color: var(--text-secondary);
+}
+
+.page-header-right {
+  flex-shrink: 0;
+  margin-left: var(--spacing-lg);
+}
+
+/* ============================================
+   Progress Tracker - "Certified Authority"
+   ============================================ */
+.progress-tracker {
+  padding: var(--spacing-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.progress-tracker-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: var(--spacing-md);
+}
+
+.progress-step {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.progress-step.pending {
+  background: var(--bg-base);
+  border: 2px solid var(--border-subtle);
+  color: var(--text-muted);
+}
+
+.progress-step.active {
+  background: var(--accent-muted);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(201, 168, 76, 0); }
+}
+
+.progress-step.complete {
+  background: var(--success);
+  border: 2px solid var(--success);
+  color: white;
+}
+
+.progress-step svg {
+  width: 16px;
+  height: 16px;
+}
+
+.progress-connector {
+  width: 40px;
+  height: 2px;
+  background: var(--border-subtle);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-tracker-label {
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  min-height: 20px;
+}
+
+.progress-tracker-label.complete {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.progress-tracker-shimmer {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer-slide 1.5s ease-in-out infinite;
+  border-radius: 2px;
+  margin-top: var(--spacing-sm);
+}
+
+@keyframes shimmer-slide {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.progress-tracker-complete {
+  border-color: var(--success);
+}
+
+.progress-tracker-complete .progress-tracker-shimmer {
+  display: none;
 }
 
 /* ============================================

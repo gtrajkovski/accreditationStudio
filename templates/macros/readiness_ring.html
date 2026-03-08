@@ -1,0 +1,83 @@
+{# Readiness Score Ring Macro - "Certified Authority" Design #}
+{# Usage: {% from 'macros/readiness_ring.html' import readiness_ring %}
+         {{ readiness_ring(score=82, sub_scores={'documents': 75, 'compliance': 90, 'evidence': 80, 'consistency': 70}) }}
+#}
+
+{% macro readiness_ring(score=0, sub_scores=None, size='large') %}
+{% set diameter = 140 if size == 'large' else (80 if size == 'medium' else 40) %}
+{% set stroke_width = 8 if size == 'large' else (6 if size == 'medium' else 3) %}
+{% set radius = (diameter - stroke_width) / 2 %}
+{% set circumference = 2 * 3.14159 * radius %}
+{% set dash_offset = circumference * (1 - score / 100) %}
+
+{# Color interpolation based on score #}
+{% if score >= 80 %}
+  {% set ring_color = '#4ade80' %}
+{% elif score >= 60 %}
+  {% set ring_color = '#fbbf24' %}
+{% else %}
+  {% set ring_color = '#ef4444' %}
+{% endif %}
+
+<div class="readiness-ring-container readiness-ring-{{ size }}">
+  <div class="readiness-ring-wrapper">
+    <svg class="readiness-ring" width="{{ diameter }}" height="{{ diameter }}" viewBox="0 0 {{ diameter }} {{ diameter }}">
+      {# Background track #}
+      <circle
+        cx="{{ diameter / 2 }}"
+        cy="{{ diameter / 2 }}"
+        r="{{ radius }}"
+        fill="none"
+        stroke="var(--border-subtle)"
+        stroke-width="{{ stroke_width }}"
+      />
+      {# Progress arc #}
+      <circle
+        class="readiness-ring-progress"
+        cx="{{ diameter / 2 }}"
+        cy="{{ diameter / 2 }}"
+        r="{{ radius }}"
+        fill="none"
+        stroke="{{ ring_color }}"
+        stroke-width="{{ stroke_width }}"
+        stroke-linecap="round"
+        stroke-dasharray="{{ circumference }}"
+        stroke-dashoffset="{{ dash_offset }}"
+        transform="rotate(-90 {{ diameter / 2 }} {{ diameter / 2 }})"
+        style="--target-offset: {{ dash_offset }};"
+      />
+    </svg>
+    {% if size != 'mini' %}
+    <div class="readiness-ring-label">
+      <span class="readiness-ring-score">{{ score }}</span>
+      <span class="readiness-ring-max">/ 100</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if sub_scores and size == 'large' %}
+  <div class="readiness-sub-scores">
+    {% for name, value in sub_scores.items() %}
+    {% if value >= 80 %}
+      {% set bar_color = '#4ade80' %}
+    {% elif value >= 60 %}
+      {% set bar_color = '#fbbf24' %}
+    {% else %}
+      {% set bar_color = '#ef4444' %}
+    {% endif %}
+    <div class="readiness-gauge" style="--gauge-delay: {{ loop.index * 0.1 }}s;">
+      <div class="readiness-gauge-track">
+        <div class="readiness-gauge-fill" style="--gauge-height: {{ value }}%; --gauge-color: {{ bar_color }};"></div>
+      </div>
+      <span class="readiness-gauge-label">{{ name[:4]|title }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{# Mini ring for headers - no sub-scores #}
+{% macro readiness_ring_mini(score=0) %}
+{{ readiness_ring(score=score, sub_scores=None, size='mini') }}
+{% endmacro %}

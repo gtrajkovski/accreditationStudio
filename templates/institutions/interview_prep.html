@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}Interview Prep - {{ institution.name }}{% endblock %}
+{% block header_title %}Interview Preparation{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="generateAll()">Generate All Roles</button>
+<button class="btn btn-primary" onclick="exportPrep()">Export Package</button>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid mb-lg">
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Roles</h3>
+        <div style="font-size:2rem;font-weight:700;" id="roleCount">9</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Prepared</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-success" id="preparedCount">0</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Red Flags</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-warning" id="redFlagsCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Questions</h3>
+        <div style="font-size:2rem;font-weight:700;" id="questionsCount">-</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Interview Roles</h3>
+    </div>
+    <div id="rolesList" style="padding:var(--spacing-md);">
+        <p class="text-muted">Loading roles...</p>
+    </div>
+</div>
+
+<!-- Prep Detail Modal -->
+<div id="prepModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideModal()"></div>
+    <div class="modal-content" style="max-width:800px;max-height:90vh;overflow-y:auto;">
+        <div class="modal-header">
+            <h3 id="modalTitle">Interview Prep</h3>
+            <button class="btn btn-ghost" onclick="hideModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="prepContent">
+            <p class="text-muted">Loading...</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideModal()">Close</button>
+            <button class="btn btn-primary" onclick="exportRole()">Export DOCX</button>
+        </div>
+    </div>
+</div>
+
+<!-- Generation Progress Modal -->
+<div id="progressModal" class="modal" style="display:none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3>Generating Prep Document</h3>
+        </div>
+        <div class="modal-body">
+            <div id="progressSteps"></div>
+            <div class="progress-bar" style="margin-top:var(--spacing-md);">
+                <div id="progressBar" style="width:0%;height:8px;background:var(--accent);border-radius:4px;transition:width 0.3s;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = "{{ institution.id }}";
+let currentRole = null;
+
+const ROLES = {
+    director: { name: "Director/President", icon: "user-tie" },
+    academic_dean: { name: "Academic Dean", icon: "graduation-cap" },
+    faculty: { name: "Faculty", icon: "chalkboard-teacher" },
+    financial_aid: { name: "Financial Aid Director", icon: "dollar-sign" },
+    registrar: { name: "Registrar", icon: "clipboard-list" },
+    admissions: { name: "Admissions Representative", icon: "user-plus" },
+    career_services: { name: "Career Services/Placement", icon: "briefcase" },
+    students: { name: "Current Students", icon: "users" },
+    graduates: { name: "Graduates", icon: "user-graduate" }
+};
+
+document.addEventListener('DOMContentLoaded', loadRoles);
+
+async function loadRoles() {
+    const res = await fetch(`/api/institutions/${institutionId}/interview-prep/roles`);
+    const data = await res.json();
+
+    document.getElementById('roleCount').textContent = data.roles?.length || 9;
+
+    const container = document.getElementById('rolesList');
+    let preparedCount = 0;
+    let totalRedFlags = 0;
+    let totalQuestions = 0;
+
+    // Check which roles have prep docs
+    const prepStatus = {};
+    for (const role of Object.keys(ROLES)) {
+        try {
+            const prepRes = await fetch(`/api/institutions/${institutionId}/interview-prep/${role}/questions`);
+            if (prepRes.ok) {
+                const prepData = await prepRes.json();
+                prepStatus[role] = { prepared: true, questions: prepData.questions?.length || 0 };
+                preparedCount++;
+                totalQuestions += prepStatus[role].questions;
+            }
+        } catch (e) {
+            prepStatus[role] = { prepared: false };
+        }
+    }
+
+    document.getElementById('preparedCount').textContent = preparedCount;
+    document.getElementById('questionsCount').textContent = totalQuestions || '-';
+
+    container.innerHTML = Object.entries(ROLES).map(([role, info]) => {
+        const status = prepStatus[role];
+        const statusBadge = status?.prepared
+            ? '<span class="chip chip-compliant">Ready</span>'
+            : '<span class="chip chip-pending">Not Generated</span>';
+
+        return `
+        <div style="padding:var(--spacing-md);border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:var(--spacing-sm);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <strong>${info.name}</strong>
+                <div class="text-muted text-sm">${status?.questions ? status.questions + ' questions prepared' : 'No prep document yet'}</div>
+            </div>
+            <div style="display:flex;gap:var(--spacing-sm);align-items:center;">
+                ${statusBadge}
+                ${status?.prepared
+                    ? `<button class="btn btn-sm btn-secondary" onclick="viewPrep('${role}')">View</button>`
+                    : `<button class="btn btn-sm btn-primary" onclick="generatePrep('${role}')">Generate</button>`
+                }
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function generatePrep(role) {
+    currentRole = role;
+    document.getElementById('progressModal').style.display = 'flex';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('progressSteps').innerHTML = '<p>Initializing...</p>';
+
+    try {
+        const response = await fetch(`/api/institutions/${institutionId}/interview-prep/stream`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: role })
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const text = decoder.decode(value);
+            const lines = text.split('\n').filter(l => l.startsWith('data: '));
+
+            for (const line of lines) {
+                try {
+                    const data = JSON.parse(line.slice(6));
+                    const pct = (data.step / data.total) * 100;
+                    document.getElementById('progressBar').style.width = pct + '%';
+                    document.getElementById('progressSteps').innerHTML = `<p>${data.message}</p>`;
+
+                    if (data.result) {
+                        document.getElementById('progressModal').style.display = 'none';
+                        loadRoles();
+                        viewPrep(role);
+                    }
+                } catch (e) {}
+            }
+        }
+    } catch (e) {
+        document.getElementById('progressModal').style.display = 'none';
+        alert('Generation failed: ' + e.message);
+    }
+}
+
+async function viewPrep(role) {
+    currentRole = role;
+    document.getElementById('modalTitle').textContent = ROLES[role].name + ' Interview Prep';
+    document.getElementById('prepModal').style.display = 'flex';
+    document.getElementById('prepContent').innerHTML = '<p class="text-muted">Loading...</p>';
+
+    try {
+        // Load questions
+        const questionsRes = await fetch(`/api/institutions/${institutionId}/interview-prep/${role}/questions`);
+        const questionsData = await questionsRes.json();
+
+        // Load red flags
+        const flagsRes = await fetch(`/api/institutions/${institutionId}/interview-prep/${role}/red-flags`);
+        const flagsData = await flagsRes.json();
+
+        // Load do-not list
+        const doNotRes = await fetch(`/api/institutions/${institutionId}/interview-prep/${role}/do-not-list`);
+        const doNotData = await doNotRes.json();
+
+        let html = '<div>';
+
+        // Likely Questions
+        if (questionsData.questions?.length) {
+            html += `<h4 style="margin-bottom:var(--spacing-md);">Likely Questions (${questionsData.questions.length})</h4>`;
+            html += '<div style="margin-bottom:var(--spacing-lg);">';
+            questionsData.questions.forEach((q, i) => {
+                html += `
+                <div style="padding:var(--spacing-sm);border-left:3px solid var(--accent);margin-bottom:var(--spacing-sm);background:var(--bg-secondary);">
+                    <strong>Q${i+1}: ${q.question || q}</strong>
+                    ${q.suggested_response ? `<p class="text-muted text-sm" style="margin-top:var(--spacing-xs);">Suggested: ${q.suggested_response}</p>` : ''}
+                </div>`;
+            });
+            html += '</div>';
+        }
+
+        // Red Flags
+        if (flagsData.red_flags?.length) {
+            html += `<h4 style="margin-bottom:var(--spacing-md);color:var(--danger);">Red Flag Areas (${flagsData.red_flags.length})</h4>`;
+            html += '<div style="margin-bottom:var(--spacing-lg);">';
+            flagsData.red_flags.forEach(flag => {
+                html += `
+                <div style="padding:var(--spacing-sm);border-left:3px solid var(--danger);margin-bottom:var(--spacing-sm);background:rgba(239,68,68,0.1);">
+                    <strong>${flag.area || flag}</strong>
+                    ${flag.issue ? `<p class="text-sm">${flag.issue}</p>` : ''}
+                    ${flag.honest_response ? `<p class="text-muted text-sm">Response: ${flag.honest_response}</p>` : ''}
+                </div>`;
+            });
+            html += '</div>';
+        }
+
+        // Do Not Say
+        if (doNotData.do_not_list?.length) {
+            html += `<h4 style="margin-bottom:var(--spacing-md);color:var(--warning);">Do Not Say</h4>`;
+            html += '<ul style="margin-bottom:var(--spacing-lg);">';
+            doNotData.do_not_list.forEach(item => {
+                html += `<li>${item}</li>`;
+            });
+            html += '</ul>';
+        }
+
+        html += '</div>';
+        document.getElementById('prepContent').innerHTML = html;
+
+    } catch (e) {
+        document.getElementById('prepContent').innerHTML = `<p class="text-danger">Failed to load: ${e.message}</p>`;
+    }
+}
+
+function hideModal() {
+    document.getElementById('prepModal').style.display = 'none';
+}
+
+async function exportRole() {
+    if (!currentRole) return;
+    const res = await fetch(`/api/institutions/${institutionId}/interview-prep/${currentRole}/export?format=docx`);
+    const data = await res.json();
+    if (data.export_path) {
+        alert('Export saved to: ' + data.export_path);
+    }
+}
+
+async function generateAll() {
+    const roles = Object.keys(ROLES);
+    for (const role of roles) {
+        await generatePrep(role);
+    }
+}
+
+async function exportPrep() {
+    const res = await fetch(`/api/institutions/${institutionId}/interview-prep/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roles: Object.keys(ROLES) })
+    });
+    const data = await res.json();
+    alert(`Generated ${data.total} prep documents.`);
+}
+</script>
+{% endblock %}

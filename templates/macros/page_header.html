@@ -1,0 +1,48 @@
+{# Page Header Macro - "Certified Authority" Design #}
+{# Usage: {% from 'macros/page_header.html' import page_header %}
+         {{ page_header(title='Compliance Audits', breadcrumbs=[('Dashboard', '/'), ('Institution', '/institutions/123'), ('Audits', None)], institution=current_institution, score=82) }}
+#}
+
+{% macro page_header(title, breadcrumbs=None, institution=None, score=None) %}
+<header class="page-header">
+  <div class="page-header-content">
+    {% if institution %}
+    <span class="page-header-institution">{{ institution.name }}</span>
+    {% endif %}
+
+    <h1 class="page-header-title">{{ title }}</h1>
+
+    {% if breadcrumbs %}
+    <nav class="page-header-breadcrumbs" aria-label="Breadcrumb">
+      {% for label, url in breadcrumbs %}
+        {% if not loop.last %}
+          <a href="{{ url }}" class="breadcrumb-link">{{ label }}</a>
+          <span class="breadcrumb-separator">/</span>
+        {% else %}
+          <span class="breadcrumb-current">{{ label }}</span>
+        {% endif %}
+      {% endfor %}
+    </nav>
+    {% endif %}
+  </div>
+
+  {% if score is not none %}
+  <div class="page-header-right">
+    {% from 'macros/readiness_ring.html' import readiness_ring %}
+    {{ readiness_ring(score=score, size='mini') }}
+  </div>
+  {% endif %}
+</header>
+{% endmacro %}
+
+{# Simple header without score #}
+{% macro simple_header(title, subtitle=None) %}
+<header class="page-header page-header-simple">
+  <div class="page-header-content">
+    <h1 class="page-header-title">{{ title }}</h1>
+    {% if subtitle %}
+    <p class="page-header-subtitle">{{ subtitle }}</p>
+    {% endif %}
+  </div>
+</header>
+{% endmacro %}
