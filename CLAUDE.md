@@ -346,4 +346,16 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ New API endpoints: POST `/api/agents/sessions/<id>/pause`, `/resume`
 - ✅ Session cards UI with real-time status updates
 
-Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`
+**Phase 8 (Post-Visit + Ongoing):** ✅ Complete
+- ✅ Team Report Response Agent (8 tools: report parsing, finding categorization, response drafting, evidence gathering, action plan creation, validation, packet export)
+- ✅ Database migration (0016_team_reports.sql)
+- ✅ Team Reports API blueprint with CRUD, AI parsing, response drafting
+- ✅ Team Reports UI page (upload, parse, view findings, draft responses)
+- ✅ Compliance Calendar Agent (8 tools: events, deadlines, timeline generation, reminders, action plan sync, export)
+- ✅ Compliance Calendar API blueprint with CRUD, stats, reminders
+- ✅ Compliance Calendar UI page (events, reminders, timeline generator)
+- ✅ Document Review Agent (8 tools: scheduling, pending reviews, completion, cycles, reports, bulk schedule, history, priorities)
+- ✅ Document Reviews API blueprint with CRUD, stats, bulk operations
+- ✅ Document Reviews UI page (pending, overdue, scheduling, completion)
+
+Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`

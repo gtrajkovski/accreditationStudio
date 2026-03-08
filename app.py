@@ -41,6 +41,9 @@ from src.api.exhibits import exhibits_bp, init_exhibits_bp
 from src.api.achievements import achievements_bp, init_achievements_bp
 from src.api.interview_prep import interview_prep_bp, init_interview_prep_bp
 from src.api.ser import ser_bp, init_ser_bp
+from src.api.team_reports import team_reports_bp, init_team_reports_bp
+from src.api.compliance_calendar import compliance_calendar_bp, init_compliance_calendar_bp
+from src.api.document_reviews import document_reviews_bp, init_document_reviews_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 
@@ -80,6 +83,9 @@ init_exhibits_bp(workspace_manager)
 init_achievements_bp(workspace_manager)
 init_interview_prep_bp(workspace_manager)
 init_ser_bp(workspace_manager)
+init_team_reports_bp(workspace_manager)
+init_compliance_calendar_bp(workspace_manager)
+init_document_reviews_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -100,6 +106,9 @@ app.register_blueprint(exhibits_bp)
 app.register_blueprint(achievements_bp)
 app.register_blueprint(interview_prep_bp)
 app.register_blueprint(ser_bp)
+app.register_blueprint(team_reports_bp)
+app.register_blueprint(compliance_calendar_bp)
+app.register_blueprint(document_reviews_bp)
 
 
 # =============================================================================
@@ -428,6 +437,51 @@ def institution_visit_readiness(id):
 
     return render_template(
         'institutions/visit_readiness.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
+@app.route('/institutions/<id>/team-reports')
+def institution_team_reports(id):
+    """Team report responses page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/team_reports.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
+@app.route('/institutions/<id>/calendar')
+def institution_calendar(id):
+    """Compliance calendar page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/compliance_calendar.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
+@app.route('/institutions/<id>/document-reviews')
+def institution_document_reviews(id):
+    """Document review scheduler page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/document_reviews.html',
         institution=institution,
         current_institution=institution,
         readiness_score=_get_readiness_score(id),

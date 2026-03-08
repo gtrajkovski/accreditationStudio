@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+{% block title %}Document Reviews - {{ institution.name }}{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="bulkSchedule()">Auto-Schedule</button>
+<button class="btn btn-primary" onclick="showScheduleModal()">Schedule Review</button>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='Document Review Scheduler',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Reviews', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<div class="dashboard-grid mb-lg">
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Overdue</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-danger" id="overdueCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Due This Week</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-warning" id="weekCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Due This Month</h3>
+        <div style="font-size:2rem;font-weight:700;" id="monthCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Completed (30d)</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-success" id="completedCount">-</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 class="card-title">Pending Reviews</h3>
+        <select id="typeFilter" onchange="loadReviews()" class="form-select" style="width:auto;">
+            <option value="">All Types</option>
+            <option value="policy">Policy</option>
+            <option value="catalog">Catalog</option>
+            <option value="procedure">Procedure</option>
+        </select>
+    </div>
+    <div id="reviewsList" style="padding:var(--spacing-md);"><p class="text-muted">Loading...</p></div>
+</div>
+
+<div id="scheduleModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideScheduleModal()"></div>
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header"><h3>Schedule Review</h3><button class="btn btn-ghost" onclick="hideScheduleModal()">&times;</button></div>
+        <div class="modal-body">
+            <div class="form-group mb-md"><label class="form-label">Document ID</label><input type="text" id="docId" class="form-input"></div>
+            <div class="form-group mb-md"><label class="form-label">Document Title</label><input type="text" id="docTitle" class="form-input"></div>
+            <div class="form-group mb-md"><label class="form-label">Type</label><select id="docType" class="form-select"><option value="policy">Policy</option><option value="catalog">Catalog</option><option value="procedure">Procedure</option><option value="other">Other</option></select></div>
+            <div class="form-group mb-md"><label class="form-label">Review Cycle</label><select id="reviewCycle" class="form-select"><option value="annual">Annual</option><option value="semi-annual">Semi-Annual</option><option value="quarterly">Quarterly</option></select></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" onclick="hideScheduleModal()">Cancel</button><button class="btn btn-primary" onclick="saveReview()">Schedule</button></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = "{{ institution.id }}";
+document.addEventListener('DOMContentLoaded', () => { loadStats(); loadReviews(); });
+
+async function loadStats() {
+    const res = await fetch(`/api/document-reviews/stats?institution_id=${institutionId}`);
+    const data = await res.json();
+    document.getElementById('overdueCount').textContent = data.overdue || 0;
+    document.getElementById('weekCount').textContent = data.due_this_week || 0;
+    document.getElementById('monthCount').textContent = data.due_this_month || 0;
+    document.getElementById('completedCount').textContent = data.completed_this_month || 0;
+}
+
+async function loadReviews() {
+    const type = document.getElementById('typeFilter').value;
+    let url = `/api/document-reviews/pending?institution_id=${institutionId}`;
+    if (type) url += `&document_type=${type}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const container = document.getElementById('reviewsList');
+    if (!data.reviews?.length) { container.innerHTML = '<p class="text-muted" style="text-align:center;">No pending reviews.</p>'; return; }
+    container.innerHTML = data.reviews.map(r => `
+        <div style="padding:var(--spacing-md);border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:var(--spacing-sm);display:flex;justify-content:space-between;align-items:center;">
+            <div><strong>${r.document_id}</strong><div class="text-muted text-sm">${r.document_type} | Due: ${r.next_review_date} (${r.days_until < 0 ? Math.abs(r.days_until) + ' days overdue' : r.days_until + ' days'})</div></div>
+            <div><span class="chip chip-${r.urgency === 'overdue' ? 'danger' : r.urgency === 'urgent' ? 'warning' : ''}">${r.urgency}</span>
+            <button class="btn btn-sm btn-primary" onclick="completeReview('${r.id}')">Complete</button></div>
+        </div>`).join('');
+}
+
+function showScheduleModal() { document.getElementById('scheduleModal').style.display = 'flex'; }
+function hideScheduleModal() { document.getElementById('scheduleModal').style.display = 'none'; }
+
+async function saveReview() {
+    await fetch('/api/document-reviews/', { method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ institution_id: institutionId, document_id: document.getElementById('docId').value,
+            document_type: document.getElementById('docType').value, review_cycle: document.getElementById('reviewCycle').value })});
+    hideScheduleModal(); loadStats(); loadReviews();
+}
+
+async function completeReview(id) {
+    await fetch(`/api/document-reviews/${id}/complete`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}' });
+    loadStats(); loadReviews();
+}
+
+async function bulkSchedule() {
+    await fetch('/api/document-reviews/bulk-schedule', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ institution_id: institutionId })});
+    loadStats(); loadReviews(); alert('Reviews scheduled for all documents.');
+}
+</script>
+{% endblock %}

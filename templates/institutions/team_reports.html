@@ -1,0 +1,596 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+{% block title %}Team Reports - {{ institution.name }}{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="showUploadModal()">Upload Report</button>
+<button class="btn btn-primary" onclick="draftAllResponses()" id="draftAllBtn" disabled>Draft All Responses</button>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='Team Report Responses',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Team Reports', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<div class="dashboard-grid mb-lg">
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Reports</h3>
+        <div style="font-size:2rem;font-weight:700;" id="reportCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Total Findings</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-warning" id="findingsCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Responses Drafted</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-success" id="responsesCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Next Deadline</h3>
+        <div style="font-size:1.2rem;font-weight:700;" class="text-danger" id="nextDeadline">-</div>
+    </div>
+</div>
+
+<div class="card mb-lg">
+    <div class="card-header">
+        <h3 class="card-title">Team Reports</h3>
+    </div>
+    <div id="reportsList" style="padding:var(--spacing-md);">
+        <p class="text-muted">Loading reports...</p>
+    </div>
+</div>
+
+<div class="card" id="findingsCard" style="display:none;">
+    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 class="card-title" id="findingsTitle">Findings</h3>
+        <div style="display:flex;gap:var(--spacing-sm);">
+            <select id="severityFilter" onchange="filterFindings()" class="form-select" style="width:auto;">
+                <option value="">All Severities</option>
+                <option value="critical">Critical</option>
+                <option value="moderate">Moderate</option>
+                <option value="minor">Minor</option>
+                <option value="observation">Observation</option>
+            </select>
+            <select id="statusFilter" onchange="filterFindings()" class="form-select" style="width:auto;">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="drafted">Drafted</option>
+                <option value="reviewed">Reviewed</option>
+            </select>
+        </div>
+    </div>
+    <div id="findingsList" style="padding:var(--spacing-md);">
+        <p class="text-muted">Select a report to view findings...</p>
+    </div>
+</div>
+
+<!-- Upload Report Modal -->
+<div id="uploadModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideUploadModal()"></div>
+    <div class="modal-content" style="max-width:600px;">
+        <div class="modal-header">
+            <h3>Upload Team Report</h3>
+            <button class="btn btn-ghost" onclick="hideUploadModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group mb-md">
+                <label class="form-label">Accreditor</label>
+                <select id="accreditorCode" class="form-select">
+                    <option value="ACCSC">ACCSC</option>
+                    <option value="SACSCOC">SACSCOC</option>
+                    <option value="HLC">HLC</option>
+                    <option value="ABHES">ABHES</option>
+                    <option value="COE">COE</option>
+                </select>
+            </div>
+            <div class="form-group mb-md">
+                <label class="form-label">Visit Date</label>
+                <input type="date" id="visitDate" class="form-input">
+            </div>
+            <div class="form-group mb-md">
+                <label class="form-label">Response Due Date</label>
+                <input type="date" id="responseDueDate" class="form-input">
+            </div>
+            <div class="form-group mb-md">
+                <label class="form-label">Report Text</label>
+                <textarea id="reportText" class="form-textarea" rows="10" placeholder="Paste the full team report text here..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideUploadModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="createAndParseReport()">Upload & Parse</button>
+        </div>
+    </div>
+</div>
+
+<!-- Finding Response Modal -->
+<div id="responseModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideResponseModal()"></div>
+    <div class="modal-content" style="max-width:900px;max-height:90vh;overflow-y:auto;">
+        <div class="modal-header">
+            <h3 id="responseModalTitle">Finding Response</h3>
+            <button class="btn btn-ghost" onclick="hideResponseModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="findingDetail" style="margin-bottom:var(--spacing-lg);padding:var(--spacing-md);background:var(--bg-secondary);border-radius:var(--radius-md);">
+                <p class="text-muted">Loading...</p>
+            </div>
+            <div id="responseDetail">
+                <h4 style="margin-bottom:var(--spacing-md);">Response</h4>
+                <div id="responseContent" style="min-height:200px;padding:var(--spacing-md);border:1px solid var(--border-color);border-radius:var(--radius-md);white-space:pre-wrap;">
+                    No response drafted yet.
+                </div>
+            </div>
+            <div id="actionItemsSection" style="margin-top:var(--spacing-lg);display:none;">
+                <h4 style="margin-bottom:var(--spacing-md);">Action Items</h4>
+                <div id="actionItemsList"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideResponseModal()">Close</button>
+            <button class="btn btn-warning" onclick="regenerateResponse()" id="regenerateBtn">Regenerate</button>
+            <button class="btn btn-primary" onclick="approveResponse()" id="approveBtn">Approve Response</button>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Modal -->
+<div id="progressModal" class="modal" style="display:none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3 id="progressTitle">Processing...</h3>
+        </div>
+        <div class="modal-body">
+            <div id="progressMessage" class="text-muted mb-md">Initializing...</div>
+            <div class="progress-bar">
+                <div id="progressBar" style="width:0%;height:8px;background:var(--accent);border-radius:4px;transition:width 0.3s;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = "{{ institution.id }}";
+let currentReportId = null;
+let currentFindingId = null;
+let allFindings = [];
+
+document.addEventListener('DOMContentLoaded', loadReports);
+
+async function loadReports() {
+    try {
+        const res = await fetch(`/api/team-reports/?institution_id=${institutionId}`);
+        const data = await res.json();
+
+        document.getElementById('reportCount').textContent = data.reports?.length || 0;
+
+        const container = document.getElementById('reportsList');
+
+        if (!data.reports?.length) {
+            container.innerHTML = `
+                <div style="text-align:center;padding:var(--spacing-xl);">
+                    <p class="text-muted mb-md">No team reports yet.</p>
+                    <button class="btn btn-primary" onclick="showUploadModal()">Upload First Report</button>
+                </div>`;
+            return;
+        }
+
+        let totalFindings = 0;
+        let totalResponses = 0;
+        let nextDeadline = null;
+
+        container.innerHTML = data.reports.map(report => {
+            const statusBadge = {
+                'received': '<span class="chip chip-pending">Received</span>',
+                'analyzing': '<span class="chip chip-warning">Analyzing</span>',
+                'responding': '<span class="chip chip-info">Responding</span>',
+                'submitted': '<span class="chip chip-compliant">Submitted</span>',
+            }[report.status] || '<span class="chip">' + report.status + '</span>';
+
+            const recommendBadge = {
+                'reaffirm': '<span class="chip chip-compliant">Reaffirm</span>',
+                'defer': '<span class="chip chip-warning">Defer</span>',
+                'warning': '<span class="chip chip-danger">Warning</span>',
+                'probation': '<span class="chip chip-danger">Probation</span>',
+            }[report.overall_recommendation] || '';
+
+            if (report.response_due_date && (!nextDeadline || report.response_due_date < nextDeadline)) {
+                nextDeadline = report.response_due_date;
+            }
+
+            return `
+            <div class="report-card" style="padding:var(--spacing-md);border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:var(--spacing-sm);cursor:pointer;" onclick="selectReport('${report.id}')">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div>
+                        <strong>${report.accreditor_code || 'Team Report'}</strong>
+                        <span class="text-muted"> - Visit: ${report.visit_date || 'Unknown'}</span>
+                        <div class="text-sm text-muted">Due: ${report.response_due_date || 'Not set'}</div>
+                    </div>
+                    <div style="display:flex;gap:var(--spacing-xs);">
+                        ${statusBadge}
+                        ${recommendBadge}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        document.getElementById('nextDeadline').textContent = nextDeadline || 'None';
+
+        // Load summary stats
+        if (data.reports.length > 0) {
+            await loadReportStats();
+        }
+
+    } catch (e) {
+        document.getElementById('reportsList').innerHTML = `<p class="text-danger">Error: ${e.message}</p>`;
+    }
+}
+
+async function loadReportStats() {
+    let totalFindings = 0;
+    let totalResponses = 0;
+
+    const res = await fetch(`/api/team-reports/?institution_id=${institutionId}`);
+    const data = await res.json();
+
+    for (const report of data.reports || []) {
+        const findingsRes = await fetch(`/api/team-reports/${report.id}/findings`);
+        const findingsData = await findingsRes.json();
+        totalFindings += findingsData.count || 0;
+        totalResponses += (findingsData.findings || []).filter(f => f.response_status !== 'pending').length;
+    }
+
+    document.getElementById('findingsCount').textContent = totalFindings;
+    document.getElementById('responsesCount').textContent = totalResponses;
+
+    if (totalFindings > 0) {
+        document.getElementById('draftAllBtn').disabled = false;
+    }
+}
+
+async function selectReport(reportId) {
+    currentReportId = reportId;
+
+    // Highlight selected
+    document.querySelectorAll('.report-card').forEach(el => {
+        el.style.borderColor = 'var(--border-color)';
+    });
+    event.currentTarget.style.borderColor = 'var(--accent)';
+
+    // Show findings card
+    document.getElementById('findingsCard').style.display = 'block';
+
+    // Load findings
+    await loadFindings(reportId);
+}
+
+async function loadFindings(reportId) {
+    const container = document.getElementById('findingsList');
+    container.innerHTML = '<p class="text-muted">Loading findings...</p>';
+
+    try {
+        const res = await fetch(`/api/team-reports/${reportId}/findings`);
+        const data = await res.json();
+
+        allFindings = data.findings || [];
+        document.getElementById('findingsTitle').textContent = `Findings (${allFindings.length})`;
+
+        renderFindings(allFindings);
+
+    } catch (e) {
+        container.innerHTML = `<p class="text-danger">Error: ${e.message}</p>`;
+    }
+}
+
+function filterFindings() {
+    const severity = document.getElementById('severityFilter').value;
+    const status = document.getElementById('statusFilter').value;
+
+    let filtered = allFindings;
+
+    if (severity) {
+        filtered = filtered.filter(f => f.severity === severity);
+    }
+    if (status) {
+        filtered = filtered.filter(f => f.response_status === status);
+    }
+
+    renderFindings(filtered);
+}
+
+function renderFindings(findings) {
+    const container = document.getElementById('findingsList');
+
+    if (!findings.length) {
+        container.innerHTML = '<p class="text-muted">No findings match filter.</p>';
+        return;
+    }
+
+    container.innerHTML = findings.map(finding => {
+        const severityClass = {
+            'critical': 'chip-danger',
+            'moderate': 'chip-warning',
+            'minor': 'chip-info',
+            'observation': '',
+        }[finding.severity] || '';
+
+        const statusClass = {
+            'pending': 'chip-pending',
+            'drafted': 'chip-warning',
+            'reviewed': 'chip-compliant',
+            'submitted': 'chip-compliant',
+        }[finding.response_status] || '';
+
+        return `
+        <div class="finding-row" style="padding:var(--spacing-md);border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:var(--spacing-sm);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--spacing-sm);">
+                <div>
+                    <strong>${finding.finding_number || 'Finding'}</strong>
+                    <span class="text-muted"> - ${finding.standard_reference || 'Standard'}</span>
+                </div>
+                <div style="display:flex;gap:var(--spacing-xs);">
+                    <span class="chip ${severityClass}">${finding.severity}</span>
+                    <span class="chip ${statusClass}">${finding.response_status}</span>
+                </div>
+            </div>
+            <p class="text-sm" style="margin-bottom:var(--spacing-sm);">${(finding.finding_text || '').substring(0, 200)}${finding.finding_text?.length > 200 ? '...' : ''}</p>
+            <div style="display:flex;gap:var(--spacing-sm);">
+                <button class="btn btn-sm btn-secondary" onclick="viewFinding('${finding.id}')">View Details</button>
+                ${finding.response_status === 'pending'
+                    ? `<button class="btn btn-sm btn-primary" onclick="draftResponse('${finding.id}')">Draft Response</button>`
+                    : `<button class="btn btn-sm btn-secondary" onclick="viewResponse('${finding.id}')">View Response</button>`
+                }
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function showUploadModal() {
+    document.getElementById('uploadModal').style.display = 'flex';
+}
+
+function hideUploadModal() {
+    document.getElementById('uploadModal').style.display = 'none';
+}
+
+async function createAndParseReport() {
+    const accreditorCode = document.getElementById('accreditorCode').value;
+    const visitDate = document.getElementById('visitDate').value;
+    const responseDueDate = document.getElementById('responseDueDate').value;
+    const reportText = document.getElementById('reportText').value;
+
+    if (!reportText.trim()) {
+        alert('Please paste the report text.');
+        return;
+    }
+
+    hideUploadModal();
+    showProgress('Parsing Team Report');
+
+    try {
+        // Create report entry
+        const createRes = await fetch('/api/team-reports/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                institution_id: institutionId,
+                accreditor_code: accreditorCode,
+                visit_date: visitDate,
+                response_due_date: responseDueDate,
+            })
+        });
+        const createData = await createRes.json();
+
+        if (!createData.id) {
+            throw new Error('Failed to create report entry');
+        }
+
+        updateProgress(30, 'AI parsing report...');
+
+        // Parse with AI
+        const parseRes = await fetch(`/api/team-reports/${createData.id}/parse`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                report_text: reportText,
+                accreditor_code: accreditorCode,
+                visit_date: visitDate,
+                response_due_date: responseDueDate,
+            })
+        });
+        const parseData = await parseRes.json();
+
+        updateProgress(100, 'Complete!');
+
+        setTimeout(() => {
+            hideProgress();
+            loadReports();
+            if (parseData.report_id || createData.id) {
+                selectReport(parseData.report_id || createData.id);
+            }
+        }, 500);
+
+    } catch (e) {
+        hideProgress();
+        alert('Error: ' + e.message);
+    }
+}
+
+async function draftResponse(findingId) {
+    currentFindingId = findingId;
+    showProgress('Drafting Response');
+
+    try {
+        updateProgress(50, 'AI generating response...');
+
+        const res = await fetch(`/api/team-reports/findings/${findingId}/draft-response`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+
+        updateProgress(100, 'Complete!');
+
+        setTimeout(() => {
+            hideProgress();
+            loadFindings(currentReportId);
+            viewResponse(findingId);
+        }, 500);
+
+    } catch (e) {
+        hideProgress();
+        alert('Error: ' + e.message);
+    }
+}
+
+async function viewFinding(findingId) {
+    currentFindingId = findingId;
+    document.getElementById('responseModal').style.display = 'flex';
+    document.getElementById('responseModalTitle').textContent = 'Finding Details';
+
+    const finding = allFindings.find(f => f.id === findingId);
+    if (!finding) return;
+
+    document.getElementById('findingDetail').innerHTML = `
+        <div style="display:flex;justify-content:space-between;margin-bottom:var(--spacing-sm);">
+            <strong>${finding.finding_number || 'Finding'}</strong>
+            <span class="chip chip-${finding.severity === 'critical' ? 'danger' : finding.severity === 'moderate' ? 'warning' : ''}">${finding.severity}</span>
+        </div>
+        <p class="text-muted text-sm mb-sm">Standard: ${finding.standard_reference || 'N/A'}</p>
+        <p style="margin-bottom:var(--spacing-sm);">${finding.finding_text || ''}</p>
+        <p class="text-sm text-muted"><strong>Requirement:</strong> ${finding.requirement_text || 'N/A'}</p>
+    `;
+
+    // Try to load response
+    try {
+        const res = await fetch(`/api/team-reports/findings/${findingId}/response`);
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById('responseContent').textContent = data.response_text || 'No response text';
+
+            if (data.action_items?.length) {
+                document.getElementById('actionItemsSection').style.display = 'block';
+                document.getElementById('actionItemsList').innerHTML = data.action_items.map(item => `
+                    <div style="padding:var(--spacing-sm);border-left:3px solid var(--accent);margin-bottom:var(--spacing-sm);background:var(--bg-secondary);">
+                        <strong>${item.description || item}</strong>
+                        ${item.responsible_party ? `<br><span class="text-muted text-sm">Responsible: ${item.responsible_party}</span>` : ''}
+                        ${item.due_date ? `<br><span class="text-muted text-sm">Due: ${item.due_date}</span>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('actionItemsSection').style.display = 'none';
+            }
+        } else {
+            document.getElementById('responseContent').textContent = 'No response drafted yet.';
+            document.getElementById('actionItemsSection').style.display = 'none';
+        }
+    } catch (e) {
+        document.getElementById('responseContent').textContent = 'No response drafted yet.';
+    }
+}
+
+async function viewResponse(findingId) {
+    await viewFinding(findingId);
+}
+
+function hideResponseModal() {
+    document.getElementById('responseModal').style.display = 'none';
+}
+
+async function regenerateResponse() {
+    if (!currentFindingId) return;
+    hideResponseModal();
+    await draftResponse(currentFindingId);
+}
+
+async function approveResponse() {
+    if (!currentFindingId) return;
+
+    try {
+        // Get current response
+        const getRes = await fetch(`/api/team-reports/findings/${currentFindingId}/response`);
+        if (!getRes.ok) {
+            alert('No response to approve');
+            return;
+        }
+        const data = await getRes.json();
+
+        // Update status
+        await fetch(`/api/team-reports/responses/${data.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'approved', requires_review: false })
+        });
+
+        hideResponseModal();
+        loadFindings(currentReportId);
+        loadReportStats();
+
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function draftAllResponses() {
+    if (!currentReportId) {
+        alert('Please select a report first.');
+        return;
+    }
+
+    const pendingFindings = allFindings.filter(f => f.response_status === 'pending');
+    if (!pendingFindings.length) {
+        alert('No pending findings to draft responses for.');
+        return;
+    }
+
+    showProgress(`Drafting ${pendingFindings.length} Responses`);
+
+    let completed = 0;
+    for (const finding of pendingFindings) {
+        try {
+            updateProgress((completed / pendingFindings.length) * 100, `Drafting response ${completed + 1} of ${pendingFindings.length}...`);
+
+            await fetch(`/api/team-reports/findings/${finding.id}/draft-response`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+
+            completed++;
+        } catch (e) {
+            console.error('Error drafting response:', e);
+        }
+    }
+
+    updateProgress(100, 'Complete!');
+    setTimeout(() => {
+        hideProgress();
+        loadFindings(currentReportId);
+        loadReportStats();
+    }, 500);
+}
+
+function showProgress(title) {
+    document.getElementById('progressTitle').textContent = title;
+    document.getElementById('progressMessage').textContent = 'Initializing...';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('progressModal').style.display = 'flex';
+}
+
+function updateProgress(pct, message) {
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressMessage').textContent = message;
+}
+
+function hideProgress() {
+    document.getElementById('progressModal').style.display = 'none';
+}
+</script>
+{% endblock %}

@@ -102,6 +102,11 @@ class AgentType(Enum):
     INTERVIEW_PREP = "interview_prep"
     SER_DRAFTING = "ser_drafting"
 
+    # Phase 8 - Post-Visit + Ongoing
+    TEAM_REPORT = "team_report"
+    COMPLIANCE_CALENDAR = "compliance_calendar"
+    DOCUMENT_REVIEW = "document_review"
+
 
 class BaseAgent(ABC):
     """Abstract base class for all agents.

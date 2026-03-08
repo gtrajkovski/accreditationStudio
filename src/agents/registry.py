@@ -117,6 +117,14 @@ class AgentRegistry:
                 catalog_agent,
                 evidence_agent,
                 achievement_agent,
+                # Phase 7
+                interview_prep_agent,
+                ser_drafting_agent,
+                checklist_agent,
+                # Phase 8
+                team_report_agent,
+                compliance_calendar_agent,
+                document_review_agent,
             )
         except ImportError:
             # Agents may not all exist yet
