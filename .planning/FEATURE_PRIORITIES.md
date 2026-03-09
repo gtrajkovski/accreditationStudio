@@ -44,11 +44,11 @@ Visual workflow: Select Standards → Evidence → Narratives → Preview → Ex
 ## Full Feature List (20 Items)
 
 ### Dashboards & Visualization
-1. **Flight Deck** - Mission control with readiness score
+1. **Flight Deck** - Mission control with readiness score ✅
 2. **Evidence Coverage Map** - Standard coverage percentages
 3. **Compliance Heatmap** - Matrix: documents × requirements
-4. **Compliance History** - Track readiness over time (graph)
-5. **Risk Alerts** - Real-time warnings banner
+4. **Compliance History** - Track readiness over time (graph) ✅
+5. **Risk Alerts** - Real-time warnings banner ✅
 
 ### AI-Powered Features
 6. **Explain This Standard** - Plain English + required evidence
@@ -77,7 +77,7 @@ Visual workflow: Select Standards → Evidence → Narratives → Preview → Ex
 
 ### Navigation
 19. **Global Search** - Search standards, documents, findings, evidence
-20. **Quick Actions FAB** - Upload, Audit, Fix, Create Packet
+20. **Quick Actions FAB** - Upload, Audit, Fix, Create Packet ✅
 
 ---
 
@@ -92,7 +92,7 @@ Every screen must answer:
 ### UI Polish
 - Skeleton loaders (not spinners)
 - Severity badges: Critical (red), Moderate (yellow), Minor (blue), Compliant (green)
-- Keyboard shortcuts: `/` search, `A` audit, `F` fix
+- Keyboard shortcuts: `/` search, `A` audit, `F` fix, `G+D` dashboard, `G+C` compliance ✅
 
 ---
 

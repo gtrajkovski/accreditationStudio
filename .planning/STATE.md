@@ -1,10 +1,27 @@
 # AccreditAI State
 
 ## Current Phase
-**v1.0 MVP COMPLETE** - All 8 phases finished
+**Post-MVP Backlog** - Implementing feature enhancements
 
 ## Session Date
 2026-03-08
+
+## Backlog Progress
+
+### Completed This Session
+- ✅ Compliance History (line chart with 7d/30d/90d range, sub-scores toggle)
+- ✅ Keyboard Shortcuts (G+D dashboard, G+C compliance sequences)
+- ✅ Quick Actions FAB (floating button: Upload/Audit/Packet)
+- ✅ Risk Alerts Banner (critical blockers on dashboard)
+
+### Remaining Backlog
+- 🔲 Impact Analysis - Change one fact, see affected documents
+- 🔲 Institutional Knowledge Graph - Facts as nodes
+- 🔲 Accreditation Timeline Planner - Project management
+- 🔲 Site Visit Mode - Fast search during visits
+- 🔲 Multi-Institution Mode - Consultant dashboard
+- 🔲 Evidence Highlighting - Highlight exact sentences
+- 🔲 Global Search - Unified search across all content
 
 ## Milestone Summary
 
