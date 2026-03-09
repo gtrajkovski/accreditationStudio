@@ -1,0 +1,318 @@
+<!-- Command Palette Modal -->
+<div id="command-palette" class="command-palette" style="display: none;">
+    <div class="command-palette-backdrop" onclick="CommandPalette.close()"></div>
+    <div class="command-palette-modal">
+        <div class="command-palette-header">
+            <svg class="command-palette-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+                type="text"
+                id="command-palette-input"
+                class="command-palette-input"
+                placeholder="{{ t('commands.placeholder') }}"
+                autocomplete="off"
+                spellcheck="false"
+            />
+            <kbd class="command-palette-kbd">esc</kbd>
+        </div>
+
+        <div class="command-palette-results" id="command-palette-results">
+            <!-- Commands will be rendered here -->
+        </div>
+
+        <div class="command-palette-footer">
+            <span class="command-hint">
+                <kbd>&uarr;</kbd><kbd>&darr;</kbd> {{ t('commands.navigate') }}
+            </span>
+            <span class="command-hint">
+                <kbd>&crarr;</kbd> {{ t('commands.select') }}
+            </span>
+            <span class="command-hint">
+                <kbd>esc</kbd> {{ t('commands.close') }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Shortcuts Help Modal -->
+<div id="shortcuts-modal" class="shortcuts-modal" style="display: none;">
+    <div class="shortcuts-modal-backdrop" onclick="CommandPalette.closeShortcuts()"></div>
+    <div class="shortcuts-modal-content">
+        <div class="shortcuts-modal-header">
+            <h3>{{ t('commands.shortcuts_title') }}</h3>
+            <button class="btn btn-ghost btn-sm" onclick="CommandPalette.closeShortcuts()">&times;</button>
+        </div>
+        <div class="shortcuts-grid">
+            <div class="shortcut-group">
+                <h4>{{ t('commands.category_navigation') }}</h4>
+                <div class="shortcut-item"><kbd>/</kbd> <span>{{ t('commands.focus_search') }}</span></div>
+                <div class="shortcut-item"><kbd>Ctrl+K</kbd> <span>{{ t('commands.open_palette') }}</span></div>
+                <div class="shortcut-item"><kbd>G</kbd> <kbd>D</kbd> <span>{{ t('commands.go_dashboard') }}</span></div>
+                <div class="shortcut-item"><kbd>G</kbd> <kbd>C</kbd> <span>{{ t('commands.go_compliance') }}</span></div>
+                <div class="shortcut-item"><kbd>W</kbd> <span>{{ t('commands.open_work_queue') }}</span></div>
+                <div class="shortcut-item"><kbd>D</kbd> <span>{{ t('commands.open_documents') }}</span></div>
+                <div class="shortcut-item"><kbd>E</kbd> <span>{{ t('commands.open_evidence') }}</span></div>
+                <div class="shortcut-item"><kbd>S</kbd> <span>{{ t('commands.open_standards') }}</span></div>
+                <div class="shortcut-item"><kbd>P</kbd> <span>{{ t('commands.open_packets') }}</span></div>
+            </div>
+            <div class="shortcut-group">
+                <h4>{{ t('commands.category_actions') }}</h4>
+                <div class="shortcut-item"><kbd>A</kbd> <span>{{ t('commands.run_audit') }}</span></div>
+                <div class="shortcut-item"><kbd>C</kbd> <span>{{ t('commands.run_consistency') }}</span></div>
+                <div class="shortcut-item"><kbd>F</kbd> <span>{{ t('commands.fix_finding') }}</span></div>
+                <div class="shortcut-item"><kbd>?</kbd> <span>{{ t('commands.show_shortcuts') }}</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Command Palette */
+.command-palette {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15vh;
+}
+
+.command-palette-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.command-palette-modal {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+.command-palette-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.command-palette-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.command-palette-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.command-palette-input::placeholder {
+    color: var(--text-muted);
+}
+
+.command-palette-kbd {
+    padding: 2px 6px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.command-palette-results {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.command-group {
+    padding: var(--spacing-xs) 0;
+}
+
+.command-group-title {
+    padding: var(--spacing-xs) var(--spacing-lg);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.command-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.command-item:hover,
+.command-item.selected {
+    background: var(--bg-secondary);
+}
+
+.command-item-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.command-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.command-item-title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.command-item-description {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.command-item-shortcut {
+    flex-shrink: 0;
+}
+
+.command-item-shortcut kbd {
+    padding: 2px 6px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.command-palette-footer {
+    display: flex;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+}
+
+.command-hint {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.command-hint kbd {
+    padding: 1px 4px;
+    background: var(--bg-primary);
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.command-empty {
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* Shortcuts Modal */
+.shortcuts-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shortcuts-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.shortcuts-modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.shortcuts-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.shortcuts-modal-header h3 {
+    margin: 0;
+}
+
+.shortcuts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+
+.shortcut-group h4 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.shortcut-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-xs) 0;
+    font-size: 0.875rem;
+}
+
+.shortcut-item kbd {
+    min-width: 28px;
+    padding: 2px 6px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    font-family: monospace;
+    text-align: center;
+}
+</style>

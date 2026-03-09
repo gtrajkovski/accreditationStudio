@@ -99,6 +99,29 @@
     </div>
 </div>
 
+<!-- Compliance History Chart -->
+<div class="card mb-lg" id="compliance-history-section">
+    <div class="card-header">
+        <h3 class="card-title">Compliance History</h3>
+        <div class="chart-controls">
+            <div class="time-range-selector">
+                <button class="btn btn-sm" data-range="7">7d</button>
+                <button class="btn btn-sm btn-secondary active" data-range="30">30d</button>
+                <button class="btn btn-sm" data-range="90">90d</button>
+            </div>
+        </div>
+    </div>
+    <div class="chart-container">
+        <canvas id="compliance-chart"></canvas>
+    </div>
+    <div class="chart-legend">
+        <label class="checkbox-label">
+            <input type="checkbox" id="show-subscores">
+            Show sub-scores
+        </label>
+    </div>
+</div>
+
 <div class="dashboard-grid mb-lg">
     <!-- Institution Info -->
     <div class="card">
@@ -693,6 +716,57 @@
 .btn-danger:hover {
     background: #dc2626;
 }
+
+/* Compliance History Chart Styles */
+.chart-container {
+    position: relative;
+    height: 240px;
+    padding: var(--spacing-md);
+}
+
+.chart-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.time-range-selector {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.time-range-selector .btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.75rem;
+    min-width: 36px;
+}
+
+.time-range-selector .btn.active {
+    background: var(--accent);
+    color: var(--text-inverse, #1a1a2e);
+    border-color: var(--accent);
+}
+
+.chart-legend {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.chart-legend .checkbox-label {
+    font-weight: 400;
+}
+
+.chart-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--text-muted);
+    text-align: center;
+}
 </style>
 {% endblock %}
 
@@ -941,5 +1015,56 @@ document.addEventListener('keydown', function(event) {
         closeProgramModal();
     }
 });
+
+// =============================================================================
+// Compliance History Chart
+// =============================================================================
+
+let complianceChart = null;
+
+async function initComplianceChart() {
+    // Wait for Chart.js to be available
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js not loaded yet, retrying...');
+        setTimeout(initComplianceChart, 100);
+        return;
+    }
+
+    complianceChart = new ComplianceChart('compliance-chart', {
+        institutionId: institutionId,
+        showSubScores: false,
+        timeRange: 30
+    });
+
+    await complianceChart.init();
+}
+
+// Time range selector
+document.querySelectorAll('.time-range-selector .btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        // Update active state
+        document.querySelectorAll('.time-range-selector .btn').forEach(b => {
+            b.classList.remove('active', 'btn-secondary');
+        });
+        this.classList.add('active', 'btn-secondary');
+
+        // Update chart
+        const days = parseInt(this.dataset.range);
+        if (complianceChart) {
+            await complianceChart.updateTimeRange(days);
+        }
+    });
+});
+
+// Sub-scores toggle
+document.getElementById('show-subscores').addEventListener('change', function() {
+    if (complianceChart) {
+        complianceChart.toggleSubScores(this.checked);
+    }
+});
+
+// Initialize chart on page load
+document.addEventListener('DOMContentLoaded', initComplianceChart);
 </script>
+<script src="{{ url_for('static', filename='js/compliance-chart.js') }}"></script>
 {% endblock %}

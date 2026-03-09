@@ -813,6 +813,52 @@ def get_readiness_history(
             conn.close()
 
 
+def ensure_daily_snapshot(
+    institution_id: str,
+    accreditor_code: str = "ACCSC",
+    conn: Optional[sqlite3.Connection] = None
+) -> Optional[str]:
+    """Ensure at least one snapshot exists for today.
+
+    This function creates a new snapshot only if no snapshot exists for
+    the current UTC date. Use this to maintain regular historical data
+    without creating excessive snapshots.
+
+    Args:
+        institution_id: Institution ID
+        accreditor_code: Accreditor code (ACCSC, COE, etc.)
+        conn: Optional database connection
+
+    Returns:
+        Snapshot ID if new snapshot created, None if one already exists
+    """
+    should_close = conn is None
+    if conn is None:
+        conn = get_conn()
+
+    try:
+        # Check if snapshot exists for today
+        today = datetime.utcnow().date().isoformat()
+
+        cursor = conn.execute("""
+            SELECT id FROM institution_readiness_snapshots
+            WHERE institution_id = ?
+              AND DATE(created_at) = ?
+            LIMIT 1
+        """, (institution_id, today))
+
+        if cursor.fetchone():
+            return None  # Already have today's snapshot
+
+        # Compute and persist new snapshot
+        readiness = compute_readiness(institution_id, accreditor_code, conn)
+        return persist_snapshot(institution_id, readiness, conn)
+
+    finally:
+        if should_close:
+            conn.close()
+
+
 # =============================================================================
 # Cache Management
 # =============================================================================

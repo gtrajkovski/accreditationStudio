@@ -20,6 +20,7 @@ from src.services.readiness_service import (
     get_readiness_history,
     compute_readiness,
     mark_readiness_stale,
+    ensure_daily_snapshot,
 )
 
 readiness_bp = Blueprint('readiness', __name__, url_prefix='/api')
@@ -321,4 +322,47 @@ def invalidate_readiness(institution_id: str):
         return jsonify({
             "success": False,
             "error": str(e)
+        }), 500
+
+
+@readiness_bp.route('/institutions/<institution_id>/readiness/snapshot', methods=['POST'])
+def create_readiness_snapshot(institution_id: str):
+    """Manually trigger a readiness snapshot.
+
+    Creates a new snapshot only if one doesn't exist for today.
+    Use this to ensure historical data is captured regularly.
+
+    Returns:
+        {
+            "success": true,
+            "snapshot_id": "snap_xxx" | null,
+            "created": true | false,
+            "message": "..."
+        }
+    """
+    accreditor = _get_accreditor_code(institution_id)
+
+    try:
+        snapshot_id = ensure_daily_snapshot(institution_id, accreditor)
+
+        if snapshot_id:
+            return jsonify({
+                "success": True,
+                "snapshot_id": snapshot_id,
+                "created": True,
+                "message": "New snapshot created"
+            })
+        else:
+            return jsonify({
+                "success": True,
+                "snapshot_id": None,
+                "created": False,
+                "message": "Snapshot already exists for today"
+            })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "created": False
         }), 500
