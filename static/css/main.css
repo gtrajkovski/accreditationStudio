@@ -1356,3 +1356,164 @@ a:hover {
     display: none;
   }
 }
+
+/* ============================================
+   Quick Actions FAB
+   ============================================ */
+.fab-container {
+  position: fixed;
+  bottom: var(--spacing-lg);
+  right: var(--spacing-lg);
+  z-index: var(--z-tooltip);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.fab-button {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  background-color: var(--accent-primary);
+  color: var(--bg-base);
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-normal) var(--transition-timing);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fab-button:hover {
+  background-color: var(--accent-hover);
+  box-shadow: var(--shadow-xl);
+  transform: scale(1.05);
+}
+
+.fab-button:focus {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.fab-icon {
+  width: 24px;
+  height: 24px;
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+.fab-icon-default {
+  opacity: 1;
+}
+
+.fab-icon-close {
+  position: absolute;
+  opacity: 0;
+  transform: rotate(-90deg);
+}
+
+.fab-button.open .fab-icon-default {
+  opacity: 0;
+  transform: rotate(90deg);
+}
+
+.fab-button.open .fab-icon-close {
+  opacity: 1;
+  transform: rotate(0);
+}
+
+.fab-menu {
+  position: absolute;
+  bottom: 68px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  transition: all var(--transition-normal) var(--transition-timing);
+  pointer-events: none;
+}
+
+.fab-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.fab-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.fab-menu-item:hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--accent-primary);
+}
+
+.fab-menu-item:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-primary);
+}
+
+.fab-menu-item svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+.fab-menu-item span {
+  flex: 1;
+}
+
+.fab-menu-item kbd {
+  padding: 2px 6px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* Stagger animation for menu items */
+.fab-menu.open .fab-menu-item:nth-child(1) { animation: fabSlideIn 0.2s 0.05s both; }
+.fab-menu.open .fab-menu-item:nth-child(2) { animation: fabSlideIn 0.2s 0.1s both; }
+.fab-menu.open .fab-menu-item:nth-child(3) { animation: fabSlideIn 0.2s 0.15s both; }
+.fab-menu.open .fab-menu-item:nth-child(4) { animation: fabSlideIn 0.2s 0.2s both; }
+
+@keyframes fabSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .fab-button,
+  .fab-menu,
+  .fab-menu-item,
+  .fab-icon {
+    transition: none;
+    animation: none;
+  }
+}

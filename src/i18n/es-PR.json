@@ -219,5 +219,11 @@
     "help_shortcuts": "Mostrar Atajos de Teclado",
     "action_success": "Acción completada",
     "action_failed": "Acción fallida"
+  },
+  "fab": {
+    "quick_actions": "Acciones rápidas",
+    "upload": "Subir Documento",
+    "audit": "Ejecutar Auditoría",
+    "packet": "Crear Paquete"
   }
 }

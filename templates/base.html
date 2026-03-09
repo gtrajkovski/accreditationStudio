@@ -275,6 +275,56 @@
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- Quick Actions FAB -->
+    {% if current_institution %}
+    <div class="fab-container" id="fab-container">
+        <button
+            class="fab-button"
+            id="fab-button"
+            aria-label="{{ t('fab.quick_actions') }}"
+            aria-expanded="false"
+            aria-controls="fab-menu"
+        >
+            <svg class="fab-icon fab-icon-default" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <svg class="fab-icon fab-icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+        <div class="fab-menu" id="fab-menu" role="menu">
+            <button class="fab-menu-item" role="menuitem" data-action="action_upload_doc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span>{{ t('fab.upload') }}</span>
+                <kbd>U</kbd>
+            </button>
+            <button class="fab-menu-item" role="menuitem" data-action="action_run_audit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>{{ t('fab.audit') }}</span>
+                <kbd>A</kbd>
+            </button>
+            <button class="fab-menu-item" role="menuitem" data-action="nav_packets">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/>
+                    <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                    <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+                <span>{{ t('fab.packet') }}</span>
+                <kbd>P</kbd>
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Page Context for Command Palette -->
     <script type="application/json" id="page-context">
     {
@@ -294,6 +344,7 @@
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script src="{{ url_for('static', filename='js/command_palette.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/fab.js') }}"></script></script>
 
     <!-- Initialize i18n with server-provided strings -->
     <script>

@@ -219,5 +219,11 @@
     "help_shortcuts": "Show Keyboard Shortcuts",
     "action_success": "Action completed",
     "action_failed": "Action failed"
+  },
+  "fab": {
+    "quick_actions": "Quick actions",
+    "upload": "Upload Document",
+    "audit": "Run Audit",
+    "packet": "Create Packet"
   }
 }
