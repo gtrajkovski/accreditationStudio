@@ -4,6 +4,26 @@
 {% block header_title %}Dashboard{% endblock %}
 
 {% block content %}
+<!-- Risk Alerts Banner -->
+<div class="risk-alerts-banner" id="risk-alerts-banner" style="display: none;">
+    <div class="risk-alerts-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span class="risk-alerts-title">Critical Issues Requiring Attention</span>
+        <span class="risk-alerts-count" id="risk-alerts-count">0</span>
+        <button class="risk-alerts-dismiss" id="risk-alerts-dismiss" aria-label="Dismiss">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    </div>
+    <div class="risk-alerts-list" id="risk-alerts-list"></div>
+</div>
+
 <div class="dashboard-grid mb-lg">
     <!-- Quick Stats -->
     <div class="card">
@@ -196,6 +216,68 @@
 
 {% block extra_scripts %}
 <style>
+/* Risk Alerts Banner */
+.risk-alerts-banner {
+    background: linear-gradient(90deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%);
+    border: 1px solid var(--danger);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+    overflow: hidden;
+}
+.risk-alerts-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: rgba(239,68,68,0.1);
+}
+.risk-alerts-header svg {
+    width: 20px;
+    height: 20px;
+    color: var(--danger);
+    flex-shrink: 0;
+}
+.risk-alerts-title {
+    font-weight: 600;
+    color: var(--danger);
+}
+.risk-alerts-count {
+    background: var(--danger);
+    color: white;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.risk-alerts-dismiss {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--text-muted);
+}
+.risk-alerts-dismiss:hover {
+    color: var(--danger);
+}
+.risk-alerts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border-subtle);
+}
+.risk-alert-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--bg-card);
+}
+.risk-alert-item a {
+    margin-left: auto;
+    font-size: 0.875rem;
+}
+
 .session-card {
     display: flex;
     align-items: center;
@@ -322,5 +404,52 @@ function updateSessionUI(sessionId, newStatus) {
         }
     }
 }
+
+// Risk Alerts Banner
+async function loadRiskAlerts() {
+    const banner = document.getElementById('risk-alerts-banner');
+    const list = document.getElementById('risk-alerts-list');
+    const count = document.getElementById('risk-alerts-count');
+
+    if (!banner) return;
+
+    // Check if dismissed this session
+    if (sessionStorage.getItem('risk_alerts_dismissed')) {
+        return;
+    }
+
+    try {
+        // Get alerts for current institution if set
+        const context = document.getElementById('page-context');
+        const ctx = context ? JSON.parse(context.textContent) : {};
+
+        if (!ctx.institution_id) return;
+
+        const res = await fetch(`/api/institutions/${ctx.institution_id}/alerts`);
+        const data = await res.json();
+
+        const blockers = data.blockers || [];
+        if (blockers.length === 0) return;
+
+        count.textContent = blockers.length;
+        list.innerHTML = blockers.slice(0, 5).map(b => `
+            <div class="risk-alert-item">
+                <span>${b.message}</span>
+                ${b.link ? `<a href="${b.link}" class="btn btn-sm btn-secondary">Fix</a>` : ''}
+            </div>
+        `).join('');
+
+        banner.style.display = 'block';
+    } catch (e) {
+        console.error('Failed to load risk alerts:', e);
+    }
+}
+
+document.getElementById('risk-alerts-dismiss')?.addEventListener('click', function() {
+    document.getElementById('risk-alerts-banner').style.display = 'none';
+    sessionStorage.setItem('risk_alerts_dismissed', '1');
+});
+
+document.addEventListener('DOMContentLoaded', loadRiskAlerts);
 </script>
 {% endblock %}
