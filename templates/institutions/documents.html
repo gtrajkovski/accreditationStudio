@@ -3,15 +3,6 @@
 
 {% block title %}Documents - {{ institution.name }} - AccreditAI{% endblock %}
 
-{% block header_actions %}
-<button class="btn btn-primary" onclick="showUploadModal()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
-        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-    </svg>
-    Upload Document
-</button>
-{% endblock %}
-
 {% block content %}
 {{ page_header(
     title='Documents',
@@ -19,89 +10,133 @@
     institution=institution,
     score=readiness_score
 ) }}
+
+<!-- Upload Zone - Always Visible -->
+<div class="upload-zone card mb-lg" id="uploadZone">
+    <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt,.md" multiple hidden>
+    <div class="upload-zone-content" id="uploadZoneContent">
+        <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+        </div>
+        <div class="upload-text">
+            <h3>Drop files here or click to upload</h3>
+            <p>PDF, DOCX, DOC, TXT, MD up to 50MB</p>
+        </div>
+    </div>
+    <!-- Upload Queue -->
+    <div class="upload-queue" id="uploadQueue" style="display: none;"></div>
+</div>
+
+<!-- Documents List -->
 <div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Uploaded Documents</h3>
+        <span class="doc-count">{{ institution.documents|length }} document{{ 's' if institution.documents|length != 1 else '' }}</span>
+    </div>
+
     {% if institution.documents %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Type</th>
-                <th>Language</th>
-                <th>Uploaded</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for doc in institution.documents %}
-            <tr data-document-id="{{ doc.id }}">
-                <td>
-                    <strong>{{ doc.original_filename or doc.id }}</strong>
-                    {% if doc.page_count %}<br><small class="text-muted">{{ doc.page_count }} pages</small>{% endif %}
-                </td>
-                <td><span class="badge badge-info">{{ doc.doc_type.value }}</span></td>
-                <td>{{ doc.language.value if doc.language else 'EN' }}</td>
-                <td class="text-muted">{{ doc.uploaded_at[:10] if doc.uploaded_at else '-' }}</td>
-                <td>
-                    <button class="btn btn-secondary btn-sm" onclick="viewDocument('{{ doc.id }}')">View</button>
-                    <button class="btn btn-primary btn-sm" onclick="auditDocument('{{ doc.id }}', '{{ doc.doc_type.value }}')">
-                        Audit
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="doc-list">
+        {% for doc in institution.documents %}
+        <div class="doc-item" data-document-id="{{ doc.id }}">
+            <div class="doc-icon doc-icon-{{ doc.doc_type.value }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <path d="M14 2v6h6"/>
+                </svg>
+            </div>
+            <div class="doc-info">
+                <div class="doc-name">{{ doc.original_filename or doc.id }}</div>
+                <div class="doc-meta">
+                    <span class="doc-type-badge">{{ doc.doc_type.value }}</span>
+                    {% if doc.page_count %}<span>{{ doc.page_count }} pages</span>{% endif %}
+                    <span>{{ doc.uploaded_at[:10] if doc.uploaded_at else '' }}</span>
+                </div>
+            </div>
+            <div class="doc-actions">
+                <button class="btn btn-ghost btn-sm" onclick="viewDocument('{{ doc.id }}')" title="View">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="auditDocument('{{ doc.id }}')">
+                    Audit
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
     {% else %}
-    <div class="text-center text-muted" style="padding: var(--spacing-xl);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+    <div class="empty-docs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
             <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
         </svg>
-        <h3 style="margin-bottom: var(--spacing-sm);">No Documents Yet</h3>
-        <p style="margin-bottom: var(--spacing-lg);">Upload documents to start your accreditation preparation.</p>
-        <button class="btn btn-primary" onclick="showUploadModal()">Upload Your First Document</button>
+        <h3>No documents uploaded yet</h3>
+        <p>Drag and drop files above to get started</p>
     </div>
     {% endif %}
 </div>
 
-<!-- Upload Modal -->
-<div id="uploadModal" class="modal" style="display: none;">
-    <div class="modal-backdrop" onclick="hideUploadModal()"></div>
-    <div class="modal-content">
+<!-- Document Type Modal (shown after file selection) -->
+<div class="modal" id="typeModal" style="display: none;">
+    <div class="modal-backdrop" onclick="cancelUpload()"></div>
+    <div class="modal-content modal-sm">
         <div class="modal-header">
-            <h3>Upload Document</h3>
-            <button class="btn btn-ghost" onclick="hideUploadModal()">&times;</button>
+            <h3>Classify Document</h3>
+            <button class="btn btn-ghost" onclick="cancelUpload()">&times;</button>
         </div>
-        <form id="uploadForm" enctype="multipart/form-data">
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Select File</label>
-                    <div class="file-upload-wrapper">
-                        <input type="file" id="fileInput" name="file" accept=".pdf,.docx,.doc,.txt,.md" required>
-                        <div class="file-upload-display" id="fileUploadDisplay">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                <polyline points="17 8 12 3 7 8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                            <span>Click to select or drag a file here</span>
-                        </div>
-                    </div>
-                    <small class="text-muted">Supported: PDF, DOCX, DOC, TXT, MD</small>
+        <div class="modal-body">
+            <div class="file-preview" id="filePreview"></div>
+            <div class="form-group">
+                <label>Document Type</label>
+                <div class="type-grid" id="typeGrid">
+                    <button class="type-option" data-type="policy" onclick="selectType('policy')">
+                        <span class="type-icon">📋</span>
+                        <span>Policy</span>
+                    </button>
+                    <button class="type-option" data-type="catalog" onclick="selectType('catalog')">
+                        <span class="type-icon">📚</span>
+                        <span>Catalog</span>
+                    </button>
+                    <button class="type-option" data-type="syllabus" onclick="selectType('syllabus')">
+                        <span class="type-icon">📝</span>
+                        <span>Syllabus</span>
+                    </button>
+                    <button class="type-option" data-type="transcript" onclick="selectType('transcript')">
+                        <span class="type-icon">📄</span>
+                        <span>Transcript</span>
+                    </button>
+                    <button class="type-option" data-type="agreement" onclick="selectType('agreement')">
+                        <span class="type-icon">🤝</span>
+                        <span>Agreement</span>
+                    </button>
+                    <button class="type-option" data-type="evidence" onclick="selectType('evidence')">
+                        <span class="type-icon">📎</span>
+                        <span>Evidence</span>
+                    </button>
+                    <button class="type-option" data-type="report" onclick="selectType('report')">
+                        <span class="type-icon">📊</span>
+                        <span>Report</span>
+                    </button>
+                    <button class="type-option" data-type="other" onclick="selectType('other')">
+                        <span class="type-icon">📁</span>
+                        <span>Other</span>
+                    </button>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="hideUploadModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary" id="uploadBtn">Upload</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
 <!-- Audit Modal -->
 <div id="auditModal" class="modal" style="display: none;">
     <div class="modal-backdrop" onclick="hideAuditModal()"></div>
-    <div class="modal-content">
+    <div class="modal-content modal-sm">
         <div class="modal-header">
             <h3>Run Compliance Audit</h3>
             <button class="btn btn-ghost" onclick="hideAuditModal()">&times;</button>
@@ -119,111 +154,534 @@
             </div>
             <div id="auditProgress" style="display: none;">
                 <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    <div class="progress-fill" id="progressFill"></div>
                 </div>
                 <p id="progressText" class="text-muted mt-sm">Initializing...</p>
             </div>
         </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="hideAuditModal()" id="auditCancelBtn">Cancel</button>
+        <div class="modal-footer" id="auditFooter">
+            <button type="button" class="btn btn-secondary" onclick="hideAuditModal()">Cancel</button>
             <button type="button" class="btn btn-primary" onclick="startAudit()" id="auditStartBtn">Start Audit</button>
         </div>
     </div>
 </div>
 
 <style>
-.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
-.modal-backdrop { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); }
-.modal-content { position: relative; background: var(--bg-card); border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); }
-.modal-header h3 { margin: 0; }
-.modal-body { padding: var(--spacing-lg); }
-.modal-footer { display: flex; justify-content: flex-end; gap: var(--spacing-sm); padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); }
-.form-group { margin-bottom: var(--spacing-md); }
-.form-group label { display: block; margin-bottom: var(--spacing-xs); font-weight: 500; }
-.form-control { width: 100%; padding: var(--spacing-sm); border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); }
-.progress-bar { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
-.progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
-.mt-sm { margin-top: var(--spacing-sm); }
-
-/* File Upload Styling */
-.file-upload-wrapper {
-    position: relative;
-    margin-bottom: var(--spacing-xs);
-}
-.file-upload-wrapper input[type="file"] {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
+/* Upload Zone */
+.upload-zone {
+    border: 2px dashed var(--border-color);
+    background: var(--bg-secondary);
+    transition: all 0.2s ease;
     cursor: pointer;
-    z-index: 2;
+    overflow: hidden;
 }
-.file-upload-display {
+
+.upload-zone:hover,
+.upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(201, 168, 76, 0.05);
+}
+
+.upload-zone.dragover {
+    transform: scale(1.01);
+}
+
+.upload-zone-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-xl);
+}
+
+.upload-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.upload-icon svg {
+    width: 28px;
+    height: 28px;
+    stroke: var(--accent);
+}
+
+.upload-zone:hover .upload-icon,
+.upload-zone.dragover .upload-icon {
+    background: var(--accent);
+}
+
+.upload-zone:hover .upload-icon svg,
+.upload-zone.dragover .upload-icon svg {
+    stroke: var(--bg-primary);
+}
+
+.upload-text h3 {
+    margin: 0 0 4px 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.upload-text p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* Upload Queue */
+.upload-queue {
+    border-top: 1px solid var(--border-color);
+    padding: var(--spacing-md);
+}
+
+.upload-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) 0;
+}
+
+.upload-item + .upload-item {
+    border-top: 1px solid var(--border-color);
+}
+
+.upload-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.upload-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.upload-item-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upload-item-status {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.upload-item-progress {
+    width: 100px;
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.upload-item-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.2s;
+}
+
+.upload-item-progress-fill.success {
+    background: var(--success);
+}
+
+.upload-item-progress-fill.error {
+    background: var(--danger);
+}
+
+/* Document List */
+.doc-count {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.doc-list {
+    padding: var(--spacing-sm);
+}
+
+.doc-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    transition: background 0.15s;
+}
+
+.doc-item:hover {
+    background: var(--bg-hover);
+}
+
+.doc-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+}
+
+.doc-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--text-muted);
+}
+
+.doc-icon-policy { background: rgba(244, 114, 182, 0.15); }
+.doc-icon-policy svg { stroke: #f472b6; }
+.doc-icon-catalog { background: rgba(167, 139, 250, 0.15); }
+.doc-icon-catalog svg { stroke: #a78bfa; }
+.doc-icon-syllabus { background: rgba(96, 165, 250, 0.15); }
+.doc-icon-syllabus svg { stroke: #60a5fa; }
+.doc-icon-evidence { background: rgba(52, 211, 153, 0.15); }
+.doc-icon-evidence svg { stroke: #34d399; }
+
+.doc-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.doc-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.doc-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.doc-type-badge {
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    text-transform: capitalize;
+}
+
+.doc-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.doc-item:hover .doc-actions {
+    opacity: 1;
+}
+
+/* Empty State */
+.empty-docs {
+    text-align: center;
+    padding: var(--spacing-xxl);
+    color: var(--text-muted);
+}
+
+.empty-docs svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+}
+
+.empty-docs h3 {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.empty-docs p {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+/* Type Selection Grid */
+.file-preview {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.file-preview-icon {
+    font-size: 24px;
+}
+
+.file-preview-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.type-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+}
+
+.type-option {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-xl) var(--spacing-lg);
-    border: 2px dashed var(--border-color);
-    border-radius: var(--radius-md);
+    gap: var(--spacing-xs);
+    padding: var(--spacing-md) var(--spacing-sm);
     background: var(--bg-secondary);
-    color: var(--text-muted);
-    text-align: center;
-    transition: all var(--transition-fast);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s;
 }
-.file-upload-display svg {
-    width: 32px;
-    height: 32px;
-    stroke: var(--text-muted);
+
+.type-option:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-color);
 }
-.file-upload-wrapper:hover .file-upload-display,
-.file-upload-wrapper.dragover .file-upload-display {
+
+.type-option.selected {
     border-color: var(--accent);
     background: rgba(201, 168, 76, 0.1);
-    color: var(--text-primary);
 }
-.file-upload-wrapper:hover .file-upload-display svg,
-.file-upload-wrapper.dragover .file-upload-display svg {
-    stroke: var(--accent);
+
+.type-icon {
+    font-size: 24px;
 }
-.file-upload-display.has-file {
-    border-style: solid;
-    border-color: var(--success);
-    background: rgba(74, 222, 128, 0.1);
+
+.type-option span:last-child {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
 }
-.file-upload-display.has-file svg {
-    stroke: var(--success);
-}
+
+/* Modal */
+.modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal-backdrop { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); }
+.modal-content { position: relative; background: var(--bg-card); border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+.modal-sm { max-width: 420px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); }
+.modal-header h3 { margin: 0; font-size: 1.125rem; }
+.modal-body { padding: var(--spacing-lg); }
+.modal-footer { display: flex; justify-content: flex-end; gap: var(--spacing-sm); padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); }
+
+.form-group { margin-bottom: var(--spacing-md); }
+.form-group:last-child { margin-bottom: 0; }
+.form-group label { display: block; margin-bottom: var(--spacing-xs); font-weight: 500; font-size: 0.875rem; }
+.form-control { width: 100%; padding: var(--spacing-sm) var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.875rem; }
+
+.progress-bar { height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+.mt-sm { margin-top: var(--spacing-sm); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
 </style>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 const institutionId = '{{ institution.id }}';
+let pendingFiles = [];
+let currentFileIndex = 0;
+let selectedType = null;
 let currentDocId = null;
 
-function showUploadModal() {
-    document.getElementById('uploadModal').style.display = 'flex';
+// ============================================================================
+// Upload Zone
+// ============================================================================
+
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const uploadQueue = document.getElementById('uploadQueue');
+
+// Click to select
+uploadZone.addEventListener('click', (e) => {
+    if (e.target.closest('.upload-queue')) return;
+    fileInput.click();
+});
+
+// Drag and drop
+['dragenter', 'dragover'].forEach(evt => {
+    uploadZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+});
+
+['dragleave', 'drop'].forEach(evt => {
+    uploadZone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+    });
+});
+
+uploadZone.addEventListener('drop', (e) => {
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
+});
+
+fileInput.addEventListener('change', () => {
+    const files = Array.from(fileInput.files);
+    handleFiles(files);
+    fileInput.value = '';
+});
+
+function handleFiles(files) {
+    const validFiles = files.filter(f => {
+        const ext = f.name.split('.').pop().toLowerCase();
+        return ['pdf', 'docx', 'doc', 'txt', 'md'].includes(ext);
+    });
+
+    if (validFiles.length === 0) {
+        window.toast.error('No valid files selected');
+        return;
+    }
+
+    pendingFiles = validFiles;
+    currentFileIndex = 0;
+    showTypeModal();
 }
 
-function hideUploadModal() {
-    document.getElementById('uploadModal').style.display = 'none';
-    document.getElementById('uploadForm').reset();
+// ============================================================================
+// Type Selection Modal
+// ============================================================================
+
+function showTypeModal() {
+    if (currentFileIndex >= pendingFiles.length) {
+        document.getElementById('typeModal').style.display = 'none';
+        return;
+    }
+
+    const file = pendingFiles[currentFileIndex];
+    const ext = file.name.split('.').pop().toLowerCase();
+    const icon = { pdf: '📕', docx: '📘', doc: '📘', txt: '📝', md: '📝' }[ext] || '📄';
+
+    document.getElementById('filePreview').innerHTML = `
+        <span class="file-preview-icon">${icon}</span>
+        <span class="file-preview-name">${file.name}</span>
+    `;
+
+    // Reset selection
+    selectedType = null;
+    document.querySelectorAll('.type-option').forEach(btn => btn.classList.remove('selected'));
+
+    document.getElementById('typeModal').style.display = 'flex';
 }
+
+function selectType(type) {
+    selectedType = type;
+    document.querySelectorAll('.type-option').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.type === type);
+    });
+
+    // Auto-proceed after selection
+    setTimeout(() => {
+        uploadCurrentFile();
+    }, 150);
+}
+
+function cancelUpload() {
+    document.getElementById('typeModal').style.display = 'none';
+    pendingFiles = [];
+    currentFileIndex = 0;
+}
+
+// ============================================================================
+// Upload Processing
+// ============================================================================
+
+async function uploadCurrentFile() {
+    const file = pendingFiles[currentFileIndex];
+    const type = selectedType || 'other';
+
+    document.getElementById('typeModal').style.display = 'none';
+
+    // Show in queue
+    uploadQueue.style.display = 'block';
+    const itemId = `upload-${Date.now()}`;
+    const ext = file.name.split('.').pop().toLowerCase();
+    const icon = { pdf: '📕', docx: '📘', doc: '📘', txt: '📝', md: '📝' }[ext] || '📄';
+
+    uploadQueue.innerHTML += `
+        <div class="upload-item" id="${itemId}">
+            <div class="upload-item-icon">${icon}</div>
+            <div class="upload-item-info">
+                <div class="upload-item-name">${file.name}</div>
+                <div class="upload-item-status">Uploading...</div>
+            </div>
+            <div class="upload-item-progress">
+                <div class="upload-item-progress-fill" style="width: 30%"></div>
+            </div>
+        </div>
+    `;
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('doc_type', type);
+
+        const res = await fetch(`/api/institutions/${institutionId}/documents/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await res.json();
+        const item = document.getElementById(itemId);
+
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+        item.querySelector('.upload-item-status').textContent = 'Uploaded';
+        item.querySelector('.upload-item-progress-fill').style.width = '100%';
+        item.querySelector('.upload-item-progress-fill').classList.add('success');
+
+    } catch (err) {
+        const item = document.getElementById(itemId);
+        item.querySelector('.upload-item-status').textContent = err.message;
+        item.querySelector('.upload-item-progress-fill').classList.add('error');
+    }
+
+    // Process next file
+    currentFileIndex++;
+    if (currentFileIndex < pendingFiles.length) {
+        showTypeModal();
+    } else {
+        // All done - reload after delay
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    }
+}
+
+// ============================================================================
+// Document Actions
+// ============================================================================
 
 function viewDocument(docId) {
     window.toast.info('Document viewer coming soon');
 }
 
-function auditDocument(docId, docType) {
+function auditDocument(docId) {
     currentDocId = docId;
     document.getElementById('auditModal').style.display = 'flex';
     document.getElementById('auditProgress').style.display = 'none';
-    document.getElementById('auditStartBtn').style.display = 'inline-block';
+    document.getElementById('auditFooter').style.display = 'flex';
+    document.getElementById('progressFill').style.width = '0%';
 }
 
 function hideAuditModal() {
@@ -234,12 +692,11 @@ function hideAuditModal() {
 async function startAudit() {
     const standardsId = document.getElementById('standardsSelect').value;
     document.getElementById('auditProgress').style.display = 'block';
-    document.getElementById('auditStartBtn').style.display = 'none';
+    document.getElementById('auditFooter').style.display = 'none';
     document.getElementById('progressText').textContent = 'Starting audit...';
     document.getElementById('progressFill').style.width = '5%';
 
     try {
-        // Start audit
         const startRes = await fetch(`/api/institutions/${institutionId}/audits`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -250,29 +707,23 @@ async function startAudit() {
 
         const auditId = startData.audit_id;
         document.getElementById('progressFill').style.width = '10%';
-        document.getElementById('progressText').textContent = 'Audit initialized. Running passes...';
 
-        // Stream audit progress
         const evtSource = new EventSource(`/api/institutions/${institutionId}/audits/${auditId}/stream`);
 
         evtSource.onmessage = function(e) {
             const data = JSON.parse(e.data);
             if (data.type === 'pass_started') {
-                const pct = 10 + (data.pass * 15);
-                document.getElementById('progressFill').style.width = pct + '%';
+                document.getElementById('progressFill').style.width = (10 + data.pass * 15) + '%';
                 document.getElementById('progressText').textContent = `Running pass ${data.pass}: ${data.name}...`;
-            } else if (data.type === 'pass_completed') {
-                const msg = data.result?.message || `Pass ${data.pass} complete`;
-                document.getElementById('progressText').textContent = msg;
             } else if (data.type === 'audit_completed') {
                 document.getElementById('progressFill').style.width = '100%';
-                document.getElementById('progressText').textContent = 'Audit complete!';
+                document.getElementById('progressText').textContent = 'Complete!';
                 evtSource.close();
                 setTimeout(() => {
                     hideAuditModal();
-                    window.toast.success('Audit complete! View results in Compliance page.');
+                    window.toast.success('Audit complete!');
                     window.location.href = `/institutions/${institutionId}/compliance`;
-                }, 1000);
+                }, 800);
             } else if (data.type === 'error') {
                 evtSource.close();
                 throw new Error(data.error);
@@ -281,87 +732,21 @@ async function startAudit() {
 
         evtSource.onerror = function() {
             evtSource.close();
-            document.getElementById('progressText').textContent = 'Connection lost. Check Compliance page for results.';
+            document.getElementById('progressText').textContent = 'Connection lost.';
         };
 
     } catch (err) {
         window.toast.error(err.message);
         document.getElementById('auditProgress').style.display = 'none';
-        document.getElementById('auditStartBtn').style.display = 'inline-block';
+        document.getElementById('auditFooter').style.display = 'flex';
     }
 }
 
-// File input display update
-const fileInput = document.getElementById('fileInput');
-const fileDisplay = document.getElementById('fileUploadDisplay');
-const fileWrapper = fileInput.parentElement;
-
-fileInput.addEventListener('change', function() {
-    if (this.files && this.files[0]) {
-        const fileName = this.files[0].name;
-        fileDisplay.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                <path d="M14 2v6h6"/>
-            </svg>
-            <span>${fileName}</span>
-        `;
-        fileDisplay.classList.add('has-file');
-    } else {
-        resetFileDisplay();
-    }
-});
-
-function resetFileDisplay() {
-    fileDisplay.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-        </svg>
-        <span>Click to select or drag a file here</span>
-    `;
-    fileDisplay.classList.remove('has-file');
-}
-
-// Drag and drop
-['dragenter', 'dragover'].forEach(evt => {
-    fileWrapper.addEventListener(evt, (e) => {
-        e.preventDefault();
-        fileWrapper.classList.add('dragover');
-    });
-});
-
-['dragleave', 'drop'].forEach(evt => {
-    fileWrapper.addEventListener(evt, (e) => {
-        e.preventDefault();
-        fileWrapper.classList.remove('dragover');
-    });
-});
-
-// Upload form
-document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    const btn = document.getElementById('uploadBtn');
-    btn.disabled = true;
-    btn.textContent = 'Uploading...';
-
-    try {
-        const res = await fetch(`/api/institutions/${institutionId}/documents/upload`, {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Upload failed');
-        window.toast.success('Document uploaded successfully');
-        hideUploadModal();
-        location.reload();
-    } catch (err) {
-        window.toast.error(err.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Upload';
+// Close modals on Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        cancelUpload();
+        hideAuditModal();
     }
 });
 </script>
