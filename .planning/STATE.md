@@ -1,5 +1,25 @@
 # AccreditAI State
 
+## URGENT TODO (Next Session)
+
+**Document Upload Not Working** - The `documents_bp` blueprint exists in `src/api/documents.py` but is NOT registered in `app.py`.
+
+Fix needed in `app.py`:
+```python
+# Add import
+from src.api.documents import documents_bp, init_documents_bp
+
+# Add initialization (after other init_*_bp calls)
+init_documents_bp(workspace_manager)
+
+# Add registration (after other register_blueprint calls)
+app.register_blueprint(documents_bp)
+```
+
+Then test: `curl -X POST http://127.0.0.1:5006/api/institutions/inst_b2b4c7533e20/documents/upload -F "file=@test.txt" -F "doc_type=policy"`
+
+---
+
 ## Current Phase
 **Post-MVP Backlog** - Implementing feature enhancements
 
@@ -13,9 +33,9 @@
 - ✅ Keyboard Shortcuts (G+D dashboard, G+C compliance sequences)
 - ✅ Quick Actions FAB (floating button: Upload/Audit/Packet)
 - ✅ Risk Alerts Banner (critical blockers on dashboard)
+- ✅ Impact Analysis (fact-to-document dependencies, change simulation, auto-remediation)
 
 ### Remaining Backlog
-- 🔲 Impact Analysis - Change one fact, see affected documents
 - 🔲 Institutional Knowledge Graph - Facts as nodes
 - 🔲 Accreditation Timeline Planner - Project management
 - 🔲 Site Visit Mode - Fast search during visits
