@@ -76,7 +76,17 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label>Select File</label>
-                    <input type="file" id="fileInput" name="file" accept=".pdf,.docx,.doc,.txt,.md" required>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="fileInput" name="file" accept=".pdf,.docx,.doc,.txt,.md" required>
+                        <div class="file-upload-display" id="fileUploadDisplay">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <span>Click to select or drag a file here</span>
+                        </div>
+                    </div>
                     <small class="text-muted">Supported: PDF, DOCX, DOC, TXT, MD</small>
                 </div>
             </div>
@@ -135,6 +145,59 @@
 .progress-bar { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
 .mt-sm { margin-top: var(--spacing-sm); }
+
+/* File Upload Styling */
+.file-upload-wrapper {
+    position: relative;
+    margin-bottom: var(--spacing-xs);
+}
+.file-upload-wrapper input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+.file-upload-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xl) var(--spacing-lg);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    text-align: center;
+    transition: all var(--transition-fast);
+}
+.file-upload-display svg {
+    width: 32px;
+    height: 32px;
+    stroke: var(--text-muted);
+}
+.file-upload-wrapper:hover .file-upload-display,
+.file-upload-wrapper.dragover .file-upload-display {
+    border-color: var(--accent);
+    background: rgba(201, 168, 76, 0.1);
+    color: var(--text-primary);
+}
+.file-upload-wrapper:hover .file-upload-display svg,
+.file-upload-wrapper.dragover .file-upload-display svg {
+    stroke: var(--accent);
+}
+.file-upload-display.has-file {
+    border-style: solid;
+    border-color: var(--success);
+    background: rgba(74, 222, 128, 0.1);
+}
+.file-upload-display.has-file svg {
+    stroke: var(--success);
+}
 </style>
 {% endblock %}
 
@@ -227,6 +290,54 @@ async function startAudit() {
         document.getElementById('auditStartBtn').style.display = 'inline-block';
     }
 }
+
+// File input display update
+const fileInput = document.getElementById('fileInput');
+const fileDisplay = document.getElementById('fileUploadDisplay');
+const fileWrapper = fileInput.parentElement;
+
+fileInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+        const fileName = this.files[0].name;
+        fileDisplay.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <path d="M14 2v6h6"/>
+            </svg>
+            <span>${fileName}</span>
+        `;
+        fileDisplay.classList.add('has-file');
+    } else {
+        resetFileDisplay();
+    }
+});
+
+function resetFileDisplay() {
+    fileDisplay.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span>Click to select or drag a file here</span>
+    `;
+    fileDisplay.classList.remove('has-file');
+}
+
+// Drag and drop
+['dragenter', 'dragover'].forEach(evt => {
+    fileWrapper.addEventListener(evt, (e) => {
+        e.preventDefault();
+        fileWrapper.classList.add('dragover');
+    });
+});
+
+['dragleave', 'drop'].forEach(evt => {
+    fileWrapper.addEventListener(evt, (e) => {
+        e.preventDefault();
+        fileWrapper.classList.remove('dragover');
+    });
+});
 
 // Upload form
 document.getElementById('uploadForm').addEventListener('submit', async function(e) {

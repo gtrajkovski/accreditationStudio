@@ -125,6 +125,8 @@ class AgentRegistry:
                 team_report_agent,
                 compliance_calendar_agent,
                 document_review_agent,
+                # Post-MVP
+                knowledge_graph_agent,
             )
         except ImportError:
             # Agents may not all exist yet

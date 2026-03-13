@@ -107,6 +107,9 @@ class AgentType(Enum):
     COMPLIANCE_CALENDAR = "compliance_calendar"
     DOCUMENT_REVIEW = "document_review"
 
+    # Post-MVP Features
+    KNOWLEDGE_GRAPH = "knowledge_graph"
+
 
 class BaseAgent(ABC):
     """Abstract base class for all agents.

@@ -307,7 +307,7 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Agent registry with dynamic dispatch
 - ✅ Evidence Guardian (Tier 0 governance)
 - ✅ Readiness Score service with sub-scores
-- ✅ Database migrations (14 migrations)
+- ✅ Database migrations (18 migrations)
 - ✅ Compliance Audit Agent (5-pass multi-tool audit engine)
 - ✅ Audit API with SSE streaming
 - ✅ Document upload and audit trigger UI
@@ -358,4 +358,18 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Document Reviews API blueprint with CRUD, stats, bulk operations
 - ✅ Document Reviews UI page (pending, overdue, scheduling, completion)
 
-Current blueprints: `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`
+**Post-MVP: Impact Analysis** ✅ Complete
+- ✅ Impact Analysis Service (fact scanning, change simulation, auto-remediation)
+- ✅ Impact Analysis API blueprint (8 endpoints: facts, references, simulations, graph)
+- ✅ Impact Analysis UI page (fact explorer, D3.js graph, simulation modal)
+- ✅ Database migrations (0017_impact_analysis.sql, 0018_knowledge_graph.sql)
+
+**Post-MVP: Knowledge Graph** ✅ Complete
+- ✅ Knowledge Graph Service (entity extraction, relationship inference, graph traversal, impact analysis)
+- ✅ Knowledge Graph Agent (8 tools: build_graph, add_entity, add_relationship, query_graph, get_neighbors, find_path, analyze_impact, export_graph)
+- ✅ Knowledge Graph API blueprint (8 endpoints: graph data, entities, neighbors, paths, impact, export)
+- ✅ Knowledge Graph UI page (entity explorer, D3.js force-directed graph, entity details, path finder)
+- ✅ Database migration (0019_knowledge_graph_entities.sql)
+
+**Registered Blueprints** (24 total):
+`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `impact_analysis_bp`, `knowledge_graph_bp`

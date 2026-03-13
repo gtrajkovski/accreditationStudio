@@ -1,0 +1,1259 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}Knowledge Graph - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="buildGraph()" id="buildBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M23 4v6h-6M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+    </svg>
+    Build Graph
+</button>
+<button class="btn btn-secondary" onclick="exportGraph('json')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Export
+</button>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='Knowledge Graph',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Knowledge Graph', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<div class="kg-layout">
+    <!-- Left Panel: Entity Explorer -->
+    <div class="entity-explorer card">
+        <div class="card-header">
+            <h3 class="card-title">Entities</h3>
+        </div>
+        <div class="entity-search">
+            <input type="text" id="entitySearch" class="form-input" placeholder="Search entities...">
+        </div>
+        <div class="entity-type-tabs" id="entityTypeTabs">
+            <button class="entity-tab active" data-type="all">All</button>
+            <button class="entity-tab" data-type="program">Programs</button>
+            <button class="entity-tab" data-type="document">Documents</button>
+            <button class="entity-tab" data-type="standard">Standards</button>
+            <button class="entity-tab" data-type="faculty">Faculty</button>
+            <button class="entity-tab" data-type="finding">Findings</button>
+        </div>
+        <div class="entity-list" id="entityList">
+            <div class="loading-state">Loading entities...</div>
+        </div>
+    </div>
+
+    <!-- Center: Graph Visualization -->
+    <div class="graph-panel">
+        <div class="card mb-md">
+            <div class="card-header">
+                <h3 class="card-title">Relationship Graph</h3>
+                <div class="graph-controls">
+                    <select id="layoutSelect" class="form-select form-select-sm" onchange="changeLayout()">
+                        <option value="force">Force Layout</option>
+                        <option value="radial">Radial Layout</option>
+                    </select>
+                    <button class="btn btn-ghost btn-sm" onclick="zoomIn()" title="Zoom In">+</button>
+                    <button class="btn btn-ghost btn-sm" onclick="zoomOut()" title="Zoom Out">-</button>
+                    <button class="btn btn-ghost btn-sm" onclick="resetZoom()" title="Reset">Reset</button>
+                </div>
+            </div>
+            <div class="graph-container" id="graphContainer">
+                <div class="empty-state" id="graphEmptyState">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="width: 48px; height: 48px; margin-bottom: var(--spacing-md);">
+                        <circle cx="5" cy="6" r="3"/>
+                        <circle cx="19" cy="6" r="3"/>
+                        <circle cx="12" cy="18" r="3"/>
+                        <line x1="7.5" y1="7.5" x2="10.5" y2="16"/>
+                        <line x1="16.5" y1="7.5" x2="13.5" y2="16"/>
+                    </svg>
+                    <p>No graph data yet</p>
+                    <p class="text-muted">Click "Build Graph" to extract entities and relationships</p>
+                </div>
+            </div>
+            <div class="graph-legend" id="graphLegend">
+                <div class="legend-item"><span class="legend-shape legend-program"></span> Program</div>
+                <div class="legend-item"><span class="legend-shape legend-document"></span> Document</div>
+                <div class="legend-item"><span class="legend-shape legend-standard"></span> Standard</div>
+                <div class="legend-item"><span class="legend-shape legend-faculty"></span> Faculty</div>
+                <div class="legend-item"><span class="legend-shape legend-finding"></span> Finding</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Entity Details -->
+    <div class="detail-panel">
+        <div class="card" id="entityDetailsCard" style="display: none;">
+            <div class="card-header">
+                <h3 class="card-title" id="selectedEntityName">Entity Details</h3>
+                <span class="chip" id="selectedEntityType">-</span>
+            </div>
+            <div class="entity-details">
+                <div class="detail-section">
+                    <h4>Attributes</h4>
+                    <div id="entityAttributes">-</div>
+                </div>
+                <div class="detail-section">
+                    <h4>Connections</h4>
+                    <div class="connection-stats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="outgoingCount">0</span>
+                            <span class="stat-label">Outgoing</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="incomingCount">0</span>
+                            <span class="stat-label">Incoming</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="neighbors-list" id="neighborsList">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-secondary btn-sm" onclick="analyzeImpact()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    Analyze Impact
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="findPaths()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                    Find Paths
+                </button>
+            </div>
+        </div>
+
+        <!-- Impact Analysis Card -->
+        <div class="card mt-md" id="impactCard" style="display: none;">
+            <div class="card-header">
+                <h3 class="card-title">Impact Analysis</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closeImpactCard()">&times;</button>
+            </div>
+            <div class="impact-content" id="impactContent">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Path Finder Modal -->
+<div class="modal-overlay" id="pathModal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Find Paths</h3>
+            <button class="modal-close" onclick="closePathModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">From Entity</label>
+                <input type="text" id="pathFromEntity" class="form-input" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">To Entity</label>
+                <select id="pathToEntity" class="form-select">
+                    <option value="">Select target entity...</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="searchPaths()">Find Paths</button>
+
+            <div class="paths-results" id="pathsResults" style="display: none;">
+                <h4>Paths Found</h4>
+                <div id="pathsList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.kg-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: var(--spacing-lg);
+    min-height: calc(100vh - 200px);
+}
+
+@media (max-width: 1200px) {
+    .kg-layout {
+        grid-template-columns: 1fr;
+    }
+    .detail-panel {
+        order: -1;
+    }
+}
+
+/* Entity Explorer */
+.entity-explorer {
+    max-height: calc(100vh - 200px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.entity-search {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.entity-type-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.entity-tab {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.entity-tab:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.entity-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg-primary);
+}
+
+.entity-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+}
+
+.entity-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.entity-item:hover {
+    background: var(--bg-hover);
+}
+
+.entity-item.selected {
+    background: rgba(201, 168, 76, 0.15);
+    border-left: 2px solid var(--accent);
+}
+
+.entity-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.entity-icon.program { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+.entity-icon.document { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+.entity-icon.standard { background: rgba(251, 146, 60, 0.2); color: #fb923c; }
+.entity-icon.faculty { background: rgba(52, 211, 153, 0.2); color: #34d399; }
+.entity-icon.finding { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+
+.entity-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.entity-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.entity-category {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Graph Panel */
+.graph-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.graph-container {
+    height: 500px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.graph-container .empty-state {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.graph-controls {
+    display: flex;
+    gap: var(--spacing-xs);
+    align-items: center;
+}
+
+.form-select-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.graph-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.legend-shape {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-program { background: #a78bfa; }
+.legend-document { background: #60a5fa; }
+.legend-standard { background: #fb923c; }
+.legend-faculty { background: #34d399; }
+.legend-finding { background: #fbbf24; }
+
+/* Detail Panel */
+.detail-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.entity-details {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-section {
+    margin-bottom: var(--spacing-md);
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-section h4 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-xs);
+}
+
+.connection-stats {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.neighbors-list {
+    padding: var(--spacing-md);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.neighbor-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) 0;
+    font-size: 13px;
+}
+
+.neighbor-rel {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.card-footer {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Impact Card */
+.impact-content {
+    padding: var(--spacing-md);
+}
+
+.impact-score {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.impact-score-value {
+    font-size: 36px;
+    font-weight: 700;
+}
+
+.impact-score-value.low { color: var(--success); }
+.impact-score-value.medium { color: var(--warning); }
+.impact-score-value.high { color: var(--danger); }
+
+.impact-list {
+    margin-top: var(--spacing-md);
+}
+
+.impact-list h5 {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-xs);
+}
+
+.impact-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) 0;
+    font-size: 12px;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+}
+
+.paths-results {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.paths-results h4 {
+    font-size: 14px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.path-item {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.path-item-header {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-xs);
+}
+
+.path-item-nodes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 12px;
+}
+
+.path-node {
+    padding: 2px 6px;
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+}
+
+.path-arrow {
+    color: var(--text-muted);
+}
+
+/* Form elements */
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-secondary);
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.form-input[readonly] {
+    background: var(--bg-primary);
+    color: var(--text-muted);
+}
+
+.loading-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const institutionId = '{{ institution.id }}';
+let allEntities = [];
+let selectedEntity = null;
+let graphData = null;
+let svg = null;
+let simulation = null;
+let zoom = null;
+let currentLayout = 'force';
+
+// Entity type colors
+const typeColors = {
+    program: '#a78bfa',
+    document: '#60a5fa',
+    standard: '#fb923c',
+    faculty: '#34d399',
+    finding: '#fbbf24',
+    policy: '#f472b6'
+};
+
+// Entity type icons
+const typeIcons = {
+    program: '🎓',
+    document: '📄',
+    standard: '📏',
+    faculty: '👤',
+    finding: '⚠️',
+    policy: '📋'
+};
+
+// ============================================================================
+// Initialization
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadEntities();
+    loadGraph();
+
+    // Search filter
+    document.getElementById('entitySearch').addEventListener('input', (e) => {
+        filterEntities(e.target.value);
+    });
+
+    // Type tabs
+    document.querySelectorAll('.entity-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.entity-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            filterByType(tab.dataset.type);
+        });
+    });
+});
+
+// ============================================================================
+// Entity Loading
+// ============================================================================
+
+async function loadEntities() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/knowledge-graph/entities?limit=500`);
+        const data = await res.json();
+
+        if (data.success) {
+            allEntities = data.entities;
+            renderEntityList(allEntities);
+        }
+    } catch (err) {
+        console.error('Failed to load entities:', err);
+        document.getElementById('entityList').innerHTML =
+            '<div class="loading-state">Failed to load entities</div>';
+    }
+}
+
+function renderEntityList(entities) {
+    const container = document.getElementById('entityList');
+
+    if (!entities || entities.length === 0) {
+        container.innerHTML = `
+            <div class="loading-state">
+                <p>No entities found</p>
+                <p class="text-muted">Click "Build Graph" to extract entities</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = entities.map(e => `
+        <div class="entity-item" onclick="selectEntity('${e.id}')" data-id="${e.id}" data-type="${e.entity_type}">
+            <div class="entity-icon ${e.entity_type}">${typeIcons[e.entity_type] || '•'}</div>
+            <div class="entity-info">
+                <div class="entity-name">${escapeHtml(e.display_name)}</div>
+                <div class="entity-category">${e.category || e.entity_type}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterEntities(query) {
+    const q = query.toLowerCase();
+    const filtered = allEntities.filter(e =>
+        e.display_name.toLowerCase().includes(q) ||
+        e.entity_type.toLowerCase().includes(q)
+    );
+    renderEntityList(filtered);
+}
+
+function filterByType(type) {
+    if (type === 'all') {
+        renderEntityList(allEntities);
+    } else {
+        const filtered = allEntities.filter(e => e.entity_type === type);
+        renderEntityList(filtered);
+    }
+}
+
+// ============================================================================
+// Entity Selection
+// ============================================================================
+
+async function selectEntity(entityId) {
+    // Update selection UI
+    document.querySelectorAll('.entity-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.id === entityId);
+    });
+
+    selectedEntity = allEntities.find(e => e.id === entityId);
+    if (!selectedEntity) return;
+
+    // Show details card
+    const detailsCard = document.getElementById('entityDetailsCard');
+    detailsCard.style.display = 'block';
+
+    document.getElementById('selectedEntityName').textContent = selectedEntity.display_name;
+    document.getElementById('selectedEntityType').textContent = selectedEntity.entity_type;
+    document.getElementById('selectedEntityType').className = `chip entity-icon ${selectedEntity.entity_type}`;
+
+    // Render attributes
+    const attrs = selectedEntity.attributes || {};
+    const attrHtml = Object.entries(attrs)
+        .filter(([k, v]) => v !== null && v !== undefined)
+        .map(([k, v]) => `<div><strong>${k}:</strong> ${escapeHtml(String(v))}</div>`)
+        .join('') || '<div class="text-muted">No attributes</div>';
+    document.getElementById('entityAttributes').innerHTML = attrHtml;
+
+    // Load neighbors
+    await loadNeighbors(entityId);
+
+    // Highlight in graph
+    highlightGraphNode(entityId);
+}
+
+async function loadNeighbors(entityId) {
+    const container = document.getElementById('neighborsList');
+    container.innerHTML = '<div class="loading-state">Loading connections...</div>';
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/knowledge-graph/entities/${encodeURIComponent(entityId)}/neighbors?depth=1`);
+        const data = await res.json();
+
+        if (data.success) {
+            // Update counts
+            const outgoing = data.relationships.filter(r => r.direction === 'outgoing').length;
+            const incoming = data.relationships.filter(r => r.direction === 'incoming').length;
+            document.getElementById('outgoingCount').textContent = outgoing;
+            document.getElementById('incomingCount').textContent = incoming;
+
+            // Render neighbors
+            if (data.neighbors.length > 0) {
+                container.innerHTML = data.neighbors.map(n => `
+                    <div class="neighbor-item" onclick="selectEntity('${n.id}')" style="cursor: pointer;">
+                        <span class="entity-icon ${n.entity_type}">${typeIcons[n.entity_type] || '•'}</span>
+                        <span>${escapeHtml(n.display_name)}</span>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="loading-state">No connections</div>';
+            }
+        }
+    } catch (err) {
+        console.error('Failed to load neighbors:', err);
+        container.innerHTML = '<div class="loading-state">Failed to load</div>';
+    }
+}
+
+// ============================================================================
+// Graph Visualization
+// ============================================================================
+
+async function loadGraph() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/knowledge-graph`);
+        const data = await res.json();
+
+        if (data.success && data.nodes.length > 0) {
+            graphData = data;
+            document.getElementById('graphEmptyState').style.display = 'none';
+            renderGraph(data);
+        }
+    } catch (err) {
+        console.error('Failed to load graph:', err);
+    }
+}
+
+function renderGraph(data) {
+    const container = document.getElementById('graphContainer');
+
+    // Clear existing
+    d3.select(container).select('svg').remove();
+
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    svg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    // Create zoom behavior
+    zoom = d3.zoom()
+        .scaleExtent([0.2, 4])
+        .on('zoom', (event) => {
+            g.attr('transform', event.transform);
+        });
+
+    svg.call(zoom);
+
+    const g = svg.append('g');
+
+    // Arrow marker for directed edges
+    svg.append('defs').append('marker')
+        .attr('id', 'arrowhead')
+        .attr('viewBox', '-0 -5 10 10')
+        .attr('refX', 20)
+        .attr('refY', 0)
+        .attr('orient', 'auto')
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .append('path')
+        .attr('d', 'M 0,-5 L 10,0 L 0,5')
+        .attr('fill', 'var(--border-color)');
+
+    // Create simulation
+    simulation = d3.forceSimulation(data.nodes)
+        .force('link', d3.forceLink(data.edges)
+            .id(d => d.id)
+            .distance(80)
+            .strength(0.3))
+        .force('charge', d3.forceManyBody().strength(-150))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collision', d3.forceCollide().radius(25));
+
+    // Draw edges
+    const link = g.append('g')
+        .attr('class', 'links')
+        .selectAll('line')
+        .data(data.edges)
+        .join('line')
+        .attr('stroke', 'var(--border-color)')
+        .attr('stroke-width', d => Math.max(1, d.weight * 2))
+        .attr('stroke-opacity', 0.6)
+        .attr('marker-end', 'url(#arrowhead)');
+
+    // Draw nodes
+    const node = g.append('g')
+        .attr('class', 'nodes')
+        .selectAll('g')
+        .data(data.nodes)
+        .join('g')
+        .attr('cursor', 'pointer')
+        .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended));
+
+    // Node circles
+    node.append('circle')
+        .attr('r', 12)
+        .attr('fill', d => typeColors[d.entity_type] || '#888')
+        .attr('stroke', 'var(--bg-card)')
+        .attr('stroke-width', 2);
+
+    // Node labels
+    node.append('text')
+        .text(d => d.label.substring(0, 15) + (d.label.length > 15 ? '...' : ''))
+        .attr('font-size', 9)
+        .attr('text-anchor', 'middle')
+        .attr('dy', 25)
+        .attr('fill', 'var(--text-muted)');
+
+    // Click handler
+    node.on('click', (event, d) => {
+        selectEntity(d.id);
+    });
+
+    // Hover effects
+    node.on('mouseover', function(event, d) {
+        d3.select(this).select('circle')
+            .attr('r', 16)
+            .attr('stroke-width', 3);
+    }).on('mouseout', function(event, d) {
+        d3.select(this).select('circle')
+            .attr('r', 12)
+            .attr('stroke-width', 2);
+    });
+
+    // Update positions
+    simulation.on('tick', () => {
+        link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+
+        node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+}
+
+function highlightGraphNode(entityId) {
+    if (!svg) return;
+
+    svg.selectAll('.nodes g circle')
+        .attr('stroke-width', function() {
+            const d = d3.select(this.parentNode).datum();
+            return d && d.id === entityId ? 4 : 2;
+        })
+        .attr('stroke', function() {
+            const d = d3.select(this.parentNode).datum();
+            return d && d.id === entityId ? 'var(--accent)' : 'var(--bg-card)';
+        });
+}
+
+function changeLayout() {
+    const layout = document.getElementById('layoutSelect').value;
+    currentLayout = layout;
+
+    if (!simulation || !graphData) return;
+
+    if (layout === 'radial') {
+        // Switch to radial layout
+        const width = document.getElementById('graphContainer').clientWidth;
+        const height = document.getElementById('graphContainer').clientHeight;
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        simulation
+            .force('center', null)
+            .force('radial', d3.forceRadial(150, centerX, centerY).strength(0.5));
+    } else {
+        // Switch to force layout
+        const width = document.getElementById('graphContainer').clientWidth;
+        const height = document.getElementById('graphContainer').clientHeight;
+
+        simulation
+            .force('radial', null)
+            .force('center', d3.forceCenter(width / 2, height / 2));
+    }
+
+    simulation.alpha(1).restart();
+}
+
+function zoomIn() {
+    if (svg && zoom) {
+        svg.transition().duration(300).call(zoom.scaleBy, 1.5);
+    }
+}
+
+function zoomOut() {
+    if (svg && zoom) {
+        svg.transition().duration(300).call(zoom.scaleBy, 0.7);
+    }
+}
+
+function resetZoom() {
+    if (svg && zoom) {
+        svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+    }
+}
+
+// ============================================================================
+// Graph Building
+// ============================================================================
+
+async function buildGraph() {
+    const btn = document.getElementById('buildBtn');
+    btn.disabled = true;
+    btn.innerHTML = `
+        <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+        </svg>
+        Building...
+    `;
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/knowledge-graph/build`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ include_standards: true })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            window.toast.success(`Graph built: ${data.entities_created} entities, ${data.relationships_created} relationships`);
+            await loadEntities();
+            await loadGraph();
+        } else {
+            window.toast.error(data.error || 'Build failed');
+        }
+    } catch (err) {
+        console.error('Build failed:', err);
+        window.toast.error('Failed to build graph');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            Build Graph
+        `;
+    }
+}
+
+// ============================================================================
+// Impact Analysis
+// ============================================================================
+
+async function analyzeImpact() {
+    if (!selectedEntity) {
+        window.toast.warning('Please select an entity first');
+        return;
+    }
+
+    const card = document.getElementById('impactCard');
+    card.style.display = 'block';
+
+    const content = document.getElementById('impactContent');
+    content.innerHTML = '<div class="loading-state">Analyzing impact...</div>';
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/knowledge-graph/impact/${encodeURIComponent(selectedEntity.id)}`);
+        const data = await res.json();
+
+        if (data.success) {
+            const scoreClass = data.impact_score < 0.3 ? 'low' : data.impact_score < 0.6 ? 'medium' : 'high';
+
+            content.innerHTML = `
+                <div class="impact-score">
+                    <div class="impact-score-value ${scoreClass}">${Math.round(data.impact_score * 100)}%</div>
+                    <div>
+                        <div><strong>${data.total_affected}</strong> entities affected</div>
+                        <div class="text-muted">Impact score</div>
+                    </div>
+                </div>
+
+                ${data.directly_affected.length > 0 ? `
+                    <div class="impact-list">
+                        <h5>Directly Affected (${data.directly_affected.length})</h5>
+                        ${data.directly_affected.slice(0, 5).map(e => `
+                            <div class="impact-item">
+                                <span class="entity-icon ${e.entity_type}">${typeIcons[e.entity_type] || '•'}</span>
+                                <span>${escapeHtml(e.display_name)}</span>
+                                <span class="neighbor-rel">${e.relationship_type}</span>
+                            </div>
+                        `).join('')}
+                        ${data.directly_affected.length > 5 ? `<div class="text-muted">+${data.directly_affected.length - 5} more</div>` : ''}
+                    </div>
+                ` : ''}
+
+                ${data.indirectly_affected.length > 0 ? `
+                    <div class="impact-list">
+                        <h5>Indirectly Affected (${data.indirectly_affected.length})</h5>
+                        ${data.indirectly_affected.slice(0, 3).map(e => `
+                            <div class="impact-item">
+                                <span class="entity-icon ${e.entity_type}">${typeIcons[e.entity_type] || '•'}</span>
+                                <span>${escapeHtml(e.display_name)}</span>
+                            </div>
+                        `).join('')}
+                        ${data.indirectly_affected.length > 3 ? `<div class="text-muted">+${data.indirectly_affected.length - 3} more</div>` : ''}
+                    </div>
+                ` : ''}
+            `;
+        }
+    } catch (err) {
+        console.error('Impact analysis failed:', err);
+        content.innerHTML = '<div class="loading-state">Failed to analyze impact</div>';
+    }
+}
+
+function closeImpactCard() {
+    document.getElementById('impactCard').style.display = 'none';
+}
+
+// ============================================================================
+// Path Finding
+// ============================================================================
+
+function findPaths() {
+    if (!selectedEntity) {
+        window.toast.warning('Please select an entity first');
+        return;
+    }
+
+    document.getElementById('pathFromEntity').value = selectedEntity.display_name;
+
+    // Populate target select
+    const select = document.getElementById('pathToEntity');
+    select.innerHTML = '<option value="">Select target entity...</option>';
+    allEntities
+        .filter(e => e.id !== selectedEntity.id)
+        .forEach(e => {
+            select.innerHTML += `<option value="${e.id}">${e.display_name} (${e.entity_type})</option>`;
+        });
+
+    document.getElementById('pathsResults').style.display = 'none';
+    document.getElementById('pathModal').style.display = 'flex';
+}
+
+async function searchPaths() {
+    const targetId = document.getElementById('pathToEntity').value;
+    if (!targetId) {
+        window.toast.warning('Please select a target entity');
+        return;
+    }
+
+    const resultsDiv = document.getElementById('pathsResults');
+    const listDiv = document.getElementById('pathsList');
+    resultsDiv.style.display = 'block';
+    listDiv.innerHTML = '<div class="loading-state">Searching paths...</div>';
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/knowledge-graph/paths?from=${encodeURIComponent(selectedEntity.id)}&to=${encodeURIComponent(targetId)}`);
+        const data = await res.json();
+
+        if (data.success && data.paths.length > 0) {
+            listDiv.innerHTML = data.paths.map((path, i) => `
+                <div class="path-item">
+                    <div class="path-item-header">Path ${i + 1} (${path.total_length} hops)</div>
+                    <div class="path-item-nodes">
+                        ${path.path.map((nodeId, j) => {
+                            const entity = allEntities.find(e => e.id === nodeId);
+                            const name = entity ? entity.display_name : nodeId.split(':')[1];
+                            const rel = path.relationships[j] || '';
+                            return `
+                                <span class="path-node">${escapeHtml(name)}</span>
+                                ${j < path.path.length - 1 ? `<span class="path-arrow">→ <small>${rel}</small> →</span>` : ''}
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            listDiv.innerHTML = '<div class="loading-state">No paths found</div>';
+        }
+    } catch (err) {
+        console.error('Path search failed:', err);
+        listDiv.innerHTML = '<div class="loading-state">Search failed</div>';
+    }
+}
+
+function closePathModal() {
+    document.getElementById('pathModal').style.display = 'none';
+}
+
+// ============================================================================
+// Export
+// ============================================================================
+
+async function exportGraph(format) {
+    try {
+        if (format === 'graphml') {
+            window.location.href = `/api/institutions/${institutionId}/knowledge-graph/export?format=graphml`;
+        } else {
+            const res = await fetch(`/api/institutions/${institutionId}/knowledge-graph/export?format=json`);
+            const data = await res.json();
+
+            if (data.success) {
+                const blob = new Blob([JSON.stringify(data.content, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `knowledge_graph_${institutionId}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+    } catch (err) {
+        console.error('Export failed:', err);
+        window.toast.error('Failed to export graph');
+    }
+}
+
+// ============================================================================
+// Utilities
+// ============================================================================
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Modal close handlers
+document.getElementById('pathModal').addEventListener('click', (e) => {
+    if (e.target.id === 'pathModal') closePathModal();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePathModal();
+});
+</script>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spin {
+    animation: spin 1s linear infinite;
+}
+</style>
+{% endblock %}
