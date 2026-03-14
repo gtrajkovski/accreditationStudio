@@ -84,6 +84,25 @@
 
 ---
 
+## Milestone: v1.2 - Productivity & Polish
+
+### Phase 12: Bulk Operations
+55. Batch Remediation (multi-document correction workflow)
+56. Bulk Audit Trigger (queue multiple documents for audit)
+57. Progress Tracking Dashboard (batch operation status)
+
+### Phase 13: Search Enhancement
+58. Global Search UI (unified search bar with keyboard shortcut)
+59. Search Autocomplete (recent searches, suggested queries)
+60. Search Filters (date range, document type, compliance status)
+
+### Phase 14: Polish & UX
+61. Loading Skeletons (replace spinners with skeleton loaders)
+62. Keyboard Shortcuts Modal (help overlay showing all shortcuts)
+63. Onboarding Flow (first-run tutorial, setup wizard)
+
+---
+
 ## Completed Infrastructure
 
 ### Core (`src/core/`)

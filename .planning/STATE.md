@@ -2,43 +2,45 @@
 
 ## Next Session: Start Here
 
-**Evidence Highlighting complete!**
+**v1.1 Deployment Prep Complete!**
 
-Files created:
-- `src/db/migrations/0024_evidence_highlighting.sql` - Position tracking columns
-- `src/services/evidence_highlighting_service.py` - Document text, evidence, fuzzy matching
-- `src/api/evidence_highlighting.py` - 4 API endpoints
-- `templates/institutions/document_viewer.html` - Full viewer with highlights
+Files created/modified:
+- `Dockerfile` - Production container with Tesseract OCR
+- `docker-compose.yml` - Simple deployment configuration
+- `DEPLOYMENT.md` - Comprehensive setup and deployment guide
+- `pytest.ini` - Test configuration with warning filters
+- `scripts/smoke_test.py` - Deployment verification script
+
+Changes made:
+- Fixed all `datetime.utcnow()` deprecations (10+ files)
+- Added security headers middleware in app.py
+- Secure SECRET_KEY generation in config.py
+- File size validation (50MB limit) for uploads
+- Committed pending UI changes (portfolio cards, institution switcher)
 
 To verify:
 ```bash
-python app.py  # Start server
-flask db upgrade  # Apply migration
-# Navigate to an institution with audit findings
-# Go to Coverage Map, click an evidence item
-# Document viewer opens with highlighted passages
+python -m pytest tests/ --ignore=_reference  # 191 tests pass
+python app.py                                 # Start server
+python scripts/smoke_test.py                  # Run smoke tests
 ```
 
-**Next up - Phase 11 final item:**
-1. Compliance Heatmap (matrix: documents × requirements)
+**Ready for v1.1.1 tag and v1.2 planning.**
 
 ---
 
 ## Current Phase
-**Phase 11: Advanced Features** - COMPLETE (4/4)
+**Milestone Complete:** v1.1 - Post-MVP Enhancements
 
 ## Session Date
 2026-03-14
 
 ## Just Completed (This Session)
-1. **Evidence Highlighting** - Document viewer with inline highlights
-   - Full document text display with page navigation
-   - Highlighted passages linked to standards
-   - Color-coded by source (accreditor/federal/state)
-   - Tooltip shows linked standards and finding status
-   - Standards sidebar with filtering
-   - Fuzzy snippet matching for position detection
-   - URL params for highlight navigation
+1. **Cleanup** - Committed pending UI changes, cleaned artifacts
+2. **Bug Fixes** - Fixed datetime.utcnow() deprecations in 10+ files
+3. **Security** - Added headers, secure key generation, upload validation
+4. **Deployment** - Dockerfile, docker-compose, DEPLOYMENT.md
+5. **Verification** - All 191 tests pass, smoke test script created
 
 ## Current Blueprints (32 total)
 ```
@@ -52,9 +54,15 @@ coverage_map_bp, simulation_bp, portfolios_bp, evidence_highlighting_bp
 compliance_heatmap_bp
 ```
 
-## Remaining Backlog
-Phase 11 complete! All planned features implemented.
+## v1.2 Roadmap (Next Milestone)
+
+| Phase | Features |
+|-------|----------|
+| 12 | Bulk Operations (batch remediation, bulk audit, progress tracking) |
+| 13 | Search Enhancement (global search UI, autocomplete, filters) |
+| 14 | Polish & UX (loading skeletons, shortcuts modal, onboarding) |
 
 ## Repository
 - Remote: https://github.com/gtrajkovski/accreditationStudio
 - Branch: master
+- Latest tag: v1.1.1 (pending)
