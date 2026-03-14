@@ -112,8 +112,6 @@ def upload_document(institution_id: str):
 
         # Get form data
         doc_type_str = request.form.get('doc_type', 'other')
-        title = request.form.get('title', file.filename)
-        description = request.form.get('description', '')
 
         # Validate document type
         try:
@@ -126,27 +124,21 @@ def upload_document(institution_id: str):
 
         # Create document record
         document = Document(
-            title=title,
             doc_type=doc_type,
             file_path=str(upload_path),
-            description=description,
             institution_id=institution_id,
+            original_filename=file.filename,
+            page_count=parsed.page_count,
+            extracted_text=redact_pii(parsed.text) if parsed.text else "",
+            extracted_structure={
+                "file_type": parsed.file_type,
+                "word_count": parsed.word_count,
+                "has_pii": len(pii_matches) > 0,
+                "pii_count": len(pii_matches),
+                "parse_errors": parsed.parse_errors,
+                "parsed_at": parsed.parsed_at,
+            },
         )
-
-        # Store parsed data in document metadata
-        document.metadata = {
-            "original_filename": file.filename,
-            "file_type": parsed.file_type,
-            "page_count": parsed.page_count,
-            "word_count": parsed.word_count,
-            "has_pii": len(pii_matches) > 0,
-            "pii_count": len(pii_matches),
-            "parse_errors": parsed.parse_errors,
-            "parsed_at": parsed.parsed_at,
-        }
-
-        # Store extracted text (redacted version for safety)
-        document.extracted_text = redact_pii(parsed.text) if parsed.text else ""
 
         # Add to institution
         institution.documents.append(document)
@@ -156,9 +148,8 @@ def upload_document(institution_id: str):
 
         # Return response with preview
         response = document.to_dict()
-        response["text_preview"] = (
-            parsed.text[:500] + "..." if len(parsed.text) > 500 else parsed.text
-        )
+        text = parsed.text or ""
+        response["text_preview"] = text[:500] + "..." if len(text) > 500 else text
         response["pii_detected"] = [
             {"type": m.pii_type, "confidence": m.confidence}
             for m in pii_matches

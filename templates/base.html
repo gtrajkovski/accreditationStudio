@@ -38,14 +38,19 @@
 <body>
     <div class="app-layout">
         <!-- Sidebar Navigation -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <a href="{{ url_for('dashboard') }}" class="sidebar-logo">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="sidebar-logo-icon">
                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                     </svg>
-                    AccreditAI
+                    <span class="sidebar-logo-text">AccreditAI</span>
                 </a>
+                <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" type="button" title="Collapse sidebar (Ctrl+B)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
+                    </svg>
+                </button>
             </div>
 
             <nav class="sidebar-nav">
@@ -441,6 +446,33 @@
         document.addEventListener('click', () => {
             document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
         });
+
+        // Sidebar collapse functionality
+        (function() {
+            const SIDEBAR_KEY = 'accreditai_sidebar_collapsed';
+            const sidebar = document.getElementById('sidebar');
+            const collapseBtn = document.getElementById('sidebarCollapseBtn');
+
+            // Load saved state
+            if (localStorage.getItem(SIDEBAR_KEY) === 'true') {
+                sidebar.classList.add('collapsed');
+            }
+
+            // Toggle handler
+            collapseBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem(SIDEBAR_KEY, sidebar.classList.contains('collapsed'));
+            });
+
+            // Keyboard shortcut: Ctrl+B
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'b' && !e.target.matches('input, textarea')) {
+                    e.preventDefault();
+                    sidebar.classList.toggle('collapsed');
+                    localStorage.setItem(SIDEBAR_KEY, sidebar.classList.contains('collapsed'));
+                }
+            });
+        })();
 
         // Collapsible nav groups with localStorage persistence
         (function() {

@@ -31,6 +31,13 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+nul
+
+# Claude Code
+.claude/
+
+# Development scripts
+seed_data.py
 
 # Build
 dist/
