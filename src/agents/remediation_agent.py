@@ -15,7 +15,7 @@ Tools:
 import io
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Generator
 
 from docx import Document as DocxDocument
@@ -715,7 +715,7 @@ Respond with JSON in this format:
         doc_bytes.seek(0)
 
         # Save to workspace
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         redline_filename = f"redlines/{remed.document_id}_{timestamp}_redline.docx"
 
         if self.workspace_manager:
@@ -815,7 +815,7 @@ Respond with JSON in this format:
         doc_bytes.seek(0)
 
         # Save to workspace
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         final_filename = f"finals/{remed.document_id}_{timestamp}_final.docx"
 
         if self.workspace_manager:

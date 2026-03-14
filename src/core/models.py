@@ -6,7 +6,7 @@ with unknown field filtering for schema evolution.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, List, Dict, Any
 import uuid
@@ -189,7 +189,7 @@ def generate_id(prefix: str = "") -> str:
 
 def now_iso() -> str:
     """Return current UTC timestamp in ISO format."""
-    return datetime.utcnow().isoformat() + "Z"
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 # ===========================
@@ -2162,7 +2162,7 @@ class ActionPlan:
         self.items_blocked = sum(1 for i in self.items if i.status == ActionItemStatus.BLOCKED)
 
         # Count overdue items
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         self.items_overdue = sum(
             1 for i in self.items
             if i.due_date and i.due_date < today and i.status not in [ActionItemStatus.COMPLETED, ActionItemStatus.CANCELLED]

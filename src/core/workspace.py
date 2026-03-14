@@ -10,7 +10,7 @@ import shutil
 import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.config import Config
 from src.core.models import Institution, Program
@@ -270,7 +270,7 @@ class WorkspaceManager:
                 for p in institution.programs
             },
             "policies": {},
-            "updated_at": datetime.utcnow().isoformat() + "Z",
+            "updated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         }
 
     def save_institution(self, institution: Institution) -> Path:
@@ -447,7 +447,7 @@ class WorkspaceManager:
 
         # Apply updates
         target.update(updates)
-        truth_index["updated_at"] = datetime.utcnow().isoformat() + "Z"
+        truth_index["updated_at"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         self._write_json(truth_path, truth_index)
         return truth_index
@@ -502,7 +502,7 @@ class WorkspaceManager:
         versions_dir = file_path.parent / "_versions"
         versions_dir.mkdir(exist_ok=True)
 
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         version_name = f"{file_path.stem}_{timestamp}{file_path.suffix}"
         version_path = versions_dir / version_name
 

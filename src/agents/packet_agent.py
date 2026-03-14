@@ -22,7 +22,7 @@ import io
 import json
 import os
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
 from docx import Document as DocxDocument
@@ -843,7 +843,7 @@ Submission Date: {submission_date}
         doc_bytes.seek(0)
 
         # Save to workspace
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         filename = f"submissions/{packet.id}_{timestamp}.docx"
 
         if self.workspace_manager:
@@ -925,7 +925,7 @@ Submission Date: {submission_date}
         zip_buffer.seek(0)
 
         # Save ZIP
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         zip_filename = f"submissions/{packet.id}_{timestamp}.zip"
 
         self.workspace_manager.save_file(

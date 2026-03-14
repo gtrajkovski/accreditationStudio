@@ -7,7 +7,7 @@ and recent institution tracking for quick navigation.
 
 import json
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from uuid import uuid4
 
@@ -62,7 +62,7 @@ class PortfolioReadiness:
     ready_count: int    # score >= 80
     breakdown: Dict[str, Any] = field(default_factory=dict)
     institutions: List[Dict[str, Any]] = field(default_factory=list)
-    computed_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    computed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -96,7 +96,7 @@ def create_portfolio(
 ) -> Portfolio:
     """Create a new portfolio."""
     conn = get_conn()
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
 
     portfolio_id = generate_id("portfolio")
 
@@ -155,7 +155,7 @@ def update_portfolio(
         return get_portfolio(portfolio_id)
 
     updates.append("updated_at = ?")
-    params.append(datetime.utcnow().isoformat())
+    params.append(datetime.now(timezone.utc).isoformat())
     params.append(portfolio_id)
 
     conn.execute(
@@ -556,7 +556,7 @@ def get_portfolio_comparison(
 def record_institution_access(institution_id: str) -> None:
     """Record that an institution was accessed (for quick-switcher)."""
     conn = get_conn()
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
 
     # Upsert: insert or update accessed_at
     conn.execute(

@@ -12,7 +12,7 @@ Provides explanation breakdowns, blockers, and next best actions.
 import json
 import sqlite3
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 from uuid import uuid4
@@ -63,7 +63,7 @@ class ReadinessScore:
     consistency: int
     blockers: List[Blocker] = field(default_factory=list)
     breakdown: Dict[str, Any] = field(default_factory=dict)
-    computed_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    computed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -742,7 +742,7 @@ def get_latest_snapshot(
         conn = get_conn()
 
     try:
-        cutoff = (datetime.utcnow() - timedelta(minutes=max_age_minutes)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(minutes=max_age_minutes)).isoformat()
 
         cursor = conn.execute("""
             SELECT * FROM institution_readiness_snapshots
@@ -789,7 +789,7 @@ def get_readiness_history(
         conn = get_conn()
 
     try:
-        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
 
         cursor = conn.execute("""
             SELECT
@@ -838,7 +838,7 @@ def ensure_daily_snapshot(
 
     try:
         # Check if snapshot exists for today
-        today = datetime.utcnow().date().isoformat()
+        today = datetime.now(timezone.utc).date().isoformat()
 
         cursor = conn.execute("""
             SELECT id FROM institution_readiness_snapshots

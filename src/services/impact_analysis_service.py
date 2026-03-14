@@ -15,7 +15,7 @@ import json
 import re
 import sqlite3
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Tuple
 from uuid import uuid4
 
@@ -143,7 +143,7 @@ def _generate_id(prefix: str = "ref") -> str:
 
 def _now_iso() -> str:
     """Get current timestamp in ISO format."""
-    return datetime.utcnow().isoformat() + "Z"
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _flatten_truth_index(truth_index: Dict[str, Any], prefix: str = "") -> Dict[str, str]:

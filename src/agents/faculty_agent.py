@@ -5,7 +5,7 @@ Tracks academic credentials, professional licenses, and teaching qualifications.
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 
 from src.agents.base_agent import BaseAgent, AgentType
@@ -321,7 +321,7 @@ Always cite specific credential gaps and provide actionable recommendations."""
     def _count_expiring_licenses(self, member: FacultyMember, days: int = 90) -> int:
         """Count licenses expiring within N days."""
         count = 0
-        today = datetime.utcnow()
+        today = datetime.now(timezone.utc)
         threshold = today + timedelta(days=days)
 
         for lic in member.professional_licenses:
@@ -522,7 +522,7 @@ Always cite specific credential gaps and provide actionable recommendations."""
         issues = []
 
         # Check for expired licenses
-        today = datetime.utcnow()
+        today = datetime.now(timezone.utc)
         for lic in member.professional_licenses:
             if lic.expiration_date:
                 try:
@@ -775,7 +775,7 @@ Note: This is for informational purposes. Manual verification is still required.
 
             # Add expiring licenses detail
             expiring_detail = []
-            today = datetime.utcnow()
+            today = datetime.now(timezone.utc)
             threshold = today + timedelta(days=90)
             for m in members:
                 for lic in m.professional_licenses:
@@ -835,7 +835,7 @@ Note: This is for informational purposes. Manual verification is still required.
         members = self._load_faculty_registry(institution_id)
         expiring = []
 
-        today = datetime.utcnow()
+        today = datetime.now(timezone.utc)
         threshold = today + timedelta(days=days)
 
         for m in members:

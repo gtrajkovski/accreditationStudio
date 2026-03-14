@@ -16,7 +16,7 @@ Search sources:
 import json
 import time
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Set
 from hashlib import md5
 
@@ -631,7 +631,7 @@ class SiteVisitService:
         if "last_updated" in result.metadata:
             try:
                 updated = datetime.fromisoformat(result.metadata["last_updated"].rstrip("Z"))
-                days_old = (datetime.utcnow() - updated).days
+                days_old = (datetime.now(timezone.utc) - updated).days
                 recency_boost = max(0, 0.1 - (days_old / 365) * 0.1)
             except Exception:
                 pass
