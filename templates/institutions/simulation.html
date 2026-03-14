@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}Accreditation Simulation - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-primary" onclick="startSimulation('quick')" id="quickScanBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+    </svg>
+    Quick Scan
+</button>
+<button class="btn btn-secondary" onclick="startSimulation('deep')" id="deepAuditBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+    </svg>
+    Deep Audit
+</button>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='Accreditation Simulation',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Simulation', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<!-- Progress Bar (hidden by default) -->
+<div class="simulation-progress card mb-lg" id="progressCard" style="display: none;">
+    <div class="card-header"><h3 class="card-title">Simulation Running...</h3></div>
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+    <div class="progress-message" id="progressMessage">Initializing...</div>
+</div>
+
+<!-- Results Summary -->
+<div class="simulation-results" id="resultsSection" style="display: none;">
+    <div class="results-summary">
+        <div class="prediction-badge" id="predictionBadge">
+            <div class="prediction-label">Prediction</div>
+            <div class="prediction-value" id="predictionValue">--</div>
+            <div class="prediction-confidence" id="predictionConfidence">0% confidence</div>
+        </div>
+        <div class="score-card">
+            <div class="score-value" id="overallScore">0</div>
+            <div class="score-label">Overall Score</div>
+        </div>
+        <div class="score-breakdown">
+            <div class="score-item"><span class="score-name">Compliance</span><span class="score-num" id="complianceScore">0</span></div>
+            <div class="score-item"><span class="score-name">Evidence</span><span class="score-num" id="evidenceScore">0</span></div>
+            <div class="score-item"><span class="score-name">Documentation</span><span class="score-num" id="docScore">0</span></div>
+            <div class="score-item"><span class="score-name">Consistency</span><span class="score-num" id="consistencyScore">0</span></div>
+        </div>
+        <div class="risk-card">
+            <div class="risk-label">Risk Level</div>
+            <div class="risk-value" id="riskLevel">--</div>
+        </div>
+    </div>
+
+    <!-- Findings Tabs -->
+    <div class="card mt-lg">
+        <div class="card-header">
+            <h3 class="card-title">Predicted Findings</h3>
+            <div class="findings-filters">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="critical_finding">Critical</button>
+                <button class="filter-btn" data-filter="finding">Findings</button>
+                <button class="filter-btn" data-filter="concern">Concerns</button>
+            </div>
+        </div>
+        <div class="findings-list" id="findingsList">
+            <div class="empty-state">Run a simulation to see predicted findings</div>
+        </div>
+    </div>
+
+    <!-- History Chart -->
+    <div class="card mt-lg">
+        <div class="card-header"><h3 class="card-title">Simulation History</h3></div>
+        <div class="history-chart" id="historyChart"></div>
+    </div>
+</div>
+
+<!-- No Results State -->
+<div class="no-results card" id="noResultsCard">
+    <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="width: 64px; height: 64px; margin-bottom: var(--spacing-md);">
+            <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+        <h3>No Simulations Yet</h3>
+        <p class="text-muted">Run a Quick Scan or Deep Audit to predict accreditation outcomes</p>
+    </div>
+</div>
+
+<style>
+.simulation-progress { padding: var(--spacing-lg); }
+.progress-container { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; margin: var(--spacing-md) 0; }
+.progress-bar { height: 100%; background: var(--accent); transition: width 0.3s; }
+.progress-message { font-size: 0.875rem; color: var(--text-muted); text-align: center; }
+
+.results-summary { display: grid; grid-template-columns: 200px 120px 1fr 120px; gap: var(--spacing-lg); margin-bottom: var(--spacing-lg); }
+@media (max-width: 900px) { .results-summary { grid-template-columns: 1fr 1fr; } }
+
+.prediction-badge { background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--spacing-lg); text-align: center; }
+.prediction-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); }
+.prediction-value { font-size: 2rem; font-weight: 700; margin: var(--spacing-sm) 0; }
+.prediction-value.pass { color: var(--success); }
+.prediction-value.conditional { color: var(--warning); }
+.prediction-value.fail { color: var(--danger); }
+.prediction-confidence { font-size: 0.875rem; color: var(--text-muted); }
+
+.score-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--spacing-lg); text-align: center; }
+.score-value { font-size: 2.5rem; font-weight: 700; color: var(--accent); }
+.score-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); }
+
+.score-breakdown { background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--spacing-lg); }
+.score-item { display: flex; justify-content: space-between; padding: var(--spacing-xs) 0; border-bottom: 1px solid var(--border-color); }
+.score-item:last-child { border-bottom: none; }
+.score-name { color: var(--text-muted); }
+.score-num { font-weight: 600; }
+
+.risk-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--spacing-lg); text-align: center; }
+.risk-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); }
+.risk-value { font-size: 1.5rem; font-weight: 700; margin-top: var(--spacing-sm); text-transform: uppercase; }
+.risk-value.low { color: var(--success); }
+.risk-value.medium { color: var(--warning); }
+.risk-value.high, .risk-value.critical { color: var(--danger); }
+
+.findings-filters { display: flex; gap: var(--spacing-xs); }
+.filter-btn { padding: 4px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-muted); cursor: pointer; font-size: 12px; }
+.filter-btn:hover { border-color: var(--accent); }
+.filter-btn.active { background: var(--accent); border-color: var(--accent); color: var(--bg-primary); }
+
+.findings-list { max-height: 500px; overflow-y: auto; padding: var(--spacing-md); }
+.finding-item { padding: var(--spacing-md); border-radius: var(--radius-md); background: var(--bg-secondary); margin-bottom: var(--spacing-sm); border-left: 3px solid var(--border-color); }
+.finding-item.critical_finding { border-left-color: var(--danger); }
+.finding-item.finding { border-left-color: var(--warning); }
+.finding-item.concern { border-left-color: var(--info); }
+.finding-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs); }
+.finding-code { font-weight: 600; }
+.finding-likelihood { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg-card); }
+.finding-summary { font-size: 0.875rem; color: var(--text-muted); }
+
+.history-chart { height: 200px; padding: var(--spacing-md); }
+.no-results { padding: var(--spacing-xl); text-align: center; }
+.empty-state h3 { margin-bottom: var(--spacing-xs); }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = '{{ institution.id }}';
+let currentFilter = 'all';
+let allFindings = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadLatestSimulation();
+    setupFilters();
+});
+
+async function loadLatestSimulation() {
+    const res = await fetch(`/api/institutions/${institutionId}/simulations?limit=1`);
+    const data = await res.json();
+    if (data.success && data.simulations.length > 0) {
+        const sim = data.simulations[0];
+        if (sim.status === 'completed') {
+            await showResults(sim.id);
+        }
+    }
+}
+
+async function startSimulation(mode) {
+    document.getElementById('progressCard').style.display = 'block';
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('noResultsCard').style.display = 'none';
+    document.getElementById('quickScanBtn').disabled = true;
+    document.getElementById('deepAuditBtn').disabled = true;
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/simulations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode, accreditor_code: '{{ institution.accreditor_primary or "ACCSC" }}' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            streamProgress(data.simulation_id);
+        } else {
+            showError(data.error);
+        }
+    } catch (err) {
+        showError(err.message);
+    }
+}
+
+function streamProgress(simId) {
+    const es = new EventSource(`/api/institutions/${institutionId}/simulations/${simId}/stream`);
+    es.onmessage = async (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'progress') {
+            document.getElementById('progressBar').style.width = `${msg.data.progress_pct}%`;
+            document.getElementById('progressMessage').textContent = msg.data.message;
+        } else if (msg.type === 'complete') {
+            es.close();
+            await showResults(simId);
+        } else if (msg.type === 'error') {
+            es.close();
+            showError(msg.data.error);
+        }
+    };
+    es.onerror = () => { es.close(); showError('Connection lost'); };
+}
+
+async function showResults(simId) {
+    document.getElementById('progressCard').style.display = 'none';
+    document.getElementById('noResultsCard').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('quickScanBtn').disabled = false;
+    document.getElementById('deepAuditBtn').disabled = false;
+
+    const [simRes, findingsRes] = await Promise.all([
+        fetch(`/api/institutions/${institutionId}/simulations/${simId}`).then(r => r.json()),
+        fetch(`/api/institutions/${institutionId}/simulations/${simId}/findings`).then(r => r.json())
+    ]);
+
+    if (simRes.success) {
+        const sim = simRes.simulation;
+        const predEl = document.getElementById('predictionValue');
+        predEl.textContent = sim.pass_prediction?.toUpperCase() || '--';
+        predEl.className = `prediction-value ${sim.pass_prediction}`;
+        document.getElementById('predictionConfidence').textContent = `${Math.round((sim.pass_confidence || 0) * 100)}% confidence`;
+        document.getElementById('overallScore').textContent = sim.overall_score || 0;
+        document.getElementById('complianceScore').textContent = sim.compliance_score || 0;
+        document.getElementById('evidenceScore').textContent = sim.evidence_score || 0;
+        document.getElementById('docScore').textContent = sim.documentation_score || 0;
+        document.getElementById('consistencyScore').textContent = sim.consistency_score || 0;
+        const riskEl = document.getElementById('riskLevel');
+        riskEl.textContent = sim.risk_level || '--';
+        riskEl.className = `risk-value ${sim.risk_level}`;
+    }
+
+    if (findingsRes.success) {
+        allFindings = findingsRes.findings;
+        renderFindings(allFindings);
+    }
+
+    loadHistory();
+}
+
+function renderFindings(findings) {
+    const container = document.getElementById('findingsList');
+    if (!findings.length) {
+        container.innerHTML = '<div class="empty-state">No predicted findings - looking good!</div>';
+        return;
+    }
+    container.innerHTML = findings.map(f => `
+        <div class="finding-item ${f.predicted_status}">
+            <div class="finding-header">
+                <span class="finding-code">${f.standard_code}</span>
+                <span class="finding-likelihood">${f.likelihood} (${Math.round(f.confidence * 100)}%)</span>
+            </div>
+            <div class="finding-summary">${f.finding_summary || f.standard_title}</div>
+        </div>
+    `).join('');
+}
+
+function setupFilters() {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            const filtered = currentFilter === 'all' ? allFindings : allFindings.filter(f => f.predicted_status === currentFilter);
+            renderFindings(filtered);
+        });
+    });
+}
+
+async function loadHistory() {
+    const res = await fetch(`/api/institutions/${institutionId}/simulations/history?limit=10`);
+    const data = await res.json();
+    if (data.success && data.history.length > 1) {
+        renderHistoryChart(data.history.reverse());
+    }
+}
+
+function renderHistoryChart(history) {
+    const container = document.getElementById('historyChart');
+    const points = history.map((h, i) => `${i * 50 + 20},${150 - h.overall_score * 1.4}`).join(' ');
+    container.innerHTML = `<svg width="100%" height="100%" viewBox="0 0 ${history.length * 50 + 20} 160">
+        <polyline points="${points}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        ${history.map((h, i) => `<circle cx="${i * 50 + 20}" cy="${150 - h.overall_score * 1.4}" r="4" fill="var(--accent)"/>`).join('')}
+    </svg>`;
+}
+
+function showError(msg) {
+    document.getElementById('progressCard').style.display = 'none';
+    document.getElementById('quickScanBtn').disabled = false;
+    document.getElementById('deepAuditBtn').disabled = false;
+    window.toast?.error(msg) || alert(msg);
+}
+</script>
+{% endblock %}

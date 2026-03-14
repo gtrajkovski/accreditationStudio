@@ -1,0 +1,967 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}Evidence Coverage Map - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block header_actions %}
+<select id="accreditorSelect" class="form-select form-select-sm" onchange="changeAccreditor()">
+    {% for acc in accreditors %}
+    <option value="{{ acc.code }}" {% if acc.code == institution.accreditor_primary %}selected{% endif %}>
+        {{ acc.code }}
+    </option>
+    {% endfor %}
+</select>
+<button class="btn btn-secondary" onclick="showGaps()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    View Gaps
+</button>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='Evidence Coverage Map',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Coverage Map', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<!-- Summary Stats -->
+<div class="coverage-summary" id="summaryStats">
+    <div class="summary-card">
+        <div class="summary-value" id="totalStandards">--</div>
+        <div class="summary-label">Total Standards</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-value" id="coveredStandards">--</div>
+        <div class="summary-label">With Evidence</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-value coverage-ring" id="coveragePct">
+            <svg viewBox="0 0 36 36" class="ring-svg">
+                <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <path class="ring-progress" id="coverageRing" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            </svg>
+            <span class="ring-text" id="coveragePctText">0%</span>
+        </div>
+        <div class="summary-label">Coverage</div>
+    </div>
+    <div class="summary-card findings-breakdown">
+        <div class="findings-bars">
+            <div class="findings-bar compliant" id="barCompliant" style="width: 0%"></div>
+            <div class="findings-bar partial" id="barPartial" style="width: 0%"></div>
+            <div class="findings-bar non-compliant" id="barNonCompliant" style="width: 0%"></div>
+        </div>
+        <div class="findings-legend">
+            <span class="legend-item"><span class="dot compliant"></span> <span id="countCompliant">0</span> Compliant</span>
+            <span class="legend-item"><span class="dot partial"></span> <span id="countPartial">0</span> Partial</span>
+            <span class="legend-item"><span class="dot non-compliant"></span> <span id="countNonCompliant">0</span> Non-compliant</span>
+        </div>
+        <div class="summary-label">Findings Distribution</div>
+    </div>
+</div>
+
+<!-- Main Layout -->
+<div class="coverage-layout">
+    <!-- Treemap -->
+    <div class="treemap-panel">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Standards Coverage</h3>
+                <div class="breadcrumb-nav" id="treemapBreadcrumb">
+                    <button class="breadcrumb-item active" data-id="root" onclick="zoomToRoot()">
+                        <span id="accreditorLabel">All Standards</span>
+                    </button>
+                </div>
+            </div>
+            <div class="treemap-container" id="treemapContainer">
+                <div class="empty-state" id="treemapEmpty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="width: 48px; height: 48px; margin-bottom: var(--spacing-md);">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                    </svg>
+                    <p>No coverage data yet</p>
+                    <p class="text-muted">Upload and audit documents to see coverage</p>
+                </div>
+            </div>
+            <div class="treemap-legend">
+                <span class="legend-gradient">
+                    <span class="gradient-bar"></span>
+                    <span class="gradient-labels">
+                        <span>0% Coverage</span>
+                        <span>100% Coverage</span>
+                    </span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Panel -->
+    <div class="detail-panel">
+        <div class="card" id="standardDetailCard" style="display: none;">
+            <div class="card-header">
+                <h3 class="card-title" id="selectedStandardName">Standard Details</h3>
+                <span class="chip" id="selectedStandardCode">-</span>
+            </div>
+            <div class="standard-metrics">
+                <div class="metric-row">
+                    <span class="metric-label">Coverage</span>
+                    <span class="metric-value" id="detailCoverage">0%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Evidence Items</span>
+                    <span class="metric-value" id="detailEvidenceCount">0</span>
+                </div>
+                <div class="findings-mini">
+                    <span class="findings-chip compliant" id="detailCompliant">0</span>
+                    <span class="findings-chip partial" id="detailPartial">0</span>
+                    <span class="findings-chip non-compliant" id="detailNonCompliant">0</span>
+                </div>
+            </div>
+            <div class="evidence-section">
+                <h4>Evidence Items</h4>
+                <div class="evidence-list" id="evidenceList">
+                    <div class="loading-state">Select a standard to view evidence</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gaps Panel (initially hidden) -->
+        <div class="card" id="gapsCard" style="display: none;">
+            <div class="card-header">
+                <h3 class="card-title">Coverage Gaps</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closeGaps()">&times;</button>
+            </div>
+            <div class="gaps-list" id="gapsList">
+                <div class="loading-state">Loading gaps...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Summary Stats */
+.coverage-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 900px) {
+    .coverage-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.summary-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    text-align: center;
+}
+
+.summary-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: var(--spacing-xs);
+}
+
+.summary-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+/* Coverage Ring */
+.coverage-ring {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+}
+
+.ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.ring-bg {
+    fill: none;
+    stroke: var(--bg-secondary);
+    stroke-width: 3;
+}
+
+.ring-progress {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.5s ease;
+}
+
+.ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* Findings Breakdown */
+.findings-breakdown {
+    min-width: 200px;
+}
+
+.findings-bars {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--bg-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.findings-bar {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.findings-bar.compliant { background: var(--success); }
+.findings-bar.partial { background: var(--warning); }
+.findings-bar.non-compliant { background: var(--danger); }
+
+.findings-legend {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.dot.compliant { background: var(--success); }
+.dot.partial { background: var(--warning); }
+.dot.non-compliant { background: var(--danger); }
+
+/* Layout */
+.coverage-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: var(--spacing-lg);
+    min-height: 500px;
+}
+
+@media (max-width: 1000px) {
+    .coverage-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Treemap */
+.treemap-panel .card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.treemap-container {
+    flex: 1;
+    min-height: 450px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.treemap-container .empty-state {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.breadcrumb-nav {
+    display: flex;
+    gap: var(--spacing-xs);
+    align-items: center;
+}
+
+.breadcrumb-item {
+    background: var(--bg-secondary);
+    border: none;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.breadcrumb-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.breadcrumb-item.active {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.breadcrumb-item::before {
+    content: " / ";
+    margin-right: var(--spacing-xs);
+    opacity: 0.5;
+}
+
+.breadcrumb-item:first-child::before {
+    content: "";
+    margin: 0;
+}
+
+/* Treemap Legend */
+.treemap-legend {
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.legend-gradient {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.gradient-bar {
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, var(--danger), var(--warning), var(--success));
+}
+
+.gradient-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+/* Detail Panel */
+.detail-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.standard-metrics {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+}
+
+.metric-label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.metric-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.findings-mini {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.findings-chip {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.findings-chip.compliant { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+.findings-chip.partial { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+.findings-chip.non-compliant { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+/* Evidence Section */
+.evidence-section {
+    padding: var(--spacing-md);
+}
+
+.evidence-section h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-sm);
+}
+
+.evidence-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.evidence-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.evidence-item:hover {
+    background: var(--bg-hover);
+}
+
+.evidence-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+}
+
+.evidence-icon.finding { background: rgba(251, 191, 36, 0.2); }
+.evidence-icon.document { background: rgba(96, 165, 250, 0.2); }
+.evidence-icon.evidence_ref { background: rgba(167, 139, 250, 0.2); }
+
+.evidence-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.evidence-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.evidence-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.evidence-status {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.evidence-status.compliant { background: rgba(74, 222, 128, 0.2); color: var(--success); }
+.evidence-status.partial { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+.evidence-status.non_compliant { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+/* Gaps Card */
+.gaps-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+}
+
+.gap-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+}
+
+.gap-item:hover {
+    background: var(--bg-hover);
+}
+
+.gap-item.critical { border-left-color: var(--danger); }
+.gap-item.warning { border-left-color: var(--warning); }
+
+.gap-info {
+    flex: 1;
+}
+
+.gap-code {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.gap-name {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gap-pct {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.gap-pct.critical { color: var(--danger); }
+.gap-pct.warning { color: var(--warning); }
+
+.loading-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const institutionId = '{{ institution.id }}';
+let treeData = null;
+let currentNode = null;
+let selectedStandard = null;
+
+// Color scale for coverage (red -> yellow -> green)
+const coverageColor = d3.scaleLinear()
+    .domain([0, 50, 100])
+    .range(['#ef4444', '#fbbf24', '#4ade80']);
+
+// ============================================================================
+// Initialization
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadSummary();
+    loadTreemap();
+});
+
+// ============================================================================
+// Summary Stats
+// ============================================================================
+
+async function loadSummary() {
+    try {
+        const accreditor = document.getElementById('accreditorSelect').value;
+        const res = await fetch(`/api/institutions/${institutionId}/coverage-map/summary?accreditor=${accreditor}`);
+        const data = await res.json();
+
+        if (data.success) {
+            document.getElementById('totalStandards').textContent = data.total_standards;
+            document.getElementById('coveredStandards').textContent = data.covered_standards;
+            document.getElementById('coveragePctText').textContent = `${data.coverage_pct}%`;
+
+            // Update ring
+            document.getElementById('coverageRing').setAttribute('stroke-dasharray', `${data.coverage_pct}, 100`);
+
+            // Update findings breakdown
+            const findings = data.findings_by_status || {};
+            const compliant = findings.compliant || 0;
+            const partial = findings.partial || 0;
+            const nonCompliant = findings.non_compliant || 0;
+            const total = compliant + partial + nonCompliant;
+
+            if (total > 0) {
+                document.getElementById('barCompliant').style.width = `${(compliant / total) * 100}%`;
+                document.getElementById('barPartial').style.width = `${(partial / total) * 100}%`;
+                document.getElementById('barNonCompliant').style.width = `${(nonCompliant / total) * 100}%`;
+            }
+
+            document.getElementById('countCompliant').textContent = compliant;
+            document.getElementById('countPartial').textContent = partial;
+            document.getElementById('countNonCompliant').textContent = nonCompliant;
+
+            document.getElementById('accreditorLabel').textContent = data.accreditor_code || 'All Standards';
+        }
+    } catch (err) {
+        console.error('Failed to load summary:', err);
+    }
+}
+
+// ============================================================================
+// Treemap Visualization
+// ============================================================================
+
+async function loadTreemap() {
+    try {
+        const accreditor = document.getElementById('accreditorSelect').value;
+        const res = await fetch(`/api/institutions/${institutionId}/coverage-map?accreditor=${accreditor}`);
+        const data = await res.json();
+
+        if (data.success && data.tree.children && data.tree.children.length > 0) {
+            treeData = data.tree;
+            currentNode = treeData;
+            document.getElementById('treemapEmpty').style.display = 'none';
+            renderTreemap(treeData);
+        } else {
+            document.getElementById('treemapEmpty').style.display = 'flex';
+        }
+    } catch (err) {
+        console.error('Failed to load treemap:', err);
+    }
+}
+
+function renderTreemap(data) {
+    const container = document.getElementById('treemapContainer');
+
+    // Clear existing
+    d3.select(container).select('svg').remove();
+
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // Create hierarchy
+    const root = d3.hierarchy(data)
+        .sum(d => d.value || 1)
+        .sort((a, b) => b.value - a.value);
+
+    // Create treemap layout
+    d3.treemap()
+        .size([width, height])
+        .paddingOuter(3)
+        .paddingTop(20)
+        .paddingInner(2)
+        .round(true)(root);
+
+    // Create SVG
+    const svg = d3.select(container)
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    // Draw cells
+    const cell = svg.selectAll('g')
+        .data(root.descendants().filter(d => d.depth > 0))
+        .join('g')
+        .attr('transform', d => `translate(${d.x0},${d.y0})`);
+
+    // Rectangles
+    cell.append('rect')
+        .attr('width', d => Math.max(0, d.x1 - d.x0))
+        .attr('height', d => Math.max(0, d.y1 - d.y0))
+        .attr('fill', d => coverageColor(d.data.coverage_pct))
+        .attr('stroke', 'var(--bg-card)')
+        .attr('stroke-width', 1)
+        .attr('rx', 4)
+        .style('cursor', d => d.children ? 'pointer' : 'default')
+        .on('click', (event, d) => {
+            event.stopPropagation();
+            if (d.children) {
+                zoomTo(d.data);
+            } else {
+                selectStandard(d.data);
+            }
+        })
+        .on('mouseover', function(event, d) {
+            d3.select(this).attr('stroke', 'var(--accent)').attr('stroke-width', 2);
+            showTooltip(event, d);
+        })
+        .on('mouseout', function() {
+            d3.select(this).attr('stroke', 'var(--bg-card)').attr('stroke-width', 1);
+            hideTooltip();
+        });
+
+    // Labels
+    cell.append('text')
+        .attr('x', 4)
+        .attr('y', 14)
+        .text(d => {
+            const w = d.x1 - d.x0;
+            const h = d.y1 - d.y0;
+            if (w < 30 || h < 20) return '';
+            const maxLen = Math.floor(w / 7);
+            const text = d.data.code;
+            return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
+        })
+        .attr('font-size', 11)
+        .attr('font-weight', 600)
+        .attr('fill', d => d.data.coverage_pct > 60 ? 'var(--bg-primary)' : 'var(--text-primary)')
+        .style('pointer-events', 'none');
+
+    // Coverage percentage
+    cell.append('text')
+        .attr('x', d => (d.x1 - d.x0) / 2)
+        .attr('y', d => (d.y1 - d.y0) / 2 + 5)
+        .text(d => {
+            const w = d.x1 - d.x0;
+            const h = d.y1 - d.y0;
+            if (w < 40 || h < 35) return '';
+            return `${Math.round(d.data.coverage_pct)}%`;
+        })
+        .attr('text-anchor', 'middle')
+        .attr('font-size', 12)
+        .attr('font-weight', 700)
+        .attr('fill', d => d.data.coverage_pct > 60 ? 'var(--bg-primary)' : 'var(--text-primary)')
+        .style('pointer-events', 'none');
+}
+
+function zoomTo(node) {
+    currentNode = node;
+    updateBreadcrumb(node);
+    renderTreemap(node);
+}
+
+function zoomToRoot() {
+    currentNode = treeData;
+    updateBreadcrumb(treeData);
+    renderTreemap(treeData);
+}
+
+function updateBreadcrumb(node) {
+    const container = document.getElementById('treemapBreadcrumb');
+
+    // Build path from root to current
+    const path = [];
+    let current = node;
+
+    // For simplicity, just show root and current
+    container.innerHTML = `
+        <button class="breadcrumb-item ${node === treeData ? 'active' : ''}" onclick="zoomToRoot()">
+            ${treeData.code || 'All'}
+        </button>
+        ${node !== treeData ? `
+            <button class="breadcrumb-item active">
+                ${node.code}
+            </button>
+        ` : ''}
+    `;
+}
+
+// ============================================================================
+// Tooltip
+// ============================================================================
+
+let tooltip = null;
+
+function showTooltip(event, d) {
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'treemap-tooltip';
+        tooltip.style.cssText = `
+            position: fixed;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 12px;
+            z-index: 1000;
+            pointer-events: none;
+            max-width: 250px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        document.body.appendChild(tooltip);
+    }
+
+    tooltip.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 4px;">${d.data.code}: ${d.data.name}</div>
+        <div style="color: var(--text-muted);">
+            Coverage: <span style="color: ${coverageColor(d.data.coverage_pct)}">${d.data.coverage_pct.toFixed(1)}%</span>
+        </div>
+        <div style="color: var(--text-muted); margin-top: 4px;">
+            <span style="color: var(--success);">${d.data.findings_compliant || 0}</span> /
+            <span style="color: var(--warning);">${d.data.findings_partial || 0}</span> /
+            <span style="color: var(--danger);">${d.data.findings_non_compliant || 0}</span>
+            findings
+        </div>
+        ${d.children ? '<div style="color: var(--accent); margin-top: 4px;">Click to zoom</div>' : ''}
+    `;
+
+    tooltip.style.display = 'block';
+    tooltip.style.left = `${event.clientX + 10}px`;
+    tooltip.style.top = `${event.clientY + 10}px`;
+}
+
+function hideTooltip() {
+    if (tooltip) {
+        tooltip.style.display = 'none';
+    }
+}
+
+// ============================================================================
+// Standard Selection
+// ============================================================================
+
+async function selectStandard(standard) {
+    selectedStandard = standard;
+
+    // Show detail card
+    const detailCard = document.getElementById('standardDetailCard');
+    detailCard.style.display = 'block';
+
+    // Update header
+    document.getElementById('selectedStandardName').textContent = standard.name;
+    document.getElementById('selectedStandardCode').textContent = standard.code;
+
+    // Update metrics
+    document.getElementById('detailCoverage').textContent = `${standard.coverage_pct.toFixed(1)}%`;
+    document.getElementById('detailCoverage').style.color = coverageColor(standard.coverage_pct);
+    document.getElementById('detailEvidenceCount').textContent = standard.evidence_count || 0;
+    document.getElementById('detailCompliant').textContent = standard.findings_compliant || 0;
+    document.getElementById('detailPartial').textContent = standard.findings_partial || 0;
+    document.getElementById('detailNonCompliant').textContent = standard.findings_non_compliant || 0;
+
+    // Load evidence
+    await loadEvidence(standard.id);
+}
+
+async function loadEvidence(standardId) {
+    const container = document.getElementById('evidenceList');
+    container.innerHTML = '<div class="loading-state">Loading evidence...</div>';
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/coverage-map/standard/${encodeURIComponent(standardId)}/evidence`);
+        const data = await res.json();
+
+        if (data.success && data.evidence.length > 0) {
+            container.innerHTML = data.evidence.map(e => `
+                <div class="evidence-item" onclick="viewEvidence('${e.document_id || ''}', '${e.finding_id || ''}')">
+                    <div class="evidence-icon ${e.type}">
+                        ${e.type === 'finding' ? '!' : e.type === 'evidence_ref' ? '"' : ''}
+                    </div>
+                    <div class="evidence-info">
+                        <div class="evidence-title">${escapeHtml(e.title)}</div>
+                        <div class="evidence-meta">
+                            ${e.page ? `Page ${e.page}` : ''}
+                            ${e.confidence ? ` \u00b7 ${Math.round(e.confidence * 100)}% confidence` : ''}
+                        </div>
+                    </div>
+                    <span class="evidence-status ${e.status}">${e.status}</span>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<div class="loading-state">No evidence found for this standard</div>';
+        }
+    } catch (err) {
+        console.error('Failed to load evidence:', err);
+        container.innerHTML = '<div class="loading-state">Failed to load evidence</div>';
+    }
+}
+
+function viewEvidence(documentId, findingId) {
+    if (documentId) {
+        window.location.href = `/institutions/${institutionId}/documents/${documentId}`;
+    }
+}
+
+// ============================================================================
+// Gaps Panel
+// ============================================================================
+
+async function showGaps() {
+    const card = document.getElementById('gapsCard');
+    card.style.display = 'block';
+
+    const container = document.getElementById('gapsList');
+    container.innerHTML = '<div class="loading-state">Loading gaps...</div>';
+
+    try {
+        const accreditor = document.getElementById('accreditorSelect').value;
+        const res = await fetch(`/api/institutions/${institutionId}/coverage-map/gaps?accreditor=${accreditor}&threshold=50&limit=20`);
+        const data = await res.json();
+
+        if (data.success && data.gaps.length > 0) {
+            container.innerHTML = data.gaps.map(g => {
+                const severity = g.coverage_pct < 20 ? 'critical' : 'warning';
+                return `
+                    <div class="gap-item ${severity}" onclick="selectGap('${g.id}')">
+                        <div class="gap-info">
+                            <div class="gap-code">${escapeHtml(g.code)}</div>
+                            <div class="gap-name">${escapeHtml(g.name)}</div>
+                        </div>
+                        <div class="gap-pct ${severity}">${g.coverage_pct.toFixed(0)}%</div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            container.innerHTML = '<div class="loading-state">No coverage gaps found</div>';
+        }
+    } catch (err) {
+        console.error('Failed to load gaps:', err);
+        container.innerHTML = '<div class="loading-state">Failed to load gaps</div>';
+    }
+}
+
+function closeGaps() {
+    document.getElementById('gapsCard').style.display = 'none';
+}
+
+function selectGap(standardId) {
+    // Find the standard in the tree and select it
+    function findInTree(node) {
+        if (node.id === standardId) {
+            selectStandard(node);
+            return true;
+        }
+        if (node.children) {
+            for (const child of node.children) {
+                if (findInTree(child)) return true;
+            }
+        }
+        return false;
+    }
+
+    if (treeData) {
+        findInTree(treeData);
+    }
+}
+
+// ============================================================================
+// Accreditor Change
+// ============================================================================
+
+function changeAccreditor() {
+    loadSummary();
+    loadTreemap();
+}
+
+// ============================================================================
+// Utilities
+// ============================================================================
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+}
+
+// Handle resize
+window.addEventListener('resize', () => {
+    if (currentNode) {
+        renderTreemap(currentNode);
+    }
+});
+</script>
+{% endblock %}

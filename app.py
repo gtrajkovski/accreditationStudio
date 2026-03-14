@@ -49,6 +49,8 @@ from src.api.impact_analysis import impact_analysis_bp, init_impact_analysis_bp
 from src.api.knowledge_graph import knowledge_graph_bp, init_knowledge_graph_bp
 from src.api.timeline_planner import timeline_planner_bp, init_timeline_planner_bp
 from src.api.site_visit import site_visit_bp, init_site_visit_bp
+from src.api.coverage_map import coverage_map_bp, init_coverage_map_bp
+from src.api.simulation import simulation_bp, init_simulation_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 
@@ -96,6 +98,8 @@ init_impact_analysis_bp(workspace_manager)
 init_knowledge_graph_bp(workspace_manager, standards_store)
 init_timeline_planner_bp(workspace_manager)
 init_site_visit_bp(workspace_manager)
+init_coverage_map_bp(workspace_manager)
+init_simulation_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -124,6 +128,8 @@ app.register_blueprint(impact_analysis_bp)
 app.register_blueprint(knowledge_graph_bp)
 app.register_blueprint(timeline_planner_bp)
 app.register_blueprint(site_visit_bp)
+app.register_blueprint(coverage_map_bp)
+app.register_blueprint(simulation_bp)
 
 
 # =============================================================================
@@ -392,6 +398,44 @@ def institution_timeline_planner(id):
 
     return render_template(
         'institutions/timeline_planner.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
+@app.route('/institutions/<id>/coverage-map')
+def institution_coverage_map(id):
+    """Evidence coverage map page."""
+    from src.db.connection import get_conn
+
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    # Get available accreditors
+    conn = get_conn()
+    cursor = conn.execute("SELECT id, code, name FROM accreditors ORDER BY code")
+    accreditors = [dict(row) for row in cursor.fetchall()]
+
+    return render_template(
+        'institutions/coverage_map.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+        accreditors=accreditors,
+    )
+
+
+@app.route('/institutions/<id>/simulation')
+def institution_simulation(id):
+    """Accreditation simulation page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/simulation.html',
         institution=institution,
         current_institution=institution,
         readiness_score=_get_readiness_score(id),
