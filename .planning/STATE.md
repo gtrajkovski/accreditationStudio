@@ -2,26 +2,38 @@
 
 ## Next Session: Start Here
 
-**Site Visit Mode just completed.** To test it:
-```bash
-flask db upgrade              # Apply 0021_site_visit.sql
-python app.py                 # Start server on port 5003
-# Navigate to any institution page, press F2
-```
+**Evidence Coverage Map planned, ready to implement.** Plan file at:
+`.claude/plans/sorted-plotting-trinket.md`
 
-**Pick next feature from backlog below.**
+To continue:
+```bash
+# Review the plan, then implement:
+# 1. src/services/coverage_map_service.py
+# 2. src/api/coverage_map.py
+# 3. templates/institutions/coverage_map.html
+# 4. static/js/coverage_map.js
+# 5. Register in app.py + add nav link
+```
 
 ---
 
 ## Current Phase
-**Phase 10: Planning & Search** - Site Visit Mode complete, continuing with remaining items
+**Phase 10: Planning & Search** - Evidence Coverage Map planned
 
 ## Session Date
 2026-03-14
 
 ## Backlog Progress
 
-### Just Completed
+### Ready to Implement
+- **Evidence Coverage Map** (D3.js treemap visualization)
+  - Plan complete in `.claude/plans/sorted-plotting-trinket.md`
+  - Shows standards hierarchy with coverage %
+  - Color-coded: green (strong) → red (missing)
+  - Click to drill-down, see linked evidence
+  - No new DB tables needed
+
+### Just Completed (This Session)
 - ✅ **Site Visit Mode** (Fast unified search during auditor visits)
   - Migration: `0021_site_visit.sql`
   - Service: `src/services/site_visit_service.py`
@@ -29,17 +41,15 @@ python app.py                 # Start server on port 5003
   - UI: `templates/partials/site_visit_overlay.html`
   - JS: `static/js/site_visit_mode.js`
   - Shortcut: F2 or Ctrl+Shift+S
-  - Searches: documents, standards, findings, faculty, truth index, knowledge graph
 
-### Remaining Backlog (pick one)
+### Remaining Backlog
 | Priority | Feature | Description |
 |----------|---------|-------------|
-| 1 | **Global Search** | Unified search across standards, documents, findings |
-| 2 | **Evidence Coverage Map** | Standard coverage percentages visualization |
-| 3 | **Accreditation Simulation** | Mock audit with predicted findings |
-| 4 | **Multi-Institution Mode** | Consultant dashboard for 20-50 schools |
-| 5 | **Evidence Highlighting** | Highlight exact sentences in documents |
-| 6 | **Compliance Heatmap** | Matrix: documents × requirements |
+| 1 | **Evidence Coverage Map** | ← NEXT (planned) |
+| 2 | **Accreditation Simulation** | Mock audit with predicted findings |
+| 3 | **Multi-Institution Mode** | Consultant dashboard for 20-50 schools |
+| 4 | **Evidence Highlighting** | Highlight exact sentences in documents |
+| 5 | **Compliance Heatmap** | Matrix: documents × requirements |
 
 ## Current Blueprints (28 total)
 ```
@@ -62,11 +72,6 @@ impact_analysis_bp, knowledge_graph_bp, timeline_planner_bp, site_visit_bp
 - Knowledge Graph (D3.js visualization, path finder)
 - Timeline Planner (Gantt chart, templates)
 - Site Visit Mode (fast unified search, F2 shortcut)
-
-### Phase 8-9: Post-Visit + Ongoing ✅
-- Team Report Response Agent
-- Compliance Calendar Agent
-- Document Review Agent
 
 ## Repository
 - Remote: https://github.com/gtrajkovski/accreditationStudio
