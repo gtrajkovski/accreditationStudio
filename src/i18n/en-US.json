@@ -225,5 +225,21 @@
     "upload": "Upload Document",
     "audit": "Run Audit",
     "packet": "Create Packet"
+  },
+  "site_visit": {
+    "badge": "SITE VISIT MODE",
+    "placeholder": "Ask any question about this institution...",
+    "filter_all": "All",
+    "filter_documents": "Documents",
+    "filter_standards": "Standards",
+    "filter_findings": "Findings",
+    "filter_faculty": "Faculty",
+    "empty_state": "Search documents, standards, findings, and more",
+    "hint": "Type at least 2 characters to search",
+    "navigate": "Navigate",
+    "open_doc": "Open",
+    "preview": "Preview",
+    "no_results": "No results found",
+    "try_different": "Try different keywords or adjust filters"
   }
 }

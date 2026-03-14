@@ -1,0 +1,434 @@
+<!-- Site Visit Mode Search Overlay -->
+<div id="site-visit-overlay" class="site-visit-overlay" style="display: none;">
+    <div class="site-visit-backdrop" onclick="SiteVisitMode.close()"></div>
+    <div class="site-visit-modal">
+        <div class="site-visit-header">
+            <div class="site-visit-badge">{{ t('site_visit.badge') }}</div>
+            <div class="site-visit-search-container">
+                <svg class="site-visit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input
+                    type="text"
+                    id="site-visit-input"
+                    class="site-visit-input"
+                    placeholder="{{ t('site_visit.placeholder') }}"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+                <kbd class="site-visit-kbd">esc</kbd>
+            </div>
+            <div class="site-visit-filters" id="site-visit-filters">
+                <button class="filter-btn active" data-source="all">{{ t('site_visit.filter_all') }}</button>
+                <button class="filter-btn" data-source="documents">{{ t('site_visit.filter_documents') }}</button>
+                <button class="filter-btn" data-source="standards">{{ t('site_visit.filter_standards') }}</button>
+                <button class="filter-btn" data-source="findings">{{ t('site_visit.filter_findings') }}</button>
+                <button class="filter-btn" data-source="faculty">{{ t('site_visit.filter_faculty') }}</button>
+            </div>
+        </div>
+
+        <div class="site-visit-body">
+            <div class="site-visit-results" id="site-visit-results">
+                <div class="site-visit-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <p>{{ t('site_visit.empty_state') }}</p>
+                    <span class="site-visit-hint">{{ t('site_visit.hint') }}</span>
+                </div>
+            </div>
+            <div class="site-visit-preview" id="site-visit-preview" style="display: none;">
+                <!-- Preview content rendered here -->
+            </div>
+        </div>
+
+        <div class="site-visit-footer">
+            <span class="site-visit-hint-item">
+                <kbd>&uarr;</kbd><kbd>&darr;</kbd> {{ t('site_visit.navigate') }}
+            </span>
+            <span class="site-visit-hint-item">
+                <kbd>&crarr;</kbd> {{ t('site_visit.open_doc') }}
+            </span>
+            <span class="site-visit-hint-item">
+                <kbd>Tab</kbd> {{ t('site_visit.preview') }}
+            </span>
+            <span class="site-visit-hint-item site-visit-stats" id="site-visit-stats"></span>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Site Visit Overlay */
+.site-visit-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9998;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 8vh;
+}
+
+.site-visit-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.site-visit-modal {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    max-height: 85vh;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+/* Header */
+.site-visit-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+}
+
+.site-visit-badge {
+    display: inline-block;
+    background: var(--accent-primary);
+    color: var(--bg-primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    margin-bottom: var(--spacing-md);
+}
+
+.site-visit-search-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: 2px solid var(--accent-primary);
+}
+
+.site-visit-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.site-visit-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.site-visit-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.site-visit-kbd {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+}
+
+/* Filters */
+.site-visit-filters {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.site-visit-filters .filter-btn {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.site-visit-filters .filter-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.site-visit-filters .filter-btn.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--bg-primary);
+}
+
+/* Body */
+.site-visit-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 300px;
+}
+
+.site-visit-results {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+}
+
+.site-visit-preview {
+    width: 350px;
+    border-left: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+}
+
+/* Empty state */
+.site-visit-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-tertiary);
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.site-visit-empty svg {
+    opacity: 0.3;
+    margin-bottom: var(--spacing-md);
+}
+
+.site-visit-empty p {
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.site-visit-hint {
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+}
+
+/* Result items */
+.site-visit-result {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.site-visit-result:hover {
+    background: var(--bg-hover);
+}
+
+.site-visit-result.selected {
+    background: var(--bg-active);
+    border-color: var(--accent-primary);
+}
+
+.site-visit-result-source {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.site-visit-result-source.document { background: var(--info-bg); color: var(--info-text); }
+.site-visit-result-source.standard { background: var(--accreditor-bg, rgba(167, 139, 250, 0.2)); color: var(--accreditor, #a78bfa); }
+.site-visit-result-source.finding { background: var(--warning-bg); color: var(--warning-text); }
+.site-visit-result-source.faculty { background: var(--success-bg); color: var(--success-text); }
+.site-visit-result-source.truth_index { background: var(--state-bg, rgba(251, 146, 60, 0.2)); color: var(--state, #fb923c); }
+.site-visit-result-source.knowledge_graph { background: var(--professional-bg, rgba(52, 211, 153, 0.2)); color: var(--professional, #34d399); }
+
+.site-visit-result-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.site-visit-result-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.site-visit-result-snippet {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.site-visit-result-citation {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+}
+
+.site-visit-result-citation .citation-doc {
+    color: var(--text-secondary);
+}
+
+.site-visit-result-citation .citation-page {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+}
+
+.site-visit-result-citation .citation-code {
+    color: var(--accreditor, #a78bfa);
+    font-family: var(--font-mono);
+}
+
+.site-visit-result-score {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+}
+
+/* Preview pane */
+.site-visit-preview-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.site-visit-preview-citation {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.site-visit-preview-content {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+.site-visit-preview-actions {
+    margin-top: var(--spacing-lg);
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Footer */
+.site-visit-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+}
+
+.site-visit-hint-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.site-visit-hint-item kbd {
+    background: var(--bg-primary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+}
+
+.site-visit-stats {
+    margin-left: auto;
+    color: var(--text-secondary);
+}
+
+/* Loading state */
+.site-visit-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+.site-visit-loading::after {
+    content: '';
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border-default);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-left: var(--spacing-sm);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* No results */
+.site-visit-no-results {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-tertiary);
+}
+
+.site-visit-no-results p {
+    font-size: 1rem;
+    margin-bottom: var(--spacing-sm);
+}
+</style>

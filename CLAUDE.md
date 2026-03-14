@@ -226,8 +226,6 @@ Agents check confidence against `Config.AGENT_CONFIDENCE_THRESHOLD` (default 0.7
 
 ---
 
----
-
 ## Planning Directory
 
 The `.planning/` directory contains project planning artifacts:
@@ -328,7 +326,7 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Agent registry with dynamic dispatch
 - ✅ Evidence Guardian (Tier 0 governance)
 - ✅ Readiness Score service with sub-scores
-- ✅ Database migrations (18 migrations)
+- ✅ Database migrations (20 migrations)
 - ✅ Compliance Audit Agent (5-pass multi-tool audit engine)
 - ✅ Audit API with SSE streaming
 - ✅ Document upload and audit trigger UI
@@ -392,5 +390,16 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Knowledge Graph UI page (entity explorer, D3.js force-directed graph, entity details, path finder)
 - ✅ Database migration (0019_knowledge_graph_entities.sql)
 
-**Registered Blueprints** (26 total):
-`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`
+**Post-MVP: Timeline Planner** ✅ Complete
+- ✅ Timeline Planner API (15+ endpoints: phases, milestones, templates, Gantt data)
+- ✅ Timeline Planner UI page (D3.js Gantt chart, 4 templates, drag-and-drop)
+- ✅ Database migration (0020_timeline_planner.sql)
+
+**Post-MVP: Site Visit Mode** ✅ Complete
+- ✅ Site Visit Service (unified search across 6 data sources)
+- ✅ Site Visit API (6 endpoints: search, fact lookup, history, saved searches)
+- ✅ Site Visit UI (overlay with F2 shortcut, filter tabs, citations)
+- ✅ Database migration (0021_site_visit.sql with FTS5 indexes)
+
+**Registered Blueprints** (28 total):
+`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`, `timeline_planner_bp`, `site_visit_bp`

@@ -344,18 +344,27 @@
     <!-- Command Palette -->
     {% include 'partials/command_palette.html' %}
 
+    <!-- Site Visit Mode -->
+    {% include 'partials/site_visit_overlay.html' %}
+
     <!-- Core Scripts -->
     <script src="{{ url_for('static', filename='js/utils/api.js') }}"></script>
     <script src="{{ url_for('static', filename='js/utils/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script src="{{ url_for('static', filename='js/command_palette.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/fab.js') }}"></script></script>
+    <script src="{{ url_for('static', filename='js/fab.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/site_visit_mode.js') }}"></script>
 
     <!-- Initialize i18n with server-provided strings -->
     <script>
         // Initialize i18n
         AccreditAI.i18n.init({{ i18n_strings | tojson | safe }}, '{{ locale }}');
+
+        // Initialize Site Visit Mode (if institution context exists)
+        if (AccreditAI.context.institution_id) {
+            SiteVisitMode.init(AccreditAI.context.institution_id);
+        }
 
         // Dropdown toggle behavior
         document.querySelectorAll('.dropdown-toggle').forEach(btn => {

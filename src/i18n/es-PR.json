@@ -225,5 +225,21 @@
     "upload": "Subir Documento",
     "audit": "Ejecutar Auditoría",
     "packet": "Crear Paquete"
+  },
+  "site_visit": {
+    "badge": "MODO VISITA",
+    "placeholder": "Haga cualquier pregunta sobre esta institución...",
+    "filter_all": "Todo",
+    "filter_documents": "Documentos",
+    "filter_standards": "Estándares",
+    "filter_findings": "Hallazgos",
+    "filter_faculty": "Facultad",
+    "empty_state": "Buscar documentos, estándares, hallazgos y más",
+    "hint": "Escriba al menos 2 caracteres para buscar",
+    "navigate": "Navegar",
+    "open_doc": "Abrir",
+    "preview": "Vista previa",
+    "no_results": "No se encontraron resultados",
+    "try_different": "Intente palabras clave diferentes o ajuste los filtros"
   }
 }

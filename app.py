@@ -48,6 +48,7 @@ from src.api.documents import documents_bp, init_documents_bp
 from src.api.impact_analysis import impact_analysis_bp, init_impact_analysis_bp
 from src.api.knowledge_graph import knowledge_graph_bp, init_knowledge_graph_bp
 from src.api.timeline_planner import timeline_planner_bp, init_timeline_planner_bp
+from src.api.site_visit import site_visit_bp, init_site_visit_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 
@@ -94,6 +95,7 @@ init_documents_bp(workspace_manager)
 init_impact_analysis_bp(workspace_manager)
 init_knowledge_graph_bp(workspace_manager, standards_store)
 init_timeline_planner_bp(workspace_manager)
+init_site_visit_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -121,6 +123,7 @@ app.register_blueprint(documents_bp)
 app.register_blueprint(impact_analysis_bp)
 app.register_blueprint(knowledge_graph_bp)
 app.register_blueprint(timeline_planner_bp)
+app.register_blueprint(site_visit_bp)
 
 
 # =============================================================================
