@@ -47,6 +47,7 @@ from src.api.document_reviews import document_reviews_bp, init_document_reviews_
 from src.api.documents import documents_bp, init_documents_bp
 from src.api.impact_analysis import impact_analysis_bp, init_impact_analysis_bp
 from src.api.knowledge_graph import knowledge_graph_bp, init_knowledge_graph_bp
+from src.api.timeline_planner import timeline_planner_bp, init_timeline_planner_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 
@@ -92,6 +93,7 @@ init_document_reviews_bp(workspace_manager)
 init_documents_bp(workspace_manager)
 init_impact_analysis_bp(workspace_manager)
 init_knowledge_graph_bp(workspace_manager, standards_store)
+init_timeline_planner_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -118,6 +120,7 @@ app.register_blueprint(document_reviews_bp)
 app.register_blueprint(documents_bp)
 app.register_blueprint(impact_analysis_bp)
 app.register_blueprint(knowledge_graph_bp)
+app.register_blueprint(timeline_planner_bp)
 
 
 # =============================================================================
@@ -371,6 +374,21 @@ def institution_knowledge_graph(id):
 
     return render_template(
         'institutions/knowledge_graph.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
+@app.route('/institutions/<id>/timeline-planner')
+def institution_timeline_planner(id):
+    """Timeline planner page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/timeline_planner.html',
         institution=institution,
         current_institution=institution,
         readiness_score=_get_readiness_score(id),

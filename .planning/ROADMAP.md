@@ -60,6 +60,30 @@
 
 ---
 
+## Milestone: v1.1 - Post-MVP Enhancements
+
+### Phase 9: Analytics & Visualization ✅ COMPLETE
+41. ✅ Compliance History (readiness over time graph)
+42. ✅ Risk Alerts Banner (critical blockers on dashboard)
+43. ✅ Quick Actions FAB (Upload/Audit/Packet)
+44. ✅ Keyboard Shortcuts (G+D, G+C sequences)
+45. ✅ Impact Analysis (fact-to-document dependencies)
+46. ✅ Knowledge Graph (entity extraction, D3.js visualization)
+
+### Phase 10: Planning & Search 🔲 IN PROGRESS
+47. 🔲 Accreditation Timeline Planner
+48. 🔲 Site Visit Mode (fast search)
+49. 🔲 Global Search (unified search)
+50. 🔲 Evidence Coverage Map
+
+### Phase 11: Advanced Features 🔲 PLANNED
+51. 🔲 Accreditation Simulation (mock audit)
+52. 🔲 Multi-Institution Mode (consultant dashboard)
+53. 🔲 Evidence Highlighting
+54. 🔲 Compliance Heatmap
+
+---
+
 ## Completed Infrastructure
 
 ### Core (`src/core/`)

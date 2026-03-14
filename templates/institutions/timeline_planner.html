@@ -1,0 +1,1389 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}Timeline Planner - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-primary" onclick="showCreateModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    New Timeline
+</button>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='Timeline Planner',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Timeline Planner', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<div class="timeline-layout">
+    <!-- Left Panel: Timeline Cards -->
+    <div class="timeline-list card">
+        <div class="card-header">
+            <h3 class="card-title">Timelines</h3>
+            <span class="chip" id="timelineCount">0</span>
+        </div>
+        <div class="timeline-filters">
+            <select id="statusFilter" class="form-select form-select-sm" onchange="loadTimelines()">
+                <option value="">All Status</option>
+                <option value="planning">Planning</option>
+                <option value="active">Active</option>
+                <option value="on_hold">On Hold</option>
+                <option value="completed">Completed</option>
+            </select>
+        </div>
+        <div class="timeline-cards" id="timelineCards">
+            <div class="loading-state">Loading timelines...</div>
+        </div>
+    </div>
+
+    <!-- Center: Gantt Chart -->
+    <div class="gantt-panel">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title" id="ganttTitle">Select a Timeline</h3>
+                <div class="gantt-controls" id="ganttControls" style="display: none;">
+                    <button class="btn btn-ghost btn-sm" onclick="zoomIn()" title="Zoom In">+</button>
+                    <button class="btn btn-ghost btn-sm" onclick="zoomOut()" title="Zoom Out">-</button>
+                    <button class="btn btn-ghost btn-sm" onclick="resetZoom()" title="Fit">Fit</button>
+                </div>
+            </div>
+            <div class="gantt-container" id="ganttContainer">
+                <div class="empty-state" id="ganttEmptyState">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="width: 48px; height: 48px; margin-bottom: var(--spacing-md);">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                        <rect x="6" y="13" width="4" height="2" fill="currentColor"/>
+                        <rect x="12" y="13" width="6" height="2" fill="currentColor"/>
+                        <rect x="8" y="17" width="5" height="2" fill="currentColor"/>
+                    </svg>
+                    <p>No timeline selected</p>
+                    <p class="text-muted">Select a timeline from the left or create a new one</p>
+                </div>
+            </div>
+            <div class="gantt-legend" id="ganttLegend" style="display: none;">
+                <div class="legend-item"><span class="legend-color legend-pending"></span> Pending</div>
+                <div class="legend-item"><span class="legend-color legend-in-progress"></span> In Progress</div>
+                <div class="legend-item"><span class="legend-color legend-completed"></span> Completed</div>
+                <div class="legend-item"><span class="legend-color legend-overdue"></span> Overdue</div>
+                <div class="legend-item"><span class="legend-color legend-blocked"></span> Blocked</div>
+            </div>
+        </div>
+
+        <!-- Stats Panel -->
+        <div class="stats-panel card" id="statsPanel" style="display: none;">
+            <div class="card-header">
+                <h3 class="card-title">Progress</h3>
+            </div>
+            <div class="stats-grid" id="statsGrid">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Timeline Modal -->
+<div class="modal-overlay" id="createModal">
+    <div class="modal" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>Create Timeline</h3>
+            <button class="btn btn-ghost btn-sm" onclick="hideCreateModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-tabs">
+                <button class="form-tab active" data-tab="template" onclick="switchTab('template')">From Template</button>
+                <button class="form-tab" data-tab="custom" onclick="switchTab('custom')">Custom</button>
+            </div>
+
+            <div id="templateTab" class="tab-content active">
+                <div class="form-group">
+                    <label>Template</label>
+                    <select id="templateSelect" class="form-select" onchange="updateTemplateInfo()">
+                        <option value="">Select a template...</option>
+                    </select>
+                </div>
+                <div id="templateInfo" class="template-info" style="display: none;">
+                    <p id="templateDesc" class="text-muted"></p>
+                    <div class="template-meta">
+                        <span id="templateDuration"></span>
+                        <span id="templateAccreditor"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Target Completion Date</label>
+                    <input type="date" id="templateTargetDate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Timeline Name (optional)</label>
+                    <input type="text" id="templateName" class="form-input" placeholder="Leave blank to use template name">
+                </div>
+            </div>
+
+            <div id="customTab" class="tab-content">
+                <div class="form-group">
+                    <label>Timeline Name</label>
+                    <input type="text" id="customName" class="form-input" placeholder="e.g., ACCSC Reaffirmation 2025">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Process Type</label>
+                        <select id="customProcessType" class="form-select">
+                            <option value="initial_accreditation">Initial Accreditation</option>
+                            <option value="reaffirmation">Reaffirmation</option>
+                            <option value="substantive_change">Substantive Change</option>
+                            <option value="team_visit_response">Team Visit Response</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Accreditor</label>
+                        <select id="customAccreditor" class="form-select">
+                            <option value="">Any/Other</option>
+                            <option value="ACCSC">ACCSC</option>
+                            <option value="SACSCOC">SACSCOC</option>
+                            <option value="HLC">HLC</option>
+                            <option value="ABHES">ABHES</option>
+                            <option value="COE">COE</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Target Completion Date</label>
+                    <input type="date" id="customTargetDate" class="form-input">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideCreateModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="createTimeline()">Create Timeline</button>
+        </div>
+    </div>
+</div>
+
+<!-- Milestone Detail Modal -->
+<div class="modal-overlay" id="milestoneModal">
+    <div class="modal" style="max-width: 550px;">
+        <div class="modal-header">
+            <h3 id="milestoneModalTitle">Milestone</h3>
+            <button class="btn btn-ghost btn-sm" onclick="hideMilestoneModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="editMilestoneId">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="editMilestoneName" class="form-input">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Due Date</label>
+                    <input type="date" id="editMilestoneDueDate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select id="editMilestonePriority" class="form-select">
+                        <option value="low">Low</option>
+                        <option value="normal">Normal</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="editMilestoneStatus" class="form-select">
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="blocked">Blocked</option>
+                        <option value="skipped">Skipped</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Assigned To</label>
+                    <input type="text" id="editMilestoneAssigned" class="form-input" placeholder="Name or role">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Progress (%)</label>
+                <input type="range" id="editMilestoneProgress" min="0" max="100" value="0" class="form-range">
+                <span id="progressValue">0%</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-danger" onclick="deleteMilestone()" id="deleteMilestoneBtn">Delete</button>
+            <div style="flex: 1;"></div>
+            <button class="btn btn-secondary" onclick="hideMilestoneModal()">Cancel</button>
+            <button class="btn btn-success" onclick="completeMilestone()" id="completeMilestoneBtn">Mark Complete</button>
+            <button class="btn btn-primary" onclick="saveMilestone()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Phase Modal -->
+<div class="modal-overlay" id="phaseModal">
+    <div class="modal" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3>Add Phase</h3>
+            <button class="btn btn-ghost btn-sm" onclick="hidePhaseModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Phase Name</label>
+                <input type="text" id="newPhaseName" class="form-input" placeholder="e.g., Self-Study Development">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" id="newPhaseStart" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="date" id="newPhaseEnd" class="form-input">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Color</label>
+                <div class="color-options">
+                    <button class="color-option" data-color="#a78bfa" style="background: #a78bfa;"></button>
+                    <button class="color-option" data-color="#60a5fa" style="background: #60a5fa;"></button>
+                    <button class="color-option" data-color="#34d399" style="background: #34d399;"></button>
+                    <button class="color-option" data-color="#fbbf24" style="background: #fbbf24;"></button>
+                    <button class="color-option" data-color="#f472b6" style="background: #f472b6;"></button>
+                    <button class="color-option" data-color="#fb923c" style="background: #fb923c;"></button>
+                </div>
+                <input type="hidden" id="newPhaseColor" value="#60a5fa">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hidePhaseModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="createPhase()">Add Phase</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Milestone Modal -->
+<div class="modal-overlay" id="addMilestoneModal">
+    <div class="modal" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3>Add Milestone</h3>
+            <button class="btn btn-ghost btn-sm" onclick="hideAddMilestoneModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Phase</label>
+                <select id="newMilestonePhase" class="form-select">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Milestone Name</label>
+                <input type="text" id="newMilestoneName" class="form-input" placeholder="e.g., Submit Application">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Due Date</label>
+                    <input type="date" id="newMilestoneDueDate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select id="newMilestonePriority" class="form-select">
+                        <option value="low">Low</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideAddMilestoneModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="createMilestone()">Add Milestone</button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Timeline Layout */
+.timeline-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: var(--spacing-lg);
+    height: calc(100vh - 200px);
+}
+
+/* Timeline List */
+.timeline-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.timeline-filters {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.timeline-cards {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+}
+
+.timeline-card {
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.timeline-card:hover {
+    border-color: var(--accent);
+    background: var(--bg-hover);
+}
+
+.timeline-card.selected {
+    border-color: var(--accent);
+    background: rgba(201, 168, 76, 0.1);
+}
+
+.timeline-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.timeline-color-bar {
+    width: 4px;
+    height: 100%;
+    border-radius: 2px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.timeline-card-title {
+    flex: 1;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    padding-left: var(--spacing-sm);
+}
+
+.timeline-card-meta {
+    display: flex;
+    gap: var(--spacing-md);
+    font-size: 12px;
+    color: var(--text-muted);
+    padding-left: var(--spacing-sm);
+}
+
+.timeline-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.timeline-progress {
+    margin-top: var(--spacing-sm);
+    padding-left: var(--spacing-sm);
+}
+
+.progress-bar {
+    height: 4px;
+    background: var(--bg-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width var(--transition-normal);
+}
+
+.timeline-card-actions {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    display: none;
+}
+
+.timeline-card:hover .timeline-card-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* Gantt Panel */
+.gantt-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.gantt-container {
+    height: 450px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.gantt-container .empty-state {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.gantt-controls {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.gantt-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.legend-pending { background: #6b7280; }
+.legend-in-progress { background: #3b82f6; }
+.legend-completed { background: #22c55e; }
+.legend-overdue { background: #ef4444; }
+.legend-blocked { background: #f59e0b; }
+
+/* Stats Panel */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-item.danger .stat-value { color: var(--danger); }
+.stat-item.success .stat-value { color: var(--success); }
+.stat-item.warning .stat-value { color: var(--warning); }
+
+/* Modals */
+.form-tabs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-sm);
+}
+
+.form-tab {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    position: relative;
+}
+
+.form-tab.active {
+    color: var(--accent);
+}
+
+.form-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: calc(-1 * var(--spacing-sm) - 1px);
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
+
+.template-info {
+    background: var(--bg-secondary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.template-meta {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    font-size: 12px;
+}
+
+.template-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.color-options {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.color-option {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.color-option:hover,
+.color-option.selected {
+    border-color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.form-range {
+    width: 100%;
+    margin-right: var(--spacing-sm);
+}
+
+/* Gantt Chart Bars */
+.gantt-phase-row {
+    fill: var(--bg-card);
+    cursor: pointer;
+}
+
+.gantt-phase-row:hover {
+    fill: var(--bg-hover);
+}
+
+.gantt-phase-label {
+    font-size: 12px;
+    font-weight: 600;
+    fill: var(--text-primary);
+}
+
+.gantt-milestone-bar {
+    rx: 3;
+    ry: 3;
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+}
+
+.gantt-milestone-bar:hover {
+    opacity: 0.8;
+}
+
+.gantt-milestone-label {
+    font-size: 11px;
+    fill: var(--text-primary);
+}
+
+.gantt-axis text {
+    font-size: 10px;
+    fill: var(--text-muted);
+}
+
+.gantt-axis line,
+.gantt-axis path {
+    stroke: var(--border-color);
+}
+
+.gantt-today-line {
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-dasharray: 4, 4;
+}
+
+.gantt-dependency {
+    stroke: var(--text-muted);
+    stroke-width: 1;
+    fill: none;
+    opacity: 0.5;
+}
+
+/* Timeline Actions */
+.timeline-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+</style>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const institutionId = '{{ institution.id }}';
+const apiBase = `/api/institutions/${institutionId}/timelines`;
+
+let selectedTimelineId = null;
+let currentGanttData = null;
+let templates = [];
+
+// Status colors
+const statusColors = {
+    pending: '#6b7280',
+    in_progress: '#3b82f6',
+    completed: '#22c55e',
+    overdue: '#ef4444',
+    blocked: '#f59e0b',
+    skipped: '#9ca3af'
+};
+
+const priorityColors = {
+    low: '#6b7280',
+    normal: '#3b82f6',
+    high: '#f59e0b',
+    critical: '#ef4444'
+};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadTimelines();
+    loadTemplates();
+    setupColorOptions();
+    setupProgressSlider();
+});
+
+// Load timelines
+async function loadTimelines() {
+    const status = document.getElementById('statusFilter').value;
+    const url = status ? `${apiBase}?status=${status}` : apiBase;
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        document.getElementById('timelineCount').textContent = data.count;
+
+        const container = document.getElementById('timelineCards');
+
+        if (data.count === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="padding: var(--spacing-xl); text-align: center;">
+                    <p class="text-muted">No timelines yet</p>
+                    <button class="btn btn-primary btn-sm" style="margin-top: var(--spacing-md);" onclick="showCreateModal()">
+                        Create First Timeline
+                    </button>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = data.timelines.map(tl => `
+            <div class="timeline-card ${tl.id === selectedTimelineId ? 'selected' : ''}"
+                 onclick="selectTimeline('${tl.id}')"
+                 data-id="${tl.id}">
+                <div class="timeline-color-bar" style="background: ${tl.color_code || '#c9a84c'};"></div>
+                <div class="timeline-card-header">
+                    <div class="timeline-card-title">${tl.name}</div>
+                </div>
+                <div class="timeline-card-meta">
+                    <span>${tl.phase_count} phases</span>
+                    <span>${tl.milestone_count} milestones</span>
+                    <span>${tl.overdue_count > 0 ? `<span style="color: var(--danger);">${tl.overdue_count} overdue</span>` : ''}</span>
+                </div>
+                <div class="timeline-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${tl.progress_percentage}%;"></div>
+                    </div>
+                </div>
+                <div class="timeline-card-meta" style="margin-top: var(--spacing-xs);">
+                    <span>Target: ${formatDate(tl.target_date)}</span>
+                    <span class="chip chip-sm">${tl.status}</span>
+                </div>
+                <div class="timeline-card-actions">
+                    <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); deleteTimeline('${tl.id}')" title="Delete">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('Failed to load timelines:', err);
+    }
+}
+
+// Load templates
+async function loadTemplates() {
+    try {
+        const res = await fetch(`${apiBase}/templates`);
+        const data = await res.json();
+        templates = data.templates;
+
+        const select = document.getElementById('templateSelect');
+        select.innerHTML = '<option value="">Select a template...</option>' +
+            templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    } catch (err) {
+        console.error('Failed to load templates:', err);
+    }
+}
+
+// Select timeline
+async function selectTimeline(timelineId) {
+    selectedTimelineId = timelineId;
+
+    // Update UI
+    document.querySelectorAll('.timeline-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.id === timelineId);
+    });
+
+    // Load Gantt data
+    await loadGanttData(timelineId);
+    await loadStats(timelineId);
+}
+
+// Load Gantt data
+async function loadGanttData(timelineId) {
+    try {
+        const res = await fetch(`${apiBase}/${timelineId}/gantt`);
+        const data = await res.json();
+        currentGanttData = data;
+
+        document.getElementById('ganttTitle').textContent = data.timeline.name;
+        document.getElementById('ganttControls').style.display = 'flex';
+        document.getElementById('ganttLegend').style.display = 'flex';
+        document.getElementById('ganttEmptyState').style.display = 'none';
+
+        renderGantt(data);
+    } catch (err) {
+        console.error('Failed to load Gantt data:', err);
+    }
+}
+
+// Load stats
+async function loadStats(timelineId) {
+    try {
+        const res = await fetch(`${apiBase}/${timelineId}/stats`);
+        const data = await res.json();
+
+        document.getElementById('statsPanel').style.display = 'block';
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-item">
+                <div class="stat-value">${data.completion_rate}%</div>
+                <div class="stat-label">Complete</div>
+            </div>
+            <div class="stat-item ${data.overdue_count > 0 ? 'danger' : ''}">
+                <div class="stat-value">${data.overdue_count}</div>
+                <div class="stat-label">Overdue</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${data.status_counts.in_progress || 0}</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${data.days_to_target !== null ? data.days_to_target : '-'}</div>
+                <div class="stat-label">Days Left</div>
+            </div>
+        `;
+    } catch (err) {
+        console.error('Failed to load stats:', err);
+    }
+}
+
+// Render Gantt chart
+function renderGantt(data) {
+    const container = document.getElementById('ganttContainer');
+    container.innerHTML = '';
+
+    const margin = { top: 40, right: 20, bottom: 30, left: 180 };
+    const width = container.clientWidth - margin.left - margin.right;
+    const height = container.clientHeight - margin.top - margin.bottom;
+
+    const svg = d3.select('#ganttContainer')
+        .append('svg')
+        .attr('width', container.clientWidth)
+        .attr('height', container.clientHeight);
+
+    const g = svg.append('g')
+        .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Find date range
+    const allDates = data.items.flatMap(item => [
+        item.start_date ? new Date(item.start_date) : null,
+        item.end_date ? new Date(item.end_date) : null
+    ]).filter(d => d);
+
+    if (allDates.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>No phases or milestones yet</p></div>';
+        return;
+    }
+
+    const minDate = d3.min(allDates);
+    const maxDate = d3.max(allDates);
+
+    // Add padding to date range
+    const startDate = d3.timeDay.offset(minDate, -7);
+    const endDate = d3.timeDay.offset(maxDate, 7);
+
+    // Time scale
+    const xScale = d3.scaleTime()
+        .domain([startDate, endDate])
+        .range([0, width]);
+
+    // Item scale
+    const yScale = d3.scaleBand()
+        .domain(data.items.map(d => d.id))
+        .range([0, height])
+        .padding(0.2);
+
+    // Draw time axis
+    const xAxis = d3.axisTop(xScale)
+        .ticks(d3.timeWeek.every(1))
+        .tickFormat(d3.timeFormat('%b %d'));
+
+    g.append('g')
+        .attr('class', 'gantt-axis')
+        .call(xAxis);
+
+    // Draw grid lines
+    g.append('g')
+        .attr('class', 'gantt-grid')
+        .selectAll('line')
+        .data(xScale.ticks(d3.timeWeek.every(1)))
+        .join('line')
+        .attr('x1', d => xScale(d))
+        .attr('x2', d => xScale(d))
+        .attr('y1', 0)
+        .attr('y2', height)
+        .attr('stroke', 'var(--border-color)')
+        .attr('stroke-opacity', 0.3);
+
+    // Draw today line
+    const today = new Date();
+    if (today >= startDate && today <= endDate) {
+        g.append('line')
+            .attr('class', 'gantt-today-line')
+            .attr('x1', xScale(today))
+            .attr('x2', xScale(today))
+            .attr('y1', 0)
+            .attr('y2', height);
+    }
+
+    // Draw items
+    data.items.forEach(item => {
+        const y = yScale(item.id);
+        const itemStart = item.start_date ? new Date(item.start_date) : new Date(item.end_date);
+        const itemEnd = new Date(item.end_date);
+
+        const barGroup = g.append('g')
+            .attr('class', 'gantt-item')
+            .style('cursor', 'pointer')
+            .on('click', () => {
+                if (item.type === 'milestone') {
+                    showMilestoneModal(item.id);
+                }
+            });
+
+        if (item.type === 'phase') {
+            // Phase background
+            barGroup.append('rect')
+                .attr('class', 'gantt-phase-row')
+                .attr('x', -margin.left)
+                .attr('y', y)
+                .attr('width', margin.left + width)
+                .attr('height', yScale.bandwidth())
+                .attr('fill', 'var(--bg-card)')
+                .attr('opacity', 0.5);
+
+            // Phase label
+            barGroup.append('text')
+                .attr('class', 'gantt-phase-label')
+                .attr('x', -margin.left + 10)
+                .attr('y', y + yScale.bandwidth() / 2)
+                .attr('dy', '0.35em')
+                .text(item.name)
+                .attr('fill', item.color || 'var(--text-primary)');
+
+            // Phase bar
+            const phaseWidth = Math.max(xScale(itemEnd) - xScale(itemStart), 10);
+            barGroup.append('rect')
+                .attr('x', xScale(itemStart))
+                .attr('y', y + yScale.bandwidth() * 0.1)
+                .attr('width', phaseWidth)
+                .attr('height', yScale.bandwidth() * 0.8)
+                .attr('rx', 4)
+                .attr('fill', item.color || '#60a5fa')
+                .attr('opacity', 0.3);
+        } else {
+            // Milestone label
+            barGroup.append('text')
+                .attr('class', 'gantt-milestone-label')
+                .attr('x', -margin.left + 20)
+                .attr('y', y + yScale.bandwidth() / 2)
+                .attr('dy', '0.35em')
+                .text(item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name)
+                .attr('fill', 'var(--text-muted)');
+
+            // Milestone bar
+            const barWidth = Math.max(xScale(itemEnd) - xScale(itemStart), 20);
+            barGroup.append('rect')
+                .attr('class', 'gantt-milestone-bar')
+                .attr('x', xScale(itemStart))
+                .attr('y', y + yScale.bandwidth() * 0.2)
+                .attr('width', barWidth)
+                .attr('height', yScale.bandwidth() * 0.6)
+                .attr('fill', statusColors[item.status] || statusColors.pending);
+
+            // Progress fill
+            if (item.progress > 0 && item.progress < 100) {
+                barGroup.append('rect')
+                    .attr('x', xScale(itemStart))
+                    .attr('y', y + yScale.bandwidth() * 0.2)
+                    .attr('width', barWidth * (item.progress / 100))
+                    .attr('height', yScale.bandwidth() * 0.6)
+                    .attr('rx', 3)
+                    .attr('fill', statusColors.completed)
+                    .attr('opacity', 0.7);
+            }
+
+            // Priority indicator
+            if (item.priority === 'critical' || item.priority === 'high') {
+                barGroup.append('circle')
+                    .attr('cx', xScale(itemStart) - 6)
+                    .attr('cy', y + yScale.bandwidth() / 2)
+                    .attr('r', 4)
+                    .attr('fill', priorityColors[item.priority]);
+            }
+        }
+    });
+
+    // Draw dependencies
+    data.dependencies.forEach(dep => {
+        const fromItem = data.items.find(i => i.id === dep.from);
+        const toItem = data.items.find(i => i.id === dep.to);
+
+        if (fromItem && toItem) {
+            const fromY = yScale(fromItem.id) + yScale.bandwidth() / 2;
+            const toY = yScale(toItem.id) + yScale.bandwidth() / 2;
+            const fromX = xScale(new Date(fromItem.end_date));
+            const toX = xScale(new Date(toItem.start_date || toItem.end_date));
+
+            const path = d3.path();
+            path.moveTo(fromX, fromY);
+            path.bezierCurveTo(
+                fromX + 20, fromY,
+                toX - 20, toY,
+                toX, toY
+            );
+
+            g.append('path')
+                .attr('class', 'gantt-dependency')
+                .attr('d', path.toString())
+                .attr('marker-end', 'url(#arrowhead)');
+        }
+    });
+}
+
+// Zoom functions
+function zoomIn() {
+    // TODO: Implement zoom
+}
+
+function zoomOut() {
+    // TODO: Implement zoom
+}
+
+function resetZoom() {
+    if (currentGanttData) {
+        renderGantt(currentGanttData);
+    }
+}
+
+// Modal functions
+function showCreateModal() {
+    document.getElementById('createModal').style.display = 'flex';
+    switchTab('template');
+}
+
+function hideCreateModal() {
+    document.getElementById('createModal').style.display = 'none';
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.form-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.toggle('active', c.id === tab + 'Tab');
+    });
+}
+
+function updateTemplateInfo() {
+    const templateId = document.getElementById('templateSelect').value;
+    const infoDiv = document.getElementById('templateInfo');
+
+    if (!templateId) {
+        infoDiv.style.display = 'none';
+        return;
+    }
+
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+        infoDiv.style.display = 'block';
+        document.getElementById('templateDesc').textContent = template.description || '';
+        document.getElementById('templateDuration').textContent = `${template.default_duration_days} days`;
+        document.getElementById('templateAccreditor').textContent = template.accreditor_code || 'Any Accreditor';
+    }
+}
+
+async function createTimeline() {
+    const activeTab = document.querySelector('.form-tab.active').dataset.tab;
+
+    let payload;
+    if (activeTab === 'template') {
+        const templateId = document.getElementById('templateSelect').value;
+        const targetDate = document.getElementById('templateTargetDate').value;
+        const name = document.getElementById('templateName').value;
+
+        if (!templateId || !targetDate) {
+            alert('Please select a template and target date');
+            return;
+        }
+
+        // Generate from template
+        const res = await fetch(`${apiBase}/generate-from-template`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ template_id: templateId, target_date: targetDate, name })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            hideCreateModal();
+            await loadTimelines();
+            selectTimeline(data.timeline_id);
+        } else {
+            const err = await res.json();
+            alert(err.error || 'Failed to create timeline');
+        }
+    } else {
+        const name = document.getElementById('customName').value;
+        const targetDate = document.getElementById('customTargetDate').value;
+
+        if (!name || !targetDate) {
+            alert('Please enter a name and target date');
+            return;
+        }
+
+        payload = {
+            name,
+            target_date: targetDate,
+            process_type: document.getElementById('customProcessType').value,
+            accreditor_code: document.getElementById('customAccreditor').value
+        };
+
+        const res = await fetch(apiBase, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            hideCreateModal();
+            await loadTimelines();
+            selectTimeline(data.timeline_id);
+        } else {
+            const err = await res.json();
+            alert(err.error || 'Failed to create timeline');
+        }
+    }
+}
+
+async function deleteTimeline(timelineId) {
+    if (!confirm('Delete this timeline and all its phases/milestones?')) return;
+
+    const res = await fetch(`${apiBase}/${timelineId}`, { method: 'DELETE' });
+    if (res.ok) {
+        if (selectedTimelineId === timelineId) {
+            selectedTimelineId = null;
+            document.getElementById('ganttContainer').innerHTML = '<div class="empty-state"><p>No timeline selected</p></div>';
+            document.getElementById('ganttControls').style.display = 'none';
+            document.getElementById('ganttLegend').style.display = 'none';
+            document.getElementById('statsPanel').style.display = 'none';
+        }
+        await loadTimelines();
+    }
+}
+
+// Milestone modal
+async function showMilestoneModal(milestoneId) {
+    const res = await fetch(`${apiBase}/${selectedTimelineId}`);
+    const data = await res.json();
+
+    let milestone;
+    for (const phase of data.phases) {
+        milestone = phase.milestones.find(m => m.id === milestoneId);
+        if (milestone) break;
+    }
+
+    if (!milestone) return;
+
+    document.getElementById('editMilestoneId').value = milestone.id;
+    document.getElementById('editMilestoneName').value = milestone.name;
+    document.getElementById('editMilestoneDueDate').value = milestone.due_date;
+    document.getElementById('editMilestonePriority').value = milestone.priority;
+    document.getElementById('editMilestoneStatus').value = milestone.status;
+    document.getElementById('editMilestoneAssigned').value = milestone.assigned_to || '';
+    document.getElementById('editMilestoneProgress').value = milestone.completion_percentage || 0;
+    document.getElementById('progressValue').textContent = `${milestone.completion_percentage || 0}%`;
+
+    document.getElementById('milestoneModalTitle').textContent = milestone.name;
+    document.getElementById('completeMilestoneBtn').style.display = milestone.status === 'completed' ? 'none' : 'inline-flex';
+
+    document.getElementById('milestoneModal').style.display = 'flex';
+}
+
+function hideMilestoneModal() {
+    document.getElementById('milestoneModal').style.display = 'none';
+}
+
+async function saveMilestone() {
+    const milestoneId = document.getElementById('editMilestoneId').value;
+
+    const payload = {
+        name: document.getElementById('editMilestoneName').value,
+        due_date: document.getElementById('editMilestoneDueDate').value,
+        priority: document.getElementById('editMilestonePriority').value,
+        status: document.getElementById('editMilestoneStatus').value,
+        assigned_to: document.getElementById('editMilestoneAssigned').value,
+        completion_percentage: parseInt(document.getElementById('editMilestoneProgress').value)
+    };
+
+    const res = await fetch(`${apiBase}/${selectedTimelineId}/milestones/${milestoneId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+        hideMilestoneModal();
+        await loadGanttData(selectedTimelineId);
+        await loadStats(selectedTimelineId);
+        await loadTimelines();
+    }
+}
+
+async function completeMilestone() {
+    const milestoneId = document.getElementById('editMilestoneId').value;
+
+    const res = await fetch(`${apiBase}/${selectedTimelineId}/milestones/${milestoneId}/complete`, {
+        method: 'POST'
+    });
+
+    if (res.ok) {
+        hideMilestoneModal();
+        await loadGanttData(selectedTimelineId);
+        await loadStats(selectedTimelineId);
+        await loadTimelines();
+    }
+}
+
+async function deleteMilestone() {
+    if (!confirm('Delete this milestone?')) return;
+
+    const milestoneId = document.getElementById('editMilestoneId').value;
+
+    const res = await fetch(`${apiBase}/${selectedTimelineId}/milestones/${milestoneId}`, {
+        method: 'DELETE'
+    });
+
+    if (res.ok) {
+        hideMilestoneModal();
+        await loadGanttData(selectedTimelineId);
+        await loadStats(selectedTimelineId);
+        await loadTimelines();
+    }
+}
+
+// Phase modal
+function showPhaseModal() {
+    document.getElementById('phaseModal').style.display = 'flex';
+}
+
+function hidePhaseModal() {
+    document.getElementById('phaseModal').style.display = 'none';
+}
+
+async function createPhase() {
+    const name = document.getElementById('newPhaseName').value;
+    if (!name) {
+        alert('Please enter a phase name');
+        return;
+    }
+
+    const payload = {
+        name,
+        start_date: document.getElementById('newPhaseStart').value,
+        end_date: document.getElementById('newPhaseEnd').value,
+        color_code: document.getElementById('newPhaseColor').value
+    };
+
+    const res = await fetch(`${apiBase}/${selectedTimelineId}/phases`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+        hidePhaseModal();
+        await loadGanttData(selectedTimelineId);
+        await loadTimelines();
+    }
+}
+
+// Add milestone modal
+function showAddMilestoneModal() {
+    // Populate phase dropdown
+    const select = document.getElementById('newMilestonePhase');
+    if (currentGanttData) {
+        const phases = currentGanttData.items.filter(i => i.type === 'phase');
+        select.innerHTML = phases.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+    document.getElementById('addMilestoneModal').style.display = 'flex';
+}
+
+function hideAddMilestoneModal() {
+    document.getElementById('addMilestoneModal').style.display = 'none';
+}
+
+async function createMilestone() {
+    const name = document.getElementById('newMilestoneName').value;
+    const phaseId = document.getElementById('newMilestonePhase').value;
+    const dueDate = document.getElementById('newMilestoneDueDate').value;
+
+    if (!name || !phaseId || !dueDate) {
+        alert('Please fill all required fields');
+        return;
+    }
+
+    const payload = {
+        phase_id: phaseId,
+        name,
+        due_date: dueDate,
+        priority: document.getElementById('newMilestonePriority').value
+    };
+
+    const res = await fetch(`${apiBase}/${selectedTimelineId}/milestones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+        hideAddMilestoneModal();
+        await loadGanttData(selectedTimelineId);
+        await loadStats(selectedTimelineId);
+        await loadTimelines();
+    }
+}
+
+// Helpers
+function setupColorOptions() {
+    document.querySelectorAll('.color-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('newPhaseColor').value = btn.dataset.color;
+        });
+    });
+}
+
+function setupProgressSlider() {
+    const slider = document.getElementById('editMilestoneProgress');
+    const valueSpan = document.getElementById('progressValue');
+    slider.addEventListener('input', () => {
+        valueSpan.textContent = `${slider.value}%`;
+    });
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+</script>
+{% endblock %}

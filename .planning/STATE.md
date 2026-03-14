@@ -7,7 +7,7 @@
 ---
 
 ## Current Phase
-**Post-MVP Backlog** - Implementing feature enhancements
+**Phase 10: Planning & Search** - Accreditation Timeline Planner
 
 ## Session Date
 2026-03-14
@@ -20,14 +20,17 @@
 - ✅ Quick Actions FAB (floating button: Upload/Audit/Packet)
 - ✅ Risk Alerts Banner (critical blockers on dashboard)
 - ✅ Impact Analysis (fact-to-document dependencies, change simulation, auto-remediation)
+- ✅ Knowledge Graph (entity extraction, D3.js visualization, path finder)
+- ✅ Timeline Planner (Gantt chart, phases, milestones, templates)
 
 ### Remaining Backlog
-- 🔲 Institutional Knowledge Graph - Facts as nodes
-- 🔲 Accreditation Timeline Planner - Project management
-- 🔲 Site Visit Mode - Fast search during visits
-- 🔲 Multi-Institution Mode - Consultant dashboard
-- 🔲 Evidence Highlighting - Highlight exact sentences
-- 🔲 Global Search - Unified search across all content
+- 🔲 Site Visit Mode - Fast search during auditor visits
+- 🔲 Multi-Institution Mode - Consultant dashboard for 20-50 schools
+- 🔲 Evidence Highlighting - Highlight exact sentences in documents
+- 🔲 Global Search - Search standards, documents, findings, evidence
+- 🔲 Evidence Coverage Map - Standard coverage percentages
+- 🔲 Compliance Heatmap - Matrix: documents × requirements
+- 🔲 Accreditation Simulation - Mock audit with predicted findings
 
 ## Milestone Summary
 
