@@ -401,5 +401,16 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Site Visit UI (overlay with F2 shortcut, filter tabs, citations)
 - ✅ Database migration (0021_site_visit.sql with FTS5 indexes)
 
-**Registered Blueprints** (28 total):
-`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`, `timeline_planner_bp`, `site_visit_bp`
+**Post-MVP: Evidence Coverage Map** ✅ Complete
+- ✅ Coverage Map Service (standards hierarchy, coverage metrics, gaps detection)
+- ✅ Coverage Map API (4 endpoints: tree, summary, evidence, gaps)
+- ✅ Coverage Map UI (D3.js treemap, drill-down, color-coded coverage)
+
+**Post-MVP: Accreditation Simulation** ✅ Complete
+- ✅ Simulation Service (mock audit orchestration, pass/fail prediction, risk assessment)
+- ✅ Simulation API (8 endpoints: runs, findings, risk, comparisons, SSE streaming)
+- ✅ Simulation UI (Quick Scan/Deep Audit modes, pass/fail badge, trend charts)
+- ✅ Database migration (0022_simulation.sql)
+
+**Registered Blueprints** (30 total):
+`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`, `timeline_planner_bp`, `site_visit_bp`, `coverage_map_bp`, `simulation_bp`

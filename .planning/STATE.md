@@ -2,25 +2,23 @@
 
 ## Next Session: Start Here
 
-**Accreditation Simulation feature complete!**
+**Phase 10 complete! Phase 11 in progress.**
 
-Files created:
-- `src/db/migrations/0022_simulation.sql` - Tables for simulation runs, findings, risk
-- `src/services/simulation_service.py` - Core orchestration and prediction logic
-- `src/api/simulation.py` - 8 API endpoints with SSE streaming
-- `templates/institutions/simulation.html` - UI with pass/fail badge, scores, findings
+Phase 10 delivered:
+- Timeline Planner (D3.js Gantt, 4 templates)
+- Site Visit Mode (F2 overlay, unified search)
+- Evidence Coverage Map (D3.js treemap, gaps view)
+- Accreditation Simulation (mock audit, pass/fail prediction)
 
-To verify:
-```bash
-python app.py  # Start server
-# Navigate to institution → Simulation
-# Run Quick Scan or Deep Audit
-```
+**Next up - Phase 11 remaining items:**
+1. Multi-Institution Mode (consultant dashboard for 20-50 schools)
+2. Evidence Highlighting (highlight exact sentences in documents)
+3. Compliance Heatmap (matrix: documents × requirements)
 
 ---
 
 ## Current Phase
-**Phase 10: Analytics & Visualization** - Simulation complete
+**Phase 11: Advanced Features** - In Progress (Simulation complete, 3 items remaining)
 
 ## Session Date
 2026-03-14

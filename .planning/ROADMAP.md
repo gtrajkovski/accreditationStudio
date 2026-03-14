@@ -70,14 +70,14 @@
 45. ✅ Impact Analysis (fact-to-document dependencies)
 46. ✅ Knowledge Graph (entity extraction, D3.js visualization)
 
-### Phase 10: Planning & Search 🔲 IN PROGRESS
-47. 🔲 Accreditation Timeline Planner
-48. 🔲 Site Visit Mode (fast search)
-49. 🔲 Global Search (unified search)
-50. 🔲 Evidence Coverage Map
+### Phase 10: Planning & Search ✅ COMPLETE
+47. ✅ Accreditation Timeline Planner (D3.js Gantt chart, 4 templates)
+48. ✅ Site Visit Mode (unified search, F2 overlay, 6 data sources)
+49. ✅ Global Search (FTS5 indexes, filter tabs, citations)
+50. ✅ Evidence Coverage Map (D3.js treemap, drill-down, gaps view)
 
-### Phase 11: Advanced Features 🔲 PLANNED
-51. 🔲 Accreditation Simulation (mock audit)
+### Phase 11: Advanced Features 🔲 IN PROGRESS
+51. ✅ Accreditation Simulation (mock audit, pass/fail prediction, risk assessment)
 52. 🔲 Multi-Institution Mode (consultant dashboard)
 53. 🔲 Evidence Highlighting
 54. 🔲 Compliance Heatmap
