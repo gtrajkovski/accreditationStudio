@@ -1,86 +1,71 @@
 # AccreditAI State
 
-## URGENT TODO (Next Session)
+## Next Session: Start Here
 
-✅ **Document Upload Fixed** - `documents_bp` blueprint now registered in `app.py` (2026-03-14)
+**Timeline Planner just completed.** To test it:
+```bash
+flask db upgrade              # Apply 0020_timeline_planner.sql
+python app.py                 # Start server on port 5003
+# Navigate to: /institutions/<id>/timeline-planner
+```
+
+**Pick next feature from backlog below.**
 
 ---
 
 ## Current Phase
-**Phase 10: Planning & Search** - Accreditation Timeline Planner
+**Phase 10: Planning & Search** - Timeline Planner complete, continuing with remaining items
 
 ## Session Date
 2026-03-14
 
 ## Backlog Progress
 
-### Completed This Session
-- ✅ Compliance History (line chart with 7d/30d/90d range, sub-scores toggle)
-- ✅ Keyboard Shortcuts (G+D dashboard, G+C compliance sequences)
-- ✅ Quick Actions FAB (floating button: Upload/Audit/Packet)
-- ✅ Risk Alerts Banner (critical blockers on dashboard)
-- ✅ Impact Analysis (fact-to-document dependencies, change simulation, auto-remediation)
-- ✅ Knowledge Graph (entity extraction, D3.js visualization, path finder)
-- ✅ Timeline Planner (Gantt chart, phases, milestones, templates)
+### Just Completed
+- ✅ **Timeline Planner** (Gantt chart, phases, milestones, 4 templates)
+  - Migration: `0020_timeline_planner.sql`
+  - API: `src/api/timeline_planner.py` (15+ endpoints)
+  - UI: `templates/institutions/timeline_planner.html` (D3.js Gantt)
+  - Route: `/institutions/<id>/timeline-planner`
 
-### Remaining Backlog
-- 🔲 Site Visit Mode - Fast search during auditor visits
-- 🔲 Multi-Institution Mode - Consultant dashboard for 20-50 schools
-- 🔲 Evidence Highlighting - Highlight exact sentences in documents
-- 🔲 Global Search - Search standards, documents, findings, evidence
-- 🔲 Evidence Coverage Map - Standard coverage percentages
-- 🔲 Compliance Heatmap - Matrix: documents × requirements
-- 🔲 Accreditation Simulation - Mock audit with predicted findings
+### Remaining Backlog (pick one)
+| Priority | Feature | Description |
+|----------|---------|-------------|
+| 1 | **Site Visit Mode** | Fast search during auditor visits |
+| 2 | **Global Search** | Unified search across standards, documents, findings |
+| 3 | **Evidence Coverage Map** | Standard coverage percentages visualization |
+| 4 | **Accreditation Simulation** | Mock audit with predicted findings |
+| 5 | **Multi-Institution Mode** | Consultant dashboard for 20-50 schools |
+| 6 | **Evidence Highlighting** | Highlight exact sentences in documents |
+| 7 | **Compliance Heatmap** | Matrix: documents × requirements |
 
-## Milestone Summary
+## Current Blueprints (27 total)
+```
+chat_bp, agents_bp, institutions_bp, standards_bp, settings_bp
+readiness_bp, work_queue_bp, autopilot_bp, audits_bp, remediation_bp
+checklists_bp, packets_bp, action_plans_bp, faculty_bp, catalog_bp
+exhibits_bp, achievements_bp, interview_prep_bp, ser_bp, team_reports_bp
+compliance_calendar_bp, document_reviews_bp, documents_bp
+impact_analysis_bp, knowledge_graph_bp, timeline_planner_bp
+```
 
-### Phase 8: Post-Visit + Ongoing ✅ COMPLETE
-- ✅ Team Report Response Agent (8 tools: report parsing, finding categorization, response drafting)
-- ✅ Compliance Calendar Agent (8 tools: events, deadlines, timeline generation, reminders)
-- ✅ Document Review Agent (8 tools: scheduling, pending reviews, completion, bulk operations)
-- ✅ Database migration (0016_team_reports.sql)
-- ✅ Team Reports UI page
-- ✅ Compliance Calendar UI page
-- ✅ Document Reviews UI page
+## Recently Completed Features
 
-### Phase 7: Visit Prep ✅ COMPLETE
-- ✅ Interview Prep Agent (7 tools: 9 roles, questions, talking points, red flags)
-- ✅ SER Drafting Agent (8 tools: section drafting, draft/submission modes)
-- ✅ UI Redesign ("Certified Authority" - gold accent, collapsible nav, readiness ring)
-- ✅ Enhanced Checklist Agent (4 new tools: document validation, page references, linked export)
-- ✅ Visit readiness page with mock evaluation support
-- ✅ Database migration (0015_phase7.sql)
-
-### Post-Phase 7 Improvements ✅ COMPLETE
-- ✅ Dashboard session controls (pause/resume/cancel buttons)
-- ✅ PAUSED session status added to SessionStatus enum
-- ✅ New API endpoints: POST `/api/agents/sessions/<id>/pause`, `/resume`
-- ✅ Session cards UI with real-time status updates
-
-## Current Blueprints (26 total)
-- chat_bp, agents_bp, institutions_bp, standards_bp
-- settings_bp, readiness_bp, work_queue_bp, autopilot_bp
-- audits_bp, remediation_bp, checklists_bp
-- packets_bp, action_plans_bp
-- faculty_bp, catalog_bp, exhibits_bp, achievements_bp
-- interview_prep_bp, ser_bp
-- team_reports_bp, compliance_calendar_bp, document_reviews_bp, documents_bp
-- impact_analysis_bp, knowledge_graph_bp
-
-## Post-MVP Backlog
-See FEATURE_PRIORITIES.md for potential future features:
-- Compliance History (readiness over time graph)
-- Risk Alerts Banner
-- Impact Analysis
-- Institutional Knowledge Graph
-- Accreditation Timeline Planner
-- Site Visit Mode (fast search)
-- Multi-Institution Mode (consultant scale)
-- Evidence Highlighting
-- Global Search
+### Phase 10: Analytics & Visualization ✅
+- Compliance History (line chart, 7d/30d/90d)
+- Keyboard Shortcuts (G+D, G+C sequences)
 - Quick Actions FAB
-- Keyboard Shortcuts
+- Risk Alerts Banner
+- Impact Analysis (fact scanning, change simulation)
+- Knowledge Graph (D3.js visualization, path finder)
+- Timeline Planner (Gantt chart, templates)
+
+### Phase 8-9: Post-Visit + Ongoing ✅
+- Team Report Response Agent
+- Compliance Calendar Agent
+- Document Review Agent
 
 ## Repository
 - Remote: https://github.com/gtrajkovski/accreditationStudio
 - Branch: master
+- Latest commit: Timeline Planner feature
