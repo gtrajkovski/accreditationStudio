@@ -1,0 +1,30 @@
+# AccreditAI Docker Compose Configuration
+# Simple deployment for localhost single-user tool
+
+version: '3.8'
+
+services:
+  accreditai:
+    build: .
+    container_name: accreditai
+    ports:
+      - "5003:5003"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MODEL=${MODEL:-claude-sonnet-4-20250514}
+      - SECRET_KEY=${SECRET_KEY:-}
+      - PORT=5003
+    volumes:
+      # Persist workspace data
+      - ./workspace:/app/workspace
+      # Persist uploads
+      - ./uploads:/app/uploads
+      # Persist database
+      - ./accreditai.db:/app/accreditai.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5003/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
