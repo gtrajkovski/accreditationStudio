@@ -439,7 +439,7 @@ Always be precise with citations. Never claim evidence exists if you cannot cite
             with open(output_path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=[
                     "standard_ref", "section_reference", "category", "requirement",
-                    "evidence_found", "quality", "document_id", "page",
+                    "evidence_found", "quality", "document_id", "document_name", "page",
                     "snippet", "confidence", "exhibit_label"
                 ])
                 writer.writeheader()

@@ -40,7 +40,7 @@ flask db upgrade  # Apply migration
    - Fuzzy snippet matching for position detection
    - URL params for highlight navigation
 
-## Current Blueprints (31 total)
+## Current Blueprints (32 total)
 ```
 chat_bp, agents_bp, institutions_bp, standards_bp, settings_bp
 readiness_bp, work_queue_bp, autopilot_bp, audits_bp, remediation_bp
@@ -49,6 +49,7 @@ exhibits_bp, achievements_bp, interview_prep_bp, ser_bp, team_reports_bp
 compliance_calendar_bp, document_reviews_bp, documents_bp
 impact_analysis_bp, knowledge_graph_bp, timeline_planner_bp, site_visit_bp
 coverage_map_bp, simulation_bp, portfolios_bp, evidence_highlighting_bp
+compliance_heatmap_bp
 ```
 
 ## Remaining Backlog

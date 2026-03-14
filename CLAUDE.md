@@ -430,5 +430,5 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Compliance Heatmap API (3 endpoints: matrix, cell details, document summary)
 - ✅ Compliance Heatmap UI (CSS Grid matrix, sticky headers, filters, detail panel)
 
-**Registered Blueprints** (33 total):
+**Registered Blueprints** (32 total):
 `chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`, `timeline_planner_bp`, `site_visit_bp`, `coverage_map_bp`, `simulation_bp`, `portfolios_bp`, `evidence_highlighting_bp`, `compliance_heatmap_bp`
