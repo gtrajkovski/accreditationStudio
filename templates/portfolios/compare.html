@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Compare - {{ portfolio.name }} - AccreditAI{% endblock %}
+{% block header_title %}Compare Institutions{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('portfolio_dashboard', portfolio_id=portfolio.id) }}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Back to {{ portfolio.name }}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-intro" style="margin-bottom: var(--spacing-xl);">
+    <p class="text-muted">
+        Compare readiness scores across institutions. Select up to 4 institutions to see side-by-side metrics.
+    </p>
+</div>
+
+<!-- Institution Selector -->
+<div class="card" style="margin-bottom: var(--spacing-xl);">
+    <div class="card-header">
+        <h2 class="card-title">Select Institutions to Compare</h2>
+    </div>
+    <div class="compare-selector">
+        {% for i in range(4) %}
+        <div class="compare-slot" data-index="{{ i }}">
+            <select class="form-control compare-select" onchange="updateComparison()">
+                <option value="">Select institution...</option>
+                {% for inst in comparison.institutions %}
+                <option value="{{ inst.id }}" {% if loop.index0 == i %}selected{% endif %}>
+                    {{ inst.name }} ({{ inst.score }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Radar Chart -->
+<div class="compare-grid">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Score Comparison</h2>
+        </div>
+        <div class="chart-container">
+            <canvas id="radar-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Quick Stats</h2>
+        </div>
+        <div class="quick-stats" id="quick-stats">
+            {% for inst in comparison.institutions[:4] %}
+            <div class="quick-stat-row" style="border-left-color: {{ ['#C9A84C', '#4ade80', '#3b82f6', '#f472b6'][loop.index0] }};">
+                <span class="quick-stat-name">{{ inst.name }}</span>
+                <div class="quick-stat-scores">
+                    <span class="quick-stat-score {{ 'ready' if inst.score >= 80 else ('moderate' if inst.score >= 60 else 'at-risk') }}">
+                        {{ inst.score }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Table -->
+<div class="card" style="margin-top: var(--spacing-xl);">
+    <div class="card-header">
+        <h2 class="card-title">Detailed Comparison</h2>
+    </div>
+    <table class="table" id="comparison-table">
+        <thead>
+            <tr>
+                <th>Metric</th>
+                {% for inst in comparison.institutions[:4] %}
+                <th style="border-bottom: 3px solid {{ ['#C9A84C', '#4ade80', '#3b82f6', '#f472b6'][loop.index0] }};">
+                    {{ inst.name[:20] }}{% if inst.name|length > 20 %}...{% endif %}
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Overall Score</strong></td>
+                {% for inst in comparison.institutions[:4] %}
+                <td>
+                    <span class="score-badge {{ 'ready' if inst.score >= 80 else ('moderate' if inst.score >= 60 else 'at-risk') }}">
+                        {{ inst.score }}
+                    </span>
+                </td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>Documents</td>
+                {% for inst in comparison.institutions[:4] %}
+                <td>{{ inst.documents }}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>Compliance</td>
+                {% for inst in comparison.institutions[:4] %}
+                <td>{{ inst.compliance }}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>Evidence</td>
+                {% for inst in comparison.institutions[:4] %}
+                <td>{{ inst.evidence }}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>Consistency</td>
+                {% for inst in comparison.institutions[:4] %}
+                <td>{{ inst.consistency }}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>Status</td>
+                {% for inst in comparison.institutions[:4] %}
+                <td>
+                    {% if inst.status == 'at_risk' %}
+                    <span class="badge badge-error">At Risk</span>
+                    {% elif inst.status == 'ready' %}
+                    <span class="badge badge-success">Ready</span>
+                    {% else %}
+                    <span class="badge badge-warning">Moderate</span>
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+.compare-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+}
+
+.compare-slot {
+    position: relative;
+}
+
+.compare-slot::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 2px;
+}
+
+.compare-slot[data-index="0"]::before { background: #C9A84C; }
+.compare-slot[data-index="1"]::before { background: #4ade80; }
+.compare-slot[data-index="2"]::before { background: #3b82f6; }
+.compare-slot[data-index="3"]::before { background: #f472b6; }
+
+.compare-slot select {
+    padding-left: var(--spacing-lg);
+}
+
+.compare-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--spacing-xl);
+}
+
+.chart-container {
+    padding: var(--spacing-lg);
+    height: 400px;
+}
+
+.quick-stats {
+    padding: var(--spacing-md);
+}
+
+.quick-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-left: 4px solid;
+    margin-bottom: var(--spacing-sm);
+    background: var(--bg-elevated);
+    border-radius: var(--radius-sm);
+}
+
+.quick-stat-name {
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
+}
+
+.quick-stat-score {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+}
+
+.quick-stat-score.ready {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.quick-stat-score.moderate {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--warning);
+}
+
+.quick-stat-score.at-risk {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--error);
+}
+
+.score-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+}
+
+.score-badge.ready {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.score-badge.moderate {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--warning);
+}
+
+.score-badge.at-risk {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--error);
+}
+
+@media (max-width: 1024px) {
+    .compare-selector {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .compare-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const chartData = {{ comparison.chart | tojson }};
+const institutions = {{ comparison.institutions | tojson }};
+const colors = ['#C9A84C', '#4ade80', '#3b82f6', '#f472b6'];
+
+let chart;
+
+function initChart() {
+    const ctx = document.getElementById('radar-chart').getContext('2d');
+
+    chart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: chartData.labels,
+            datasets: chartData.datasets.map((ds, i) => ({
+                ...ds,
+                borderColor: colors[i],
+                backgroundColor: colors[i] + '33',
+                pointBackgroundColor: colors[i],
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: colors[i],
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        stepSize: 20,
+                        color: 'var(--text-muted)',
+                    },
+                    grid: {
+                        color: 'var(--border-subtle)',
+                    },
+                    pointLabels: {
+                        color: 'var(--text-primary)',
+                        font: {
+                            size: 12,
+                            weight: 500,
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: 'var(--text-primary)',
+                        padding: 16,
+                        usePointStyle: true,
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateComparison() {
+    const selects = document.querySelectorAll('.compare-select');
+    const selectedIds = Array.from(selects)
+        .map(s => s.value)
+        .filter(v => v);
+
+    if (selectedIds.length === 0) return;
+
+    // Update URL and reload with new selection
+    const params = new URLSearchParams();
+    params.set('institutions', selectedIds.join(','));
+    window.location.search = params.toString();
+}
+
+// Initialize chart on load
+document.addEventListener('DOMContentLoaded', initChart);
+</script>
+{% endblock %}

@@ -412,5 +412,23 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Simulation UI (Quick Scan/Deep Audit modes, pass/fail badge, trend charts)
 - ✅ Database migration (0022_simulation.sql)
 
-**Registered Blueprints** (30 total):
-`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`, `timeline_planner_bp`, `site_visit_bp`, `coverage_map_bp`, `simulation_bp`
+**Post-MVP: Multi-Institution Mode** ✅ Complete
+- ✅ Portfolio Service (CRUD, aggregate readiness, comparison data)
+- ✅ Portfolio API (13 endpoints: portfolios, membership, readiness, comparison, bulk ops)
+- ✅ Portfolio UI (list with readiness rings, dashboard with metrics, Chart.js radar comparison)
+- ✅ Institution Quick-Switcher (sidebar dropdown, Ctrl+K shortcut, recent tracking)
+- ✅ Database migration (0023_portfolios.sql)
+
+**Post-MVP: Evidence Highlighting** ✅ Complete
+- ✅ Evidence Highlighting Service (document text, evidence aggregation, fuzzy matching)
+- ✅ Evidence Highlighting API (4 endpoints: text, evidence, standards, position)
+- ✅ Document Viewer UI (page navigation, inline highlights, standards sidebar)
+- ✅ Database migration (0024_evidence_highlighting.sql)
+
+**Post-MVP: Compliance Heatmap** ✅ Complete
+- ✅ Compliance Heatmap Service (document × standard matrix aggregation)
+- ✅ Compliance Heatmap API (3 endpoints: matrix, cell details, document summary)
+- ✅ Compliance Heatmap UI (CSS Grid matrix, sticky headers, filters, detail panel)
+
+**Registered Blueprints** (33 total):
+`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`, `timeline_planner_bp`, `site_visit_bp`, `coverage_map_bp`, `simulation_bp`, `portfolios_bp`, `evidence_highlighting_bp`, `compliance_heatmap_bp`

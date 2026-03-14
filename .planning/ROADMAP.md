@@ -76,11 +76,11 @@
 49. ✅ Global Search (FTS5 indexes, filter tabs, citations)
 50. ✅ Evidence Coverage Map (D3.js treemap, drill-down, gaps view)
 
-### Phase 11: Advanced Features 🔲 IN PROGRESS
+### Phase 11: Advanced Features ✅ COMPLETE
 51. ✅ Accreditation Simulation (mock audit, pass/fail prediction, risk assessment)
-52. 🔲 Multi-Institution Mode (consultant dashboard)
-53. 🔲 Evidence Highlighting
-54. 🔲 Compliance Heatmap
+52. ✅ Multi-Institution Mode (portfolios, aggregate readiness, comparison, Ctrl+K switcher)
+53. ✅ Evidence Highlighting (document viewer, inline highlights, standards sidebar)
+54. ✅ Compliance Heatmap (documents × standards matrix, drill-down, filters)
 
 ---
 

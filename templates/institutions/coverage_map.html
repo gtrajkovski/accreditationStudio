@@ -872,7 +872,12 @@ async function loadEvidence(standardId) {
 
 function viewEvidence(documentId, findingId) {
     if (documentId) {
-        window.location.href = `/institutions/${institutionId}/documents/${documentId}`;
+        // Navigate to document viewer with highlight parameter
+        let url = `/institutions/${institutionId}/documents/${documentId}/viewer`;
+        if (findingId) {
+            url += `?highlight=${findingId}`;
+        }
+        window.location.href = url;
     }
 }
 

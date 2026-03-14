@@ -1,0 +1,815 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}Compliance Heatmap - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Summary Stats */
+.heatmap-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.summary-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    text-align: center;
+}
+
+.summary-value {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.summary-value.compliant { color: var(--success); }
+.summary-value.partial { color: var(--warning); }
+.summary-value.non-compliant { color: var(--danger); }
+
+.summary-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+}
+
+/* Legend */
+.heatmap-legend {
+    display: flex;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-sm);
+}
+
+.legend-color.compliant { background: var(--success); }
+.legend-color.partial { background: var(--warning); }
+.legend-color.non-compliant { background: var(--danger); }
+.legend-color.not-evaluated { background: var(--bg-secondary); border: 1px solid var(--border-subtle); }
+
+/* Heatmap Container */
+.heatmap-container {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.heatmap-scroll {
+    overflow: auto;
+    max-height: calc(100vh - 400px);
+    min-height: 300px;
+}
+
+/* Heatmap Table */
+.heatmap-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 100%;
+}
+
+.heatmap-table th,
+.heatmap-table td {
+    padding: 0;
+    border: 1px solid var(--border-subtle);
+}
+
+/* Header Row */
+.heatmap-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.heatmap-table thead th {
+    background: var(--bg-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    text-align: center;
+    min-width: 60px;
+    max-width: 80px;
+}
+
+.heatmap-table thead th.corner {
+    position: sticky;
+    left: 0;
+    z-index: 30;
+    background: var(--bg-secondary);
+    min-width: 200px;
+}
+
+.std-header {
+    padding: var(--spacing-sm);
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    height: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Document Column */
+.heatmap-table tbody td.doc-cell {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background: var(--bg-card);
+    min-width: 200px;
+    max-width: 250px;
+}
+
+.doc-info {
+    padding: var(--spacing-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.doc-title {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.doc-type {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-transform: capitalize;
+}
+
+/* Heatmap Cells */
+.heatmap-cell {
+    width: 60px;
+    height: 40px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.heatmap-cell:hover {
+    outline: 2px solid var(--accent);
+    z-index: 5;
+}
+
+.heatmap-cell.compliant {
+    background: var(--success);
+}
+
+.heatmap-cell.partial {
+    background: var(--warning);
+}
+
+.heatmap-cell.non_compliant {
+    background: var(--danger);
+}
+
+.heatmap-cell.not_evaluated {
+    background: var(--bg-secondary);
+}
+
+/* Cell content (finding count) */
+.cell-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.heatmap-cell.not_evaluated .cell-count,
+.heatmap-cell.non_compliant .cell-count {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Confidence indicator */
+.heatmap-cell[data-confidence="low"] {
+    opacity: 0.5;
+}
+
+.heatmap-cell[data-confidence="medium"] {
+    opacity: 0.75;
+}
+
+/* Cell Tooltip */
+.cell-tooltip {
+    position: fixed;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    max-width: 300px;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.tooltip-title {
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-sm);
+    padding: 2px 0;
+}
+
+.tooltip-label {
+    color: var(--text-muted);
+}
+
+.tooltip-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.tooltip-value.compliant { color: var(--success); }
+.tooltip-value.partial { color: var(--warning); }
+.tooltip-value.non_compliant { color: var(--danger); }
+
+/* Detail Panel */
+.detail-panel {
+    position: fixed;
+    right: 0;
+    top: var(--header-height, 60px);
+    bottom: 0;
+    width: 400px;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border-subtle);
+    transform: translateX(100%);
+    transition: transform var(--transition-base);
+    z-index: 100;
+    overflow-y: auto;
+}
+
+.detail-panel.open {
+    transform: translateX(0);
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+}
+
+.detail-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.detail-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+}
+
+.detail-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.detail-content {
+    padding: var(--spacing-md);
+}
+
+.detail-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.meta-item {
+    text-align: center;
+}
+
+.meta-value {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+}
+
+.meta-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+/* Finding Card */
+.finding-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.finding-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.finding-status {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.finding-status.compliant {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.finding-status.partial {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--warning);
+}
+
+.finding-status.non_compliant {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+}
+
+.finding-severity {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.finding-summary {
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.finding-evidence {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+/* Filters */
+.heatmap-filters {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.filter-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-2xl);
+    color: var(--text-muted);
+}
+
+.empty-state svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block header_actions %}
+<select id="accreditorSelect" class="form-select form-select-sm" onchange="loadHeatmap()">
+    {% for acc in accreditors %}
+    <option value="{{ acc.code }}" {% if acc.code == institution.accreditor_primary %}selected{% endif %}>
+        {{ acc.code }}
+    </option>
+    {% endfor %}
+</select>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='Compliance Heatmap',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Heatmap', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<!-- Summary Stats -->
+<div class="heatmap-summary" id="summaryStats">
+    <div class="summary-card">
+        <div class="summary-value" id="totalDocs">--</div>
+        <div class="summary-label">Documents</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-value" id="totalStds">--</div>
+        <div class="summary-label">Standards</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-value compliant" id="compliantPct">--</div>
+        <div class="summary-label">Compliant</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-value partial" id="partialPct">--</div>
+        <div class="summary-label">Partial</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-value non-compliant" id="nonCompliantPct">--</div>
+        <div class="summary-label">Non-Compliant</div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="heatmap-legend">
+    <div class="legend-item">
+        <span class="legend-color compliant"></span>
+        <span>Compliant</span>
+    </div>
+    <div class="legend-item">
+        <span class="legend-color partial"></span>
+        <span>Partial</span>
+    </div>
+    <div class="legend-item">
+        <span class="legend-color non-compliant"></span>
+        <span>Non-Compliant</span>
+    </div>
+    <div class="legend-item">
+        <span class="legend-color not-evaluated"></span>
+        <span>Not Evaluated</span>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="heatmap-filters">
+    <div class="filter-group">
+        <span class="filter-label">Document Type:</span>
+        <select id="docTypeFilter" class="form-select form-select-sm" onchange="loadHeatmap()">
+            <option value="">All Types</option>
+            <option value="catalog">Catalog</option>
+            <option value="policy">Policy</option>
+            <option value="syllabus">Syllabus</option>
+            <option value="financial">Financial</option>
+            <option value="evidence">Evidence</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <span class="filter-label">Standard Level:</span>
+        <select id="stdLevelFilter" class="form-select form-select-sm" onchange="loadHeatmap()">
+            <option value="">All Levels</option>
+            <option value="section">Sections Only</option>
+            <option value="standard">Standards Only</option>
+        </select>
+    </div>
+</div>
+
+<!-- Heatmap Matrix -->
+<div class="heatmap-container">
+    <div class="heatmap-scroll" id="heatmapScroll">
+        <div class="empty-state" id="emptyState">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            <p>Loading heatmap data...</p>
+        </div>
+        <table class="heatmap-table" id="heatmapTable" style="display: none;">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Cell Tooltip -->
+<div class="cell-tooltip" id="cellTooltip" style="display: none;"></div>
+
+<!-- Detail Panel -->
+<div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+        <span class="detail-title" id="detailTitle">Cell Details</span>
+        <button class="detail-close" onclick="closeDetailPanel()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+    <div class="detail-content" id="detailContent">
+        <!-- Findings loaded here -->
+    </div>
+</div>
+
+<script>
+(function() {
+    const institutionId = '{{ institution.id }}';
+
+    let documents = [];
+    let standards = [];
+    let matrix = [];
+    let matrixMap = {};  // Quick lookup: `${doc_id}:${std_id}` -> cell
+
+    // Elements
+    const tableHead = document.getElementById('tableHead');
+    const tableBody = document.getElementById('tableBody');
+    const heatmapTable = document.getElementById('heatmapTable');
+    const emptyState = document.getElementById('emptyState');
+    const tooltip = document.getElementById('cellTooltip');
+    const detailPanel = document.getElementById('detailPanel');
+
+    // Load heatmap data
+    async function loadHeatmap() {
+        const accreditor = document.getElementById('accreditorSelect').value;
+        const docType = document.getElementById('docTypeFilter').value;
+        const stdLevel = document.getElementById('stdLevelFilter').value;
+
+        let url = `/api/institutions/${institutionId}/compliance-heatmap?`;
+        if (accreditor) url += `accreditor=${accreditor}&`;
+        if (docType) url += `doc_type=${docType}&`;
+        if (stdLevel) url += `level=${stdLevel}&`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.success) {
+                documents = data.documents || [];
+                standards = data.standards || [];
+                matrix = data.matrix || [];
+
+                // Build lookup map
+                matrixMap = {};
+                matrix.forEach(cell => {
+                    matrixMap[`${cell.document_id}:${cell.standard_id}`] = cell;
+                });
+
+                updateSummary(data.summary);
+                renderHeatmap();
+            }
+        } catch (err) {
+            console.error('Failed to load heatmap:', err);
+            emptyState.innerHTML = '<p>Failed to load heatmap data</p>';
+        }
+    }
+
+    function updateSummary(summary) {
+        document.getElementById('totalDocs').textContent = summary.total_documents;
+        document.getElementById('totalStds').textContent = summary.total_standards;
+        document.getElementById('compliantPct').textContent = summary.compliant_pct + '%';
+        document.getElementById('partialPct').textContent = summary.partial_pct + '%';
+        document.getElementById('nonCompliantPct').textContent = summary.non_compliant_pct + '%';
+    }
+
+    function renderHeatmap() {
+        if (documents.length === 0 || standards.length === 0) {
+            emptyState.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                </svg>
+                <p>No data available</p>
+                <p style="font-size: var(--font-size-sm);">Upload documents and run audits to see the heatmap</p>
+            `;
+            emptyState.style.display = 'block';
+            heatmapTable.style.display = 'none';
+            return;
+        }
+
+        // Render header
+        tableHead.innerHTML = `
+            <tr>
+                <th class="corner">Document</th>
+                ${standards.map(s => `
+                    <th title="${escapeHtml(s.title)}">
+                        <div class="std-header">${escapeHtml(s.code)}</div>
+                    </th>
+                `).join('')}
+            </tr>
+        `;
+
+        // Render body
+        tableBody.innerHTML = documents.map(doc => `
+            <tr>
+                <td class="doc-cell">
+                    <div class="doc-info">
+                        <span class="doc-title" title="${escapeHtml(doc.title)}">${escapeHtml(doc.title)}</span>
+                        <span class="doc-type">${doc.doc_type}</span>
+                    </div>
+                </td>
+                ${standards.map(std => {
+                    const cell = matrixMap[`${doc.id}:${std.id}`] || { status: 'not_evaluated' };
+                    const confLevel = cell.avg_confidence >= 0.8 ? 'high' : cell.avg_confidence >= 0.5 ? 'medium' : 'low';
+                    return `
+                        <td class="heatmap-cell ${cell.status}"
+                            data-doc-id="${doc.id}"
+                            data-std-id="${std.id}"
+                            data-confidence="${confLevel}">
+                            <div class="cell-count">${cell.finding_count > 0 ? cell.finding_count : ''}</div>
+                        </td>
+                    `;
+                }).join('')}
+            </tr>
+        `).join('');
+
+        emptyState.style.display = 'none';
+        heatmapTable.style.display = 'table';
+
+        // Bind cell events
+        document.querySelectorAll('.heatmap-cell').forEach(cell => {
+            cell.addEventListener('mouseenter', showTooltip);
+            cell.addEventListener('mouseleave', hideTooltip);
+            cell.addEventListener('click', showCellDetails);
+        });
+    }
+
+    function showTooltip(e) {
+        const cell = e.currentTarget;
+        const docId = cell.dataset.docId;
+        const stdId = cell.dataset.stdId;
+        const data = matrixMap[`${docId}:${stdId}`];
+
+        if (!data) return;
+
+        const doc = documents.find(d => d.id === docId);
+        const std = standards.find(s => s.id === stdId);
+
+        tooltip.innerHTML = `
+            <div class="tooltip-title">${escapeHtml(std.code)}: ${escapeHtml(std.title.substring(0, 40))}</div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Status</span>
+                <span class="tooltip-value ${data.status}">${formatStatus(data.status)}</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Findings</span>
+                <span class="tooltip-value">${data.finding_count}</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Evidence</span>
+                <span class="tooltip-value">${data.evidence_count}</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Confidence</span>
+                <span class="tooltip-value">${Math.round(data.avg_confidence * 100)}%</span>
+            </div>
+            ${data.max_severity ? `
+            <div class="tooltip-row">
+                <span class="tooltip-label">Severity</span>
+                <span class="tooltip-value">${data.max_severity}</span>
+            </div>
+            ` : ''}
+        `;
+
+        const rect = cell.getBoundingClientRect();
+        let left = rect.right + 8;
+        let top = rect.top;
+
+        if (left + 300 > window.innerWidth) {
+            left = rect.left - 308;
+        }
+        if (top + 150 > window.innerHeight) {
+            top = window.innerHeight - 160;
+        }
+
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+        tooltip.style.display = 'block';
+    }
+
+    function hideTooltip() {
+        tooltip.style.display = 'none';
+    }
+
+    async function showCellDetails(e) {
+        const cell = e.currentTarget;
+        const docId = cell.dataset.docId;
+        const stdId = cell.dataset.stdId;
+
+        const doc = documents.find(d => d.id === docId);
+        const std = standards.find(s => s.id === stdId);
+
+        document.getElementById('detailTitle').textContent = `${doc.title} × ${std.code}`;
+
+        const content = document.getElementById('detailContent');
+        content.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Loading...</p>';
+        detailPanel.classList.add('open');
+
+        try {
+            const res = await fetch(`/api/institutions/${institutionId}/compliance-heatmap/cell/${docId}/${stdId}`);
+            const data = await res.json();
+
+            if (data.success && data.findings.length > 0) {
+                const cellData = matrixMap[`${docId}:${stdId}`] || {};
+
+                content.innerHTML = `
+                    <div class="detail-meta">
+                        <div class="meta-item">
+                            <div class="meta-value">${data.total}</div>
+                            <div class="meta-label">Findings</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-value">${cellData.evidence_count || 0}</div>
+                            <div class="meta-label">Evidence</div>
+                        </div>
+                    </div>
+                    ${data.findings.map(f => `
+                        <div class="finding-card">
+                            <div class="finding-header">
+                                <span class="finding-status ${f.status}">${formatStatus(f.status)}</span>
+                                <span class="finding-severity">${f.severity || 'N/A'}</span>
+                            </div>
+                            <div class="finding-summary">${escapeHtml(f.summary || 'No summary')}</div>
+                            ${f.evidence.length > 0 ? `
+                                <div class="finding-evidence">
+                                    ${f.evidence.length} evidence item(s) - Page ${f.evidence[0].page || '?'}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                content.innerHTML = `
+                    <div style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">
+                        <p>No findings for this document-standard pair</p>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            console.error('Failed to load cell details:', err);
+            content.innerHTML = '<p style="text-align: center; color: var(--danger);">Failed to load details</p>';
+        }
+    }
+
+    function closeDetailPanel() {
+        detailPanel.classList.remove('open');
+    }
+
+    function formatStatus(status) {
+        return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Close detail panel on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDetailPanel();
+    });
+
+    // Initial load
+    loadHeatmap();
+
+    // Make loadHeatmap available globally for filter changes
+    window.loadHeatmap = loadHeatmap;
+})();
+</script>
+{% endblock %}

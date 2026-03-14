@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}{{ portfolio.name }} - AccreditAI{% endblock %}
+{% block header_title %}{{ portfolio.name }}{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('portfolio_compare', portfolio_id=portfolio.id) }}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M18 20V10M12 20V4M6 20v-6"/>
+    </svg>
+    Compare
+</a>
+{% if portfolio.id != 'portfolio_all' %}
+<button class="btn btn-secondary" onclick="showAddModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M12 5v14M5 12h14"/>
+    </svg>
+    Add Institutions
+</button>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Aggregate Metrics -->
+<div class="dashboard-grid" style="margin-bottom: var(--spacing-xl);">
+    <!-- Overall Score -->
+    <div class="stat-card">
+        <div class="stat-icon" style="background: var(--accent-subtle); color: var(--accent);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ readiness.avg_score }}</div>
+            <div class="stat-label">Average Readiness</div>
+        </div>
+        <div class="readiness-ring" data-score="{{ readiness.avg_score }}">
+            <svg viewBox="0 0 36 36">
+                <path class="ring-bg"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none" stroke="var(--border-subtle)" stroke-width="3"/>
+                <path class="ring-progress"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="{{ 'var(--success)' if readiness.avg_score >= 80 else ('var(--warning)' if readiness.avg_score >= 60 else 'var(--error)') }}"
+                    stroke-width="3"
+                    stroke-dasharray="{{ readiness.avg_score }}, 100"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Institution Count -->
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ readiness.institution_count }}</div>
+            <div class="stat-label">Institutions</div>
+        </div>
+    </div>
+
+    <!-- Ready Count -->
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(74, 222, 128, 0.1); color: var(--success);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ readiness.ready_count }}</div>
+            <div class="stat-label">Ready (80+)</div>
+        </div>
+    </div>
+
+    <!-- At Risk Count -->
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--error);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ readiness.at_risk_count }}</div>
+            <div class="stat-label">At Risk (&lt;60)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Score Range -->
+<div class="card" style="margin-bottom: var(--spacing-xl);">
+    <div class="card-header">
+        <h2 class="card-title">Score Distribution</h2>
+    </div>
+    <div class="score-range">
+        <div class="score-range-bar">
+            <div class="score-range-fill" style="left: {{ readiness.min_score }}%; width: {{ readiness.max_score - readiness.min_score }}%;"></div>
+            <div class="score-range-avg" style="left: {{ readiness.avg_score }}%;"></div>
+        </div>
+        <div class="score-range-labels">
+            <span>Min: {{ readiness.min_score }}</span>
+            <span>Avg: {{ readiness.avg_score }}</span>
+            <span>Max: {{ readiness.max_score }}</span>
+        </div>
+    </div>
+
+    {% if readiness.breakdown and readiness.breakdown.distribution %}
+    <div class="distribution-grid">
+        <div class="distribution-item excellent">
+            <span class="distribution-count">{{ readiness.breakdown.distribution.excellent or 0 }}</span>
+            <span class="distribution-label">Excellent (90+)</span>
+        </div>
+        <div class="distribution-item good">
+            <span class="distribution-count">{{ readiness.breakdown.distribution.good or 0 }}</span>
+            <span class="distribution-label">Good (80-89)</span>
+        </div>
+        <div class="distribution-item moderate">
+            <span class="distribution-count">{{ readiness.breakdown.distribution.moderate or 0 }}</span>
+            <span class="distribution-label">Moderate (60-79)</span>
+        </div>
+        <div class="distribution-item at-risk">
+            <span class="distribution-count">{{ readiness.breakdown.distribution.at_risk or 0 }}</span>
+            <span class="distribution-label">At Risk (&lt;60)</span>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Institutions Table -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Institutions</h2>
+        <div class="card-actions">
+            <input type="text" class="form-control" id="institution-search" placeholder="Search..." style="width: 200px;">
+        </div>
+    </div>
+    <table class="table" id="institutions-table">
+        <thead>
+            <tr>
+                <th style="cursor: pointer;" onclick="sortTable('name')">
+                    Institution
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px; vertical-align: middle;">
+                        <path d="M7 15l5 5 5-5M7 9l5-5 5 5"/>
+                    </svg>
+                </th>
+                <th>Accreditor</th>
+                <th style="cursor: pointer;" onclick="sortTable('score')">
+                    Overall
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px; vertical-align: middle;">
+                        <path d="M7 15l5 5 5-5M7 9l5-5 5 5"/>
+                    </svg>
+                </th>
+                <th>Documents</th>
+                <th>Compliance</th>
+                <th>Evidence</th>
+                <th>Consistency</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inst in readiness.institutions %}
+            <tr data-name="{{ inst.name|lower }}" data-score="{{ inst.score }}">
+                <td>
+                    <a href="{{ url_for('institution_overview', id=inst.id) }}" style="font-weight: 500;">
+                        {{ inst.name }}
+                    </a>
+                </td>
+                <td>{{ inst.accreditor }}</td>
+                <td>
+                    <span class="score-badge {{ 'ready' if inst.score >= 80 else ('moderate' if inst.score >= 60 else 'at-risk') }}">
+                        {{ inst.score }}
+                    </span>
+                </td>
+                <td>{{ inst.documents }}</td>
+                <td>{{ inst.compliance }}</td>
+                <td>{{ inst.evidence }}</td>
+                <td>{{ inst.consistency }}</td>
+                <td>
+                    {% if inst.status == 'at_risk' %}
+                    <span class="badge badge-error">At Risk</span>
+                    {% elif inst.status == 'ready' %}
+                    <span class="badge badge-success">Ready</span>
+                    {% else %}
+                    <span class="badge badge-warning">Moderate</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Add Institutions Modal -->
+{% if portfolio.id != 'portfolio_all' %}
+<div class="modal-backdrop" id="add-modal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Add Institutions</h2>
+            <button class="btn btn-ghost" onclick="closeAddModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="text-muted" style="margin-bottom: var(--spacing-md);">
+                Select institutions to add to this portfolio.
+            </p>
+            <div id="available-institutions">
+                <!-- Populated by JS -->
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addSelectedInstitutions()">Add Selected</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+.score-range {
+    padding: var(--spacing-lg);
+}
+
+.score-range-bar {
+    position: relative;
+    height: 12px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-full);
+    margin-bottom: var(--spacing-md);
+}
+
+.score-range-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--error), var(--warning), var(--success));
+    border-radius: var(--radius-full);
+    opacity: 0.6;
+}
+
+.score-range-avg {
+    position: absolute;
+    top: -4px;
+    width: 4px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 2px;
+    transform: translateX(-50%);
+}
+
+.score-range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
+.distribution-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-md);
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+}
+
+.distribution-item {
+    text-align: center;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+}
+
+.distribution-item.excellent { border-left: 3px solid var(--success); }
+.distribution-item.good { border-left: 3px solid #84cc16; }
+.distribution-item.moderate { border-left: 3px solid var(--warning); }
+.distribution-item.at-risk { border-left: 3px solid var(--error); }
+
+.distribution-count {
+    display: block;
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.distribution-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.score-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+}
+
+.score-badge.ready {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.score-badge.moderate {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--warning);
+}
+
+.score-badge.at-risk {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--error);
+}
+
+.readiness-ring {
+    width: 64px;
+    height: 64px;
+    margin-left: auto;
+}
+
+.readiness-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+#available-institutions {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+}
+
+.inst-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+}
+
+.inst-checkbox:last-child {
+    border-bottom: none;
+}
+
+.inst-checkbox:hover {
+    background: var(--bg-hover);
+}
+
+.inst-checkbox input {
+    width: 18px;
+    height: 18px;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Search functionality
+const searchInput = document.getElementById('institution-search');
+const table = document.getElementById('institutions-table');
+
+searchInput.addEventListener('input', (e) => {
+    const filter = e.target.value.toLowerCase();
+    const rows = table.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        const name = row.dataset.name;
+        row.style.display = name.includes(filter) ? '' : 'none';
+    });
+});
+
+// Sort functionality
+let sortDir = { name: 'asc', score: 'desc' };
+
+function sortTable(column) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    const dir = sortDir[column] === 'asc' ? 'desc' : 'asc';
+    sortDir[column] = dir;
+
+    rows.sort((a, b) => {
+        let aVal, bVal;
+        if (column === 'name') {
+            aVal = a.dataset.name;
+            bVal = b.dataset.name;
+        } else {
+            aVal = parseInt(a.dataset.score);
+            bVal = parseInt(b.dataset.score);
+        }
+
+        if (dir === 'asc') {
+            return aVal > bVal ? 1 : -1;
+        } else {
+            return aVal < bVal ? 1 : -1;
+        }
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Add institutions modal
+{% if portfolio.id != 'portfolio_all' %}
+const addModal = document.getElementById('add-modal');
+const portfolioId = '{{ portfolio.id }}';
+const currentInstIds = new Set([{% for inst in readiness.institutions %}'{{ inst.id }}'{% if not loop.last %}, {% endif %}{% endfor %}]);
+
+async function showAddModal() {
+    // Load all institutions
+    const resp = await fetch('/api/institutions');
+    const data = await resp.json();
+
+    // Filter out already added
+    const available = data.institutions.filter(i => !currentInstIds.has(i.id));
+
+    if (available.length === 0) {
+        window.toast.info('All institutions are already in this portfolio');
+        return;
+    }
+
+    // Render checkboxes
+    const container = document.getElementById('available-institutions');
+    container.innerHTML = available.map(inst => `
+        <label class="inst-checkbox">
+            <input type="checkbox" value="${inst.id}">
+            <span>${inst.name}</span>
+        </label>
+    `).join('');
+
+    addModal.style.display = 'flex';
+}
+
+function closeAddModal() {
+    addModal.style.display = 'none';
+}
+
+async function addSelectedInstitutions() {
+    const checkboxes = document.querySelectorAll('#available-institutions input:checked');
+    const ids = Array.from(checkboxes).map(cb => cb.value);
+
+    if (ids.length === 0) {
+        window.toast.warning('Select at least one institution');
+        return;
+    }
+
+    try {
+        await window.API.post(`/api/portfolios/${portfolioId}/institutions`, {
+            institution_ids: ids
+        });
+        window.toast.success(`Added ${ids.length} institution(s)`);
+        location.reload();
+    } catch (error) {
+        window.toast.error(`Failed: ${error.message}`);
+    }
+}
+
+addModal.addEventListener('click', (e) => {
+    if (e.target === addModal) closeAddModal();
+});
+{% endif %}
+</script>
+{% endblock %}

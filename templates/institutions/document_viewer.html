@@ -1,0 +1,903 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}{{ document.title or 'Document' }} - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Document Viewer Layout */
+.document-viewer {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: var(--spacing-lg);
+    height: calc(100vh - var(--header-height) - 180px);
+    min-height: 500px;
+}
+
+@media (max-width: 1024px) {
+    .document-viewer {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    .standards-sidebar {
+        max-height: 400px;
+    }
+}
+
+/* Page Panel */
+.page-panel {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.page-navigation {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.page-nav-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+}
+
+.page-nav-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+}
+
+.page-nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.page-indicator {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    min-width: 80px;
+    text-align: center;
+}
+
+.page-jump {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.page-jump input {
+    width: 50px;
+    padding: 4px 8px;
+    text-align: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+/* Page Content */
+.page-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-xl);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.page-content.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+/* Evidence Highlights */
+.evidence-highlight {
+    border-radius: 2px;
+    padding: 1px 2px;
+    cursor: pointer;
+    position: relative;
+    transition: all var(--transition-fast);
+}
+
+.evidence-highlight:hover {
+    filter: brightness(0.85);
+    outline: 2px solid var(--accent);
+}
+
+.evidence-highlight.accreditor {
+    background-color: rgba(167, 139, 250, 0.3);
+    border-left: 3px solid var(--accreditor);
+}
+
+.evidence-highlight.federal {
+    background-color: rgba(244, 114, 182, 0.3);
+    border-left: 3px solid var(--federal);
+}
+
+.evidence-highlight.state {
+    background-color: rgba(251, 146, 60, 0.3);
+    border-left: 3px solid var(--state);
+}
+
+.evidence-highlight.professional {
+    background-color: rgba(52, 211, 153, 0.3);
+    border-left: 3px solid var(--professional);
+}
+
+/* Status indicators on highlights */
+.evidence-highlight[data-status="compliant"] {
+    border-bottom: 2px solid var(--success);
+}
+
+.evidence-highlight[data-status="partial"] {
+    border-bottom: 2px solid var(--warning);
+}
+
+.evidence-highlight[data-status="non_compliant"] {
+    border-bottom: 2px solid var(--danger);
+}
+
+/* Evidence Tooltip */
+.evidence-tooltip {
+    position: fixed;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    max-width: 350px;
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-tooltip, 1000);
+    pointer-events: none;
+}
+
+.tooltip-header {
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.tooltip-standards {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--spacing-sm);
+}
+
+.tooltip-standards li {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) 0;
+    font-size: var(--font-size-xs);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.tooltip-standards li:last-child {
+    border-bottom: none;
+}
+
+.tooltip-code {
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--accreditor);
+}
+
+.tooltip-status {
+    margin-left: auto;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    text-transform: uppercase;
+}
+
+.tooltip-status.compliant {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.tooltip-status.partial {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--warning);
+}
+
+.tooltip-status.non_compliant {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+}
+
+.tooltip-finding {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+    padding-top: var(--spacing-xs);
+    border-top: 1px solid var(--border-subtle);
+}
+
+/* Standards Sidebar */
+.standards-sidebar {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.sidebar-title {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.sidebar-stats {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+/* Source Filters */
+.source-filters {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-wrap: wrap;
+    margin-top: var(--spacing-sm);
+}
+
+.source-filter {
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all var(--transition-fast);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.source-filter:hover {
+    background: var(--bg-hover);
+}
+
+.source-filter.active {
+    border-color: currentColor;
+}
+
+.source-filter[data-source="accreditor"].active {
+    background: rgba(167, 139, 250, 0.2);
+    color: var(--accreditor);
+}
+
+.source-filter[data-source="federal"].active {
+    background: rgba(244, 114, 182, 0.2);
+    color: var(--federal);
+}
+
+.source-filter[data-source="state"].active {
+    background: rgba(251, 146, 60, 0.2);
+    color: var(--state);
+}
+
+.source-filter[data-source="professional"].active {
+    background: rgba(52, 211, 153, 0.2);
+    color: var(--professional);
+}
+
+/* Standards List */
+.standards-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+}
+
+.standard-item {
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    transition: background var(--transition-fast);
+    margin-bottom: var(--spacing-xs);
+}
+
+.standard-item:hover {
+    background: var(--bg-hover);
+}
+
+.standard-item.selected {
+    background: rgba(233, 69, 96, 0.1);
+    border-left: 3px solid var(--accent);
+}
+
+.standard-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+.standard-icon.accreditor { background: var(--accreditor); }
+.standard-icon.federal { background: var(--federal); }
+.standard-icon.state { background: var(--state); }
+.standard-icon.professional { background: var(--professional); }
+
+.standard-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.standard-code {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.standard-title {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.standard-count {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+}
+
+.empty-state svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('institution_documents', id=institution.id) }}" class="btn btn-secondary">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Back to Documents
+</a>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title=document.title or 'Document Viewer',
+    breadcrumbs=[
+        ('Dashboard', '/dashboard'),
+        (institution.name, '/institutions/' ~ institution.id),
+        ('Documents', '/institutions/' ~ institution.id ~ '/documents'),
+        (document.title[:30] ~ '...' if document.title|length > 30 else document.title, none)
+    ],
+    institution=institution
+) }}
+
+<div class="document-viewer">
+    <!-- Page Panel -->
+    <div class="page-panel">
+        <div class="page-header">
+            <div class="page-navigation">
+                <button class="page-nav-btn" id="btnPrevPage" title="Previous page" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <span class="page-indicator">
+                    Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+                </span>
+                <button class="page-nav-btn" id="btnNextPage" title="Next page" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="page-jump">
+                <span style="font-size: var(--font-size-xs); color: var(--text-secondary);">Go to:</span>
+                <input type="number" id="pageJumpInput" min="1" value="1">
+            </div>
+        </div>
+        <div class="page-content loading" id="pageContent">
+            Loading document...
+        </div>
+    </div>
+
+    <!-- Standards Sidebar -->
+    <div class="standards-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Linked Standards</div>
+            <div class="sidebar-stats" id="sidebarStats">
+                <span id="evidenceCount">0</span> evidence items across <span id="standardsCount">0</span> standards
+            </div>
+            <div class="source-filters" id="sourceFilters">
+                <button class="source-filter active" data-source="all">All</button>
+                <button class="source-filter" data-source="accreditor">Accreditor</button>
+                <button class="source-filter" data-source="federal">Federal</button>
+                <button class="source-filter" data-source="state">State</button>
+            </div>
+        </div>
+        <div class="standards-list" id="standardsList">
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <p>No evidence found in this document</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip container -->
+<div class="evidence-tooltip" id="evidenceTooltip" style="display: none;"></div>
+
+<script>
+// Document Viewer
+(function() {
+    const institutionId = '{{ institution.id }}';
+    const documentId = '{{ document.id }}';
+
+    let pages = [];
+    let evidence = [];
+    let standards = [];
+    let currentPage = 1;
+    let totalPages = 1;
+    let activeFilters = new Set(['all']);
+    let selectedStandardId = null;
+
+    // URL params for initial state
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightFindingId = urlParams.get('highlight');
+    const initialPage = parseInt(urlParams.get('page')) || 1;
+
+    // Elements
+    const pageContent = document.getElementById('pageContent');
+    const currentPageEl = document.getElementById('currentPage');
+    const totalPagesEl = document.getElementById('totalPages');
+    const btnPrev = document.getElementById('btnPrevPage');
+    const btnNext = document.getElementById('btnNextPage');
+    const pageJumpInput = document.getElementById('pageJumpInput');
+    const standardsList = document.getElementById('standardsList');
+    const evidenceCountEl = document.getElementById('evidenceCount');
+    const standardsCountEl = document.getElementById('standardsCount');
+    const tooltip = document.getElementById('evidenceTooltip');
+
+    // Initialize
+    async function init() {
+        await loadDocument();
+        await loadEvidence();
+        await loadStandards();
+
+        if (initialPage > 1 && initialPage <= totalPages) {
+            currentPage = initialPage;
+        }
+
+        renderPage(currentPage);
+        renderStandardsList();
+        bindEvents();
+
+        // Scroll to highlighted evidence if specified
+        if (highlightFindingId) {
+            scrollToEvidence(highlightFindingId);
+        }
+    }
+
+    async function loadDocument() {
+        try {
+            const res = await fetch(`/api/institutions/${institutionId}/documents/${documentId}/text`);
+            const data = await res.json();
+
+            if (data.success) {
+                pages = data.pages || [];
+                totalPages = data.total_pages || pages.length || 1;
+                totalPagesEl.textContent = totalPages;
+                pageJumpInput.max = totalPages;
+                updateNavButtons();
+            }
+        } catch (err) {
+            console.error('Failed to load document:', err);
+            pageContent.innerHTML = '<div class="empty-state">Failed to load document</div>';
+        }
+    }
+
+    async function loadEvidence() {
+        try {
+            const res = await fetch(`/api/institutions/${institutionId}/documents/${documentId}/evidence`);
+            const data = await res.json();
+
+            if (data.success) {
+                evidence = data.evidence || [];
+                evidenceCountEl.textContent = evidence.length;
+            }
+        } catch (err) {
+            console.error('Failed to load evidence:', err);
+        }
+    }
+
+    async function loadStandards() {
+        try {
+            const res = await fetch(`/api/institutions/${institutionId}/documents/${documentId}/standards`);
+            const data = await res.json();
+
+            if (data.success) {
+                standards = data.standards || [];
+                standardsCountEl.textContent = standards.length;
+            }
+        } catch (err) {
+            console.error('Failed to load standards:', err);
+        }
+    }
+
+    function renderPage(pageNum) {
+        currentPage = pageNum;
+        currentPageEl.textContent = pageNum;
+        pageJumpInput.value = pageNum;
+        updateNavButtons();
+
+        const pageData = pages.find(p => p.page_number === pageNum);
+        if (!pageData) {
+            pageContent.innerHTML = '<div class="empty-state">Page not found</div>';
+            pageContent.classList.remove('loading');
+            return;
+        }
+
+        // Get evidence for this page
+        const pageEvidence = evidence.filter(e => e.page === pageNum);
+
+        // Render text with highlights
+        let html = escapeHtml(pageData.text || '');
+
+        if (pageEvidence.length > 0) {
+            html = applyHighlights(pageData.text || '', pageEvidence);
+        }
+
+        pageContent.innerHTML = html;
+        pageContent.classList.remove('loading');
+    }
+
+    function applyHighlights(text, pageEvidence) {
+        // Sort by position (if available) or by snippet match
+        const highlights = [];
+
+        for (const ev of pageEvidence) {
+            let start = ev.start_offset;
+            let end = ev.end_offset;
+
+            // If no stored position, try to find snippet
+            if (start === null || start === undefined) {
+                const pos = findSnippetPosition(text, ev.snippet_text);
+                if (pos) {
+                    start = pos[0];
+                    end = pos[1];
+                }
+            }
+
+            if (start !== null && start !== undefined && end !== null) {
+                const source = ev.standards && ev.standards[0] ? ev.standards[0].source : 'accreditor';
+
+                // Check if this highlight should be visible based on filters
+                if (!activeFilters.has('all') && !activeFilters.has(source)) {
+                    continue;
+                }
+
+                // Check if filtered by selected standard
+                if (selectedStandardId && !ev.standards.some(s => s.id === selectedStandardId)) {
+                    continue;
+                }
+
+                highlights.push({
+                    start,
+                    end,
+                    ev,
+                    source
+                });
+            }
+        }
+
+        // Sort by start position descending to avoid offset issues
+        highlights.sort((a, b) => b.start - a.start);
+
+        let html = escapeHtml(text);
+
+        for (const h of highlights) {
+            const standardIds = h.ev.standards.map(s => s.id).join(',');
+            const markStart = `<mark class="evidence-highlight ${h.source}" data-evidence-id="${h.ev.id}" data-standards="${standardIds}" data-status="${h.ev.status}">`;
+            const markEnd = '</mark>';
+
+            // Calculate positions in escaped HTML (approximate)
+            const beforeText = text.substring(0, h.start);
+            const highlightText = text.substring(h.start, h.end);
+
+            const escapedBefore = escapeHtml(beforeText);
+            const escapedHighlight = escapeHtml(highlightText);
+
+            const insertPos = escapedBefore.length;
+            const insertEnd = insertPos + escapedHighlight.length;
+
+            html = html.substring(0, insertPos) + markStart + html.substring(insertPos, insertEnd) + markEnd + html.substring(insertEnd);
+        }
+
+        return html;
+    }
+
+    function findSnippetPosition(text, snippet) {
+        if (!snippet || !text) return null;
+
+        snippet = snippet.trim();
+
+        // Exact match
+        let pos = text.indexOf(snippet);
+        if (pos >= 0) {
+            return [pos, pos + snippet.length];
+        }
+
+        // Normalized match
+        const normalizedText = text.replace(/\s+/g, ' ');
+        const normalizedSnippet = snippet.replace(/\s+/g, ' ');
+        pos = normalizedText.indexOf(normalizedSnippet);
+        if (pos >= 0) {
+            // Map back to original positions (approximate)
+            return [pos, pos + snippet.length];
+        }
+
+        // Substring match (first 50 chars)
+        if (snippet.length > 50) {
+            const shortSnippet = snippet.substring(0, 50);
+            pos = text.indexOf(shortSnippet);
+            if (pos >= 0) {
+                return [pos, pos + snippet.length];
+            }
+        }
+
+        return null;
+    }
+
+    function renderStandardsList() {
+        if (standards.length === 0) {
+            standardsList.innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <p>No evidence found in this document</p>
+                </div>
+            `;
+            return;
+        }
+
+        const filteredStandards = standards.filter(s => {
+            if (activeFilters.has('all')) return true;
+            return activeFilters.has(s.source);
+        });
+
+        standardsList.innerHTML = filteredStandards.map(s => `
+            <div class="standard-item ${s.id === selectedStandardId ? 'selected' : ''}"
+                 data-standard-id="${s.id}"
+                 data-source="${s.source}">
+                <span class="standard-icon ${s.source}"></span>
+                <div class="standard-info">
+                    <div class="standard-code">${escapeHtml(s.code)}</div>
+                    <div class="standard-title" title="${escapeHtml(s.title)}">${escapeHtml(s.title)}</div>
+                </div>
+                <span class="standard-count">${s.evidence_count}</span>
+            </div>
+        `).join('');
+    }
+
+    function updateNavButtons() {
+        btnPrev.disabled = currentPage <= 1;
+        btnNext.disabled = currentPage >= totalPages;
+    }
+
+    function showTooltip(ev, rect) {
+        const standardsHtml = ev.standards.map(s => `
+            <li>
+                <span class="tooltip-code">${escapeHtml(s.code)}</span>
+                <span>${escapeHtml(s.title.substring(0, 40))}${s.title.length > 40 ? '...' : ''}</span>
+                <span class="tooltip-status ${ev.status}">${ev.status.replace('_', '-')}</span>
+            </li>
+        `).join('');
+
+        tooltip.innerHTML = `
+            <div class="tooltip-header">Evidence for ${ev.standards.length} standard(s)</div>
+            <ul class="tooltip-standards">${standardsHtml}</ul>
+            ${ev.finding_summary ? `<div class="tooltip-finding">${escapeHtml(ev.finding_summary)}</div>` : ''}
+        `;
+
+        // Position tooltip
+        const tooltipRect = tooltip.getBoundingClientRect();
+        let left = rect.left;
+        let top = rect.bottom + 8;
+
+        // Adjust if off-screen
+        if (left + 350 > window.innerWidth) {
+            left = window.innerWidth - 360;
+        }
+        if (top + 200 > window.innerHeight) {
+            top = rect.top - 200;
+        }
+
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+        tooltip.style.display = 'block';
+    }
+
+    function hideTooltip() {
+        tooltip.style.display = 'none';
+    }
+
+    function scrollToEvidence(findingId) {
+        // Find evidence with this finding ID
+        const ev = evidence.find(e => e.finding_id === findingId);
+        if (ev && ev.page !== currentPage) {
+            renderPage(ev.page);
+        }
+
+        // Wait for render, then scroll to highlight
+        setTimeout(() => {
+            const mark = document.querySelector(`[data-evidence-id="${ev?.id}"]`);
+            if (mark) {
+                mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                mark.classList.add('pulse');
+                setTimeout(() => mark.classList.remove('pulse'), 2000);
+            }
+        }, 100);
+    }
+
+    function bindEvents() {
+        // Page navigation
+        btnPrev.addEventListener('click', () => {
+            if (currentPage > 1) renderPage(currentPage - 1);
+        });
+
+        btnNext.addEventListener('click', () => {
+            if (currentPage < totalPages) renderPage(currentPage + 1);
+        });
+
+        pageJumpInput.addEventListener('change', () => {
+            const page = parseInt(pageJumpInput.value);
+            if (page >= 1 && page <= totalPages) {
+                renderPage(page);
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+
+            if (e.key === 'ArrowLeft' && currentPage > 1) {
+                renderPage(currentPage - 1);
+            } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+                renderPage(currentPage + 1);
+            }
+        });
+
+        // Evidence highlight hover/click
+        pageContent.addEventListener('mouseover', (e) => {
+            const mark = e.target.closest('.evidence-highlight');
+            if (mark) {
+                const evId = mark.dataset.evidenceId;
+                const ev = evidence.find(e => e.id === evId);
+                if (ev) {
+                    showTooltip(ev, mark.getBoundingClientRect());
+                }
+            }
+        });
+
+        pageContent.addEventListener('mouseout', (e) => {
+            if (!e.target.closest('.evidence-highlight')) {
+                hideTooltip();
+            }
+        });
+
+        // Source filters
+        document.getElementById('sourceFilters').addEventListener('click', (e) => {
+            const btn = e.target.closest('.source-filter');
+            if (!btn) return;
+
+            const source = btn.dataset.source;
+
+            if (source === 'all') {
+                activeFilters.clear();
+                activeFilters.add('all');
+            } else {
+                activeFilters.delete('all');
+                if (activeFilters.has(source)) {
+                    activeFilters.delete(source);
+                    if (activeFilters.size === 0) activeFilters.add('all');
+                } else {
+                    activeFilters.add(source);
+                }
+            }
+
+            // Update button states
+            document.querySelectorAll('.source-filter').forEach(b => {
+                b.classList.toggle('active', activeFilters.has(b.dataset.source));
+            });
+
+            renderStandardsList();
+            renderPage(currentPage);
+        });
+
+        // Standard selection
+        standardsList.addEventListener('click', (e) => {
+            const item = e.target.closest('.standard-item');
+            if (!item) return;
+
+            const standardId = item.dataset.standardId;
+
+            if (selectedStandardId === standardId) {
+                selectedStandardId = null;
+            } else {
+                selectedStandardId = standardId;
+
+                // Jump to first page with this standard's evidence
+                const stdEvidence = evidence.filter(ev =>
+                    ev.standards.some(s => s.id === standardId)
+                );
+                if (stdEvidence.length > 0 && stdEvidence[0].page !== currentPage) {
+                    renderPage(stdEvidence[0].page);
+                }
+            }
+
+            renderStandardsList();
+            renderPage(currentPage);
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Start
+    init();
+})();
+</script>
+{% endblock %}

@@ -51,6 +51,9 @@ from src.api.timeline_planner import timeline_planner_bp, init_timeline_planner_
 from src.api.site_visit import site_visit_bp, init_site_visit_bp
 from src.api.coverage_map import coverage_map_bp, init_coverage_map_bp
 from src.api.simulation import simulation_bp, init_simulation_bp
+from src.api.portfolios import portfolios_bp, init_portfolios_bp
+from src.api.evidence_highlighting import evidence_highlighting_bp, init_evidence_highlighting_bp
+from src.api.compliance_heatmap import compliance_heatmap_bp, init_compliance_heatmap_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 
@@ -100,6 +103,9 @@ init_timeline_planner_bp(workspace_manager)
 init_site_visit_bp(workspace_manager)
 init_coverage_map_bp(workspace_manager)
 init_simulation_bp(workspace_manager)
+init_portfolios_bp(workspace_manager)
+init_evidence_highlighting_bp(workspace_manager)
+init_compliance_heatmap_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -130,6 +136,9 @@ app.register_blueprint(timeline_planner_bp)
 app.register_blueprint(site_visit_bp)
 app.register_blueprint(coverage_map_bp)
 app.register_blueprint(simulation_bp)
+app.register_blueprint(portfolios_bp)
+app.register_blueprint(evidence_highlighting_bp)
+app.register_blueprint(compliance_heatmap_bp)
 
 
 # =============================================================================
@@ -284,6 +293,42 @@ def institution_documents(id):
     )
 
 
+@app.route('/institutions/<id>/documents/<doc_id>/viewer')
+def document_viewer(id, doc_id):
+    """Document viewer with evidence highlighting."""
+    from src.core.models import Document
+
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    # Get document from database
+    from src.db.connection import get_conn
+    conn = get_conn()
+    cursor = conn.execute(
+        "SELECT id, title, doc_type, page_count FROM documents WHERE id = ? AND institution_id = ?",
+        (doc_id, id),
+    )
+    row = cursor.fetchone()
+    if not row:
+        return render_template('404.html'), 404
+
+    document = {
+        'id': row['id'],
+        'title': row['title'],
+        'doc_type': row['doc_type'],
+        'page_count': row['page_count'] or 1,
+    }
+
+    return render_template(
+        'institutions/document_viewer.html',
+        institution=institution,
+        current_institution=institution,
+        document=document,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
 @app.route('/institutions/<id>/compliance')
 def institution_compliance(id):
     """Institution compliance status page."""
@@ -420,6 +465,29 @@ def institution_coverage_map(id):
 
     return render_template(
         'institutions/coverage_map.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+        accreditors=accreditors,
+    )
+
+
+@app.route('/institutions/<id>/compliance-heatmap')
+def institution_compliance_heatmap(id):
+    """Compliance heatmap page (documents × standards matrix)."""
+    from src.db.connection import get_conn
+
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    # Get available accreditors
+    conn = get_conn()
+    cursor = conn.execute("SELECT id, code, name FROM accreditors ORDER BY code")
+    accreditors = [dict(row) for row in cursor.fetchall()]
+
+    return render_template(
+        'institutions/compliance_heatmap.html',
         institution=institution,
         current_institution=institution,
         readiness_score=_get_readiness_score(id),
@@ -609,6 +677,49 @@ def work_queue():
     """Unified work queue page."""
     institutions = workspace_manager.list_institutions()
     return render_template('work_queue.html', institutions=institutions)
+
+
+@app.route('/portfolios')
+def portfolios_list():
+    """Portfolio list page for multi-institution management."""
+    from src.services.portfolio_service import list_portfolios, compute_portfolio_readiness
+    portfolios = list_portfolios()
+    # Compute aggregate metrics for each portfolio
+    for p in portfolios:
+        if p.institution_count > 0:
+            readiness = compute_portfolio_readiness(p.id, workspace_manager)
+            p.avg_score = readiness.avg_score
+            p.at_risk_count = readiness.at_risk_count
+        else:
+            p.avg_score = 0
+            p.at_risk_count = 0
+    return render_template('portfolios/list.html', portfolios=portfolios)
+
+
+@app.route('/portfolios/<portfolio_id>')
+def portfolio_dashboard(portfolio_id):
+    """Portfolio dashboard with aggregate metrics."""
+    from src.services.portfolio_service import get_portfolio, compute_portfolio_readiness
+    portfolio = get_portfolio(portfolio_id)
+    if not portfolio:
+        return render_template('404.html'), 404
+    readiness = compute_portfolio_readiness(portfolio_id, workspace_manager)
+    return render_template('portfolios/dashboard.html',
+                          portfolio=portfolio,
+                          readiness=readiness)
+
+
+@app.route('/portfolios/<portfolio_id>/compare')
+def portfolio_compare(portfolio_id):
+    """Institution comparison view."""
+    from src.services.portfolio_service import get_portfolio, get_portfolio_comparison
+    portfolio = get_portfolio(portfolio_id)
+    if not portfolio:
+        return render_template('404.html'), 404
+    comparison = get_portfolio_comparison(portfolio_id, workspace_manager)
+    return render_template('portfolios/compare.html',
+                          portfolio=portfolio,
+                          comparison=comparison)
 
 
 @app.route('/settings')

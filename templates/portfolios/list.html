@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Portfolios - AccreditAI{% endblock %}
+{% block header_title %}Portfolios{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-primary" onclick="showCreateModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M12 5v14M5 12h14"/>
+    </svg>
+    New Portfolio
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="page-intro" style="margin-bottom: var(--spacing-xl);">
+    <p class="text-muted">
+        Organize institutions into portfolios for easier management. Each portfolio shows aggregate readiness metrics across all its institutions.
+    </p>
+</div>
+
+{% if portfolios %}
+<div class="portfolio-grid">
+    {% for portfolio in portfolios %}
+    <a href="{{ url_for('portfolio_dashboard', portfolio_id=portfolio.id) }}" class="portfolio-card card">
+        <div class="portfolio-card-header">
+            <div class="portfolio-icon" style="background: {{ portfolio.color }}20; color: {{ portfolio.color }};">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                </svg>
+            </div>
+            <div class="portfolio-meta">
+                <h3 class="portfolio-name">{{ portfolio.name }}</h3>
+                <span class="portfolio-count">{{ portfolio.institution_count }} institution{{ 's' if portfolio.institution_count != 1 else '' }}</span>
+            </div>
+            {% if portfolio.id != 'portfolio_all' %}
+            <button class="btn btn-ghost btn-sm portfolio-menu" onclick="event.preventDefault(); showPortfolioMenu('{{ portfolio.id }}', event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="12" cy="5" r="1"/>
+                    <circle cx="12" cy="19" r="1"/>
+                </svg>
+            </button>
+            {% endif %}
+        </div>
+
+        {% if portfolio.institution_count > 0 %}
+        <div class="portfolio-stats">
+            <div class="portfolio-score">
+                <div class="readiness-ring-small" data-score="{{ portfolio.avg_score or 0 }}">
+                    <svg viewBox="0 0 36 36">
+                        <path class="ring-bg"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" stroke="var(--border-subtle)" stroke-width="3"/>
+                        <path class="ring-progress"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="{{ 'var(--success)' if portfolio.avg_score >= 80 else ('var(--warning)' if portfolio.avg_score >= 60 else 'var(--error)') }}"
+                            stroke-width="3"
+                            stroke-dasharray="{{ portfolio.avg_score or 0 }}, 100"/>
+                    </svg>
+                    <span class="ring-text">{{ portfolio.avg_score or 0 }}</span>
+                </div>
+                <span class="portfolio-score-label">Avg Score</span>
+            </div>
+
+            {% if portfolio.at_risk_count > 0 %}
+            <div class="portfolio-alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span>{{ portfolio.at_risk_count }} at risk</span>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="portfolio-empty">
+            <span class="text-muted">No institutions yet</span>
+        </div>
+        {% endif %}
+
+        {% if portfolio.description %}
+        <p class="portfolio-description text-muted">{{ portfolio.description }}</p>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: var(--spacing-xl);">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+    </svg>
+    <h2 style="margin-bottom: var(--spacing-sm);">No Portfolios Yet</h2>
+    <p class="text-muted" style="margin-bottom: var(--spacing-lg);">
+        Create portfolios to organize your institutions by region, accreditor, or any grouping that works for you.
+    </p>
+    <button class="btn btn-primary btn-lg" onclick="showCreateModal()">
+        Create Your First Portfolio
+    </button>
+</div>
+{% endif %}
+
+<!-- Create/Edit Portfolio Modal -->
+<div class="modal-backdrop" id="portfolio-modal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="modal-title">New Portfolio</h2>
+            <button class="btn btn-ghost" onclick="closeModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="portfolio-form" onsubmit="savePortfolio(event)">
+                <input type="hidden" id="portfolio-id" value="">
+
+                <div class="form-group">
+                    <label for="portfolio-name">Name</label>
+                    <input type="text" id="portfolio-name" class="form-control" required placeholder="e.g., Western Region Schools">
+                </div>
+
+                <div class="form-group">
+                    <label for="portfolio-description">Description (optional)</label>
+                    <textarea id="portfolio-description" class="form-control" rows="2" placeholder="Brief description of this portfolio"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="portfolio-color">Color</label>
+                    <div class="color-picker">
+                        <input type="color" id="portfolio-color" value="#C9A84C">
+                        <span class="color-preview" style="background: #C9A84C;"></span>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Portfolio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+.portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.portfolio-card {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: all var(--transition-fast);
+}
+
+.portfolio-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+}
+
+.portfolio-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.portfolio-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.portfolio-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.portfolio-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.portfolio-name {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin: 0 0 var(--spacing-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.portfolio-count {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
+.portfolio-menu {
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.portfolio-card:hover .portfolio-menu {
+    opacity: 1;
+}
+
+.portfolio-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md) 0;
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: var(--spacing-md);
+}
+
+.portfolio-score {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.readiness-ring-small {
+    position: relative;
+    width: 48px;
+    height: 48px;
+}
+
+.readiness-ring-small svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.readiness-ring-small .ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.portfolio-score-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.portfolio-alert {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.portfolio-alert svg {
+    width: 16px;
+    height: 16px;
+}
+
+.portfolio-empty {
+    padding: var(--spacing-lg) 0;
+    text-align: center;
+}
+
+.portfolio-description {
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.color-picker {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.color-picker input[type="color"] {
+    width: 48px;
+    height: 32px;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.color-preview {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const modal = document.getElementById('portfolio-modal');
+const form = document.getElementById('portfolio-form');
+const colorInput = document.getElementById('portfolio-color');
+const colorPreview = document.querySelector('.color-preview');
+
+colorInput.addEventListener('input', (e) => {
+    colorPreview.style.background = e.target.value;
+});
+
+function showCreateModal() {
+    document.getElementById('modal-title').textContent = 'New Portfolio';
+    document.getElementById('portfolio-id').value = '';
+    form.reset();
+    colorPreview.style.background = '#C9A84C';
+    modal.style.display = 'flex';
+}
+
+function showEditModal(portfolio) {
+    document.getElementById('modal-title').textContent = 'Edit Portfolio';
+    document.getElementById('portfolio-id').value = portfolio.id;
+    document.getElementById('portfolio-name').value = portfolio.name;
+    document.getElementById('portfolio-description').value = portfolio.description || '';
+    document.getElementById('portfolio-color').value = portfolio.color || '#C9A84C';
+    colorPreview.style.background = portfolio.color || '#C9A84C';
+    modal.style.display = 'flex';
+}
+
+function closeModal() {
+    modal.style.display = 'none';
+}
+
+async function savePortfolio(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('portfolio-id').value;
+    const data = {
+        name: document.getElementById('portfolio-name').value,
+        description: document.getElementById('portfolio-description').value,
+        color: document.getElementById('portfolio-color').value,
+    };
+
+    try {
+        if (id) {
+            await window.API.put(`/api/portfolios/${id}`, data);
+            window.toast.success('Portfolio updated');
+        } else {
+            await window.API.post('/api/portfolios', data);
+            window.toast.success('Portfolio created');
+        }
+        location.reload();
+    } catch (error) {
+        window.toast.error(`Failed to save: ${error.message}`);
+    }
+}
+
+function showPortfolioMenu(id, event) {
+    event.stopPropagation();
+    // Simple confirm delete for now
+    if (confirm('Delete this portfolio? Institutions will not be deleted.')) {
+        deletePortfolio(id);
+    }
+}
+
+async function deletePortfolio(id) {
+    try {
+        await window.API.delete(`/api/portfolios/${id}`);
+        window.toast.success('Portfolio deleted');
+        location.reload();
+    } catch (error) {
+        window.toast.error(`Failed to delete: ${error.message}`);
+    }
+}
+
+// Close modal on backdrop click
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+});
+
+// Close on escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.style.display !== 'none') {
+        closeModal();
+    }
+});
+</script>
+{% endblock %}
