@@ -32,6 +32,9 @@ ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'tiff', 'bmp'
 }
 
+# Maximum file size (50MB)
+MAX_FILE_SIZE = 50 * 1024 * 1024
+
 
 def init_documents_bp(workspace_manager):
     """Initialize the documents blueprint with dependencies.
@@ -96,6 +99,16 @@ def upload_document(institution_id: str):
     if not _allowed_file(file.filename):
         return jsonify({
             "error": f"File type not allowed. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        }), 400
+
+    # Check file size by reading content length or seeking
+    file.seek(0, 2)  # Seek to end
+    file_size = file.tell()
+    file.seek(0)  # Reset to beginning
+
+    if file_size > MAX_FILE_SIZE:
+        return jsonify({
+            "error": f"File too large. Maximum size: {MAX_FILE_SIZE // (1024 * 1024)}MB"
         }), 400
 
     # Get upload path

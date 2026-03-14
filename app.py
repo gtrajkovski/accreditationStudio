@@ -142,6 +142,20 @@ app.register_blueprint(compliance_heatmap_bp)
 
 
 # =============================================================================
+# Security Headers
+# =============================================================================
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses."""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
+# =============================================================================
 # Template Context Processor (i18n)
 # =============================================================================
 

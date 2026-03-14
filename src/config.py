@@ -4,6 +4,7 @@ Reads configuration from environment variables with sensible defaults.
 """
 
 import os
+import secrets
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -27,7 +28,7 @@ class Config:
 
     # Server Settings
     PORT = int(os.getenv("PORT", "5003"))
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+    SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_hex(32)
 
     # Directory Paths
     BASE_DIR = Path(__file__).parent.parent
