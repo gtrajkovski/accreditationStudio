@@ -44,6 +44,7 @@ from src.api.ser import ser_bp, init_ser_bp
 from src.api.team_reports import team_reports_bp, init_team_reports_bp
 from src.api.compliance_calendar import compliance_calendar_bp, init_compliance_calendar_bp
 from src.api.document_reviews import document_reviews_bp, init_document_reviews_bp
+from src.api.documents import documents_bp, init_documents_bp
 from src.api.impact_analysis import impact_analysis_bp, init_impact_analysis_bp
 from src.api.knowledge_graph import knowledge_graph_bp, init_knowledge_graph_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
@@ -88,6 +89,7 @@ init_ser_bp(workspace_manager)
 init_team_reports_bp(workspace_manager)
 init_compliance_calendar_bp(workspace_manager)
 init_document_reviews_bp(workspace_manager)
+init_documents_bp(workspace_manager)
 init_impact_analysis_bp(workspace_manager)
 init_knowledge_graph_bp(workspace_manager, standards_store)
 
@@ -113,6 +115,7 @@ app.register_blueprint(ser_bp)
 app.register_blueprint(team_reports_bp)
 app.register_blueprint(compliance_calendar_bp)
 app.register_blueprint(document_reviews_bp)
+app.register_blueprint(documents_bp)
 app.register_blueprint(impact_analysis_bp)
 app.register_blueprint(knowledge_graph_bp)
 

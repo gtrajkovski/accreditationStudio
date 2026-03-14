@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **See [SPEC.md](./SPEC.md) for the complete technical specification** including detailed agent descriptions, data models, all application pages, workflow examples, and the full MVP build order.
 
+**See [.planning/STATE.md](.planning/STATE.md)** for current session state, backlog progress, and urgent TODOs.
+
 > **Reference Architecture:** The `_reference/` folder contains Course Builder Studio, which shares the same Flask + Jinja2 + vanilla JS + Anthropic SDK architecture. Study its patterns (especially `src/core/`, `src/generators/base_generator.py`, `src/api/`, `src/exporters/`, `src/validators/`, `app.py`, and `static/css/`) and reuse or adapt components wherever possible.
 
 ---
@@ -224,6 +226,25 @@ Agents check confidence against `Config.AGENT_CONFIDENCE_THRESHOLD` (default 0.7
 
 ---
 
+---
+
+## Planning Directory
+
+The `.planning/` directory contains project planning artifacts:
+
+| File | Purpose |
+|------|---------|
+| `STATE.md` | **Current session state** - urgent TODOs, backlog progress, what's complete |
+| `IMPLEMENTATION_PROMPTS.md` | Sequenced prompts for weekly feature shipping |
+| `FEATURE_PRIORITIES.md` | Post-MVP backlog items ranked by value |
+| `ROADMAP.md` | High-level milestone timeline |
+| `ARCHITECTURE.md` | System architecture decisions |
+| `DATABASE_SCHEMA.md` | Database table documentation |
+
+**Always check `.planning/STATE.md`** at session start for urgent TODOs and current context.
+
+---
+
 ## Environment Variables
 
 ```
@@ -371,5 +392,5 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Knowledge Graph UI page (entity explorer, D3.js force-directed graph, entity details, path finder)
 - ✅ Database migration (0019_knowledge_graph_entities.sql)
 
-**Registered Blueprints** (24 total):
-`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `impact_analysis_bp`, `knowledge_graph_bp`
+**Registered Blueprints** (26 total):
+`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`
