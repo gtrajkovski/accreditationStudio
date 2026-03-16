@@ -8,12 +8,14 @@ Provides endpoints for:
 """
 
 import json
+import time
 from typing import Dict, Any
 from flask import Blueprint, request, jsonify, Response, stream_with_context, send_file
 from pathlib import Path
 
 from src.agents.remediation_agent import RemediationAgent
 from src.core.models import AgentSession, RemediationStatus, generate_id
+from src.services.batch_service import BatchService, estimate_batch_cost
 
 
 # Create Blueprint
@@ -365,6 +367,287 @@ def list_remediations(institution_id: str):
         "total": len(remediations),
         "remediations": remediations,
     }), 200
+
+
+@remediation_bp.route('/api/institutions/<institution_id>/remediations/batch/estimate', methods=['POST'])
+def estimate_batch_remediation(institution_id: str):
+    """Estimate cost for batch remediation operation.
+
+    Request Body:
+        document_ids: List of document IDs (required)
+        model: Model to use for pricing (optional, default: claude-sonnet-4-20250514)
+
+    Returns:
+        JSON with cost breakdown.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    data = request.get_json() or {}
+    document_ids = data.get('document_ids', [])
+    model = data.get('model', 'claude-sonnet-4-20250514')
+
+    if not document_ids:
+        return jsonify({"error": "document_ids is required"}), 400
+
+    # Get document details
+    documents = []
+    for doc_id in document_ids:
+        for doc in institution.documents:
+            if doc.id == doc_id:
+                documents.append({
+                    "id": doc.id,
+                    "name": doc.name,
+                    "doc_type": doc.doc_type.value,
+                })
+                break
+
+    if not documents:
+        return jsonify({"error": "No valid documents found"}), 404
+
+    # Estimate cost
+    estimate = estimate_batch_cost("remediation", documents, model)
+
+    return jsonify(estimate), 200
+
+
+@remediation_bp.route('/api/institutions/<institution_id>/remediations/batch', methods=['POST'])
+def start_batch_remediation(institution_id: str):
+    """Start a batch remediation operation.
+
+    Request Body:
+        document_ids: List of document IDs (required)
+        concurrency: Concurrent operations (1-5, default 3)
+        confirmed: User confirmed cost (required, must be true)
+
+    Returns:
+        JSON with batch ID and stream URL.
+    """
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    data = request.get_json() or {}
+    document_ids = data.get('document_ids', [])
+    concurrency = data.get('concurrency', 3)
+    confirmed = data.get('confirmed', False)
+
+    # Validate
+    if not document_ids:
+        return jsonify({"error": "document_ids is required"}), 400
+
+    if not confirmed:
+        return jsonify({"error": "confirmed must be true"}), 400
+
+    if not (1 <= concurrency <= 5):
+        return jsonify({"error": "concurrency must be between 1 and 5"}), 400
+
+    if len(document_ids) > 50:
+        return jsonify({"error": "Maximum 50 documents per batch"}), 400
+
+    # Create batch
+    batch_service = BatchService(_workspace_manager)
+    batch = batch_service.create_batch(
+        institution_id=institution_id,
+        operation_type="remediation",
+        document_ids=document_ids,
+        concurrency=concurrency,
+    )
+
+    return jsonify({
+        "batch_id": batch.id,
+        "status": batch.status,
+        "document_count": batch.document_count,
+        "concurrency": batch.concurrency,
+        "stream_url": f"/api/institutions/{institution_id}/remediations/batch/{batch.id}/stream",
+        "status_url": f"/api/institutions/{institution_id}/remediations/batch/{batch.id}",
+        "cancel_url": f"/api/institutions/{institution_id}/remediations/batch/{batch.id}/cancel",
+    }), 201
+
+
+@remediation_bp.route('/api/institutions/<institution_id>/remediations/batch/<batch_id>/stream', methods=['GET'])
+def stream_batch_remediation(institution_id: str, batch_id: str):
+    """Stream progress for a batch remediation operation.
+
+    Returns:
+        SSE stream of batch progress events.
+    """
+    batch_service = BatchService(_workspace_manager)
+    batch = batch_service.get_batch(batch_id)
+
+    if not batch:
+        return jsonify({"error": "Batch not found"}), 404
+
+    if batch.institution_id != institution_id:
+        return jsonify({"error": "Batch does not belong to this institution"}), 403
+
+    def generate():
+        """Generate SSE events for batch progress."""
+        try:
+            yield f"data: {json.dumps({'type': 'batch_started', 'batch_id': batch_id})}\n\n"
+
+            # Poll for progress
+            last_progress = -1
+            while True:
+                progress = batch_service.get_progress(batch_id)
+
+                # Emit progress event if changed
+                if progress['progress_pct'] != last_progress:
+                    yield f"data: {json.dumps({'type': 'progress', **progress})}\n\n"
+                    last_progress = progress['progress_pct']
+
+                # Check for item completions
+                current_batch = batch_service.get_batch(batch_id)
+                if current_batch:
+                    for item in current_batch.items:
+                        if item.status == 'completed' and not item.metadata.get('emitted'):
+                            yield f"data: {json.dumps({'type': 'item_completed', 'item_id': item.id, 'document_id': item.document_id, 'document_name': item.document_name})}\n\n"
+                            item.metadata['emitted'] = True
+                        elif item.status == 'failed' and not item.metadata.get('emitted'):
+                            yield f"data: {json.dumps({'type': 'item_failed', 'item_id': item.id, 'document_id': item.document_id, 'error': item.error})}\n\n"
+                            item.metadata['emitted'] = True
+
+                # Check if complete
+                if progress['status'] in ('completed', 'cancelled', 'failed'):
+                    yield f"data: {json.dumps({'type': 'batch_completed', **progress})}\n\n"
+                    break
+
+                time.sleep(1)  # Poll every second
+
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no',
+        }
+    )
+
+
+@remediation_bp.route('/api/institutions/<institution_id>/remediations/batch/<batch_id>/cancel', methods=['POST'])
+def cancel_batch_remediation(institution_id: str, batch_id: str):
+    """Cancel a batch remediation operation.
+
+    Returns:
+        JSON with cancellation summary.
+    """
+    batch_service = BatchService(_workspace_manager)
+    batch = batch_service.get_batch(batch_id)
+
+    if not batch:
+        return jsonify({"error": "Batch not found"}), 404
+
+    if batch.institution_id != institution_id:
+        return jsonify({"error": "Batch does not belong to this institution"}), 403
+
+    result = batch_service.cancel_batch(batch_id)
+
+    return jsonify(result), 200
+
+
+@remediation_bp.route('/api/institutions/<institution_id>/remediations/batch/<batch_id>/retry-failed', methods=['POST'])
+def retry_failed_remediations(institution_id: str, batch_id: str):
+    """Retry failed items from a batch as a new batch.
+
+    Returns:
+        JSON with new batch ID.
+    """
+    batch_service = BatchService(_workspace_manager)
+    batch = batch_service.get_batch(batch_id)
+
+    if not batch:
+        return jsonify({"error": "Batch not found"}), 404
+
+    if batch.institution_id != institution_id:
+        return jsonify({"error": "Batch does not belong to this institution"}), 403
+
+    # Get failed document IDs
+    failed_doc_ids = [
+        item.document_id
+        for item in batch.items
+        if item.status == 'failed'
+    ]
+
+    if not failed_doc_ids:
+        return jsonify({"error": "No failed items to retry"}), 400
+
+    # Create new batch
+    new_batch = batch_service.create_batch(
+        institution_id=institution_id,
+        operation_type="remediation",
+        document_ids=failed_doc_ids,
+        concurrency=batch.concurrency,
+        parent_batch_id=batch_id,
+    )
+
+    return jsonify({
+        "new_batch_id": new_batch.id,
+        "retrying_count": len(failed_doc_ids),
+        "parent_batch_id": batch_id,
+        "stream_url": f"/api/institutions/{institution_id}/remediations/batch/{new_batch.id}/stream",
+    }), 201
+
+
+@remediation_bp.route('/api/institutions/<institution_id>/remediations/batch/from-audit/<audit_batch_id>', methods=['POST'])
+def chain_from_audit_batch(institution_id: str, audit_batch_id: str):
+    """Chain a remediation batch from a completed audit batch.
+
+    Only includes documents with findings_count > 0 from the audit batch.
+
+    Request Body:
+        concurrency: Concurrent operations (1-5, default 3)
+
+    Returns:
+        JSON with new remediation batch ID.
+    """
+    batch_service = BatchService(_workspace_manager)
+    audit_batch = batch_service.get_batch(audit_batch_id)
+
+    if not audit_batch:
+        return jsonify({"error": "Audit batch not found"}), 404
+
+    if audit_batch.institution_id != institution_id:
+        return jsonify({"error": "Audit batch does not belong to this institution"}), 403
+
+    if audit_batch.operation_type != "audit":
+        return jsonify({"error": "Batch is not an audit batch"}), 400
+
+    if audit_batch.status != "completed":
+        return jsonify({"error": "Audit batch not completed"}), 400
+
+    # Get documents with findings
+    doc_ids_with_findings = [
+        item.document_id
+        for item in audit_batch.items
+        if item.status == 'completed' and item.findings_count > 0
+    ]
+
+    if not doc_ids_with_findings:
+        return jsonify({"error": "No documents with findings to remediate"}), 400
+
+    data = request.get_json() or {}
+    concurrency = data.get('concurrency', 3)
+
+    # Create remediation batch
+    remed_batch = batch_service.create_batch(
+        institution_id=institution_id,
+        operation_type="remediation",
+        document_ids=doc_ids_with_findings,
+        concurrency=concurrency,
+        parent_batch_id=audit_batch_id,
+    )
+
+    return jsonify({
+        "batch_id": remed_batch.id,
+        "document_count": len(doc_ids_with_findings),
+        "chained_from": audit_batch_id,
+        "stream_url": f"/api/institutions/{institution_id}/remediations/batch/{remed_batch.id}/stream",
+    }), 201
 
 
 @remediation_bp.route('/api/institutions/<institution_id>/remediations/<remediation_id>/download/<doc_type>', methods=['GET'])
