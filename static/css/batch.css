@@ -1,0 +1,548 @@
+/* Batch Operations Styles
+ * Gmail-style batch selection and progress tracking
+ */
+
+/* ============================================
+   Selection Checkboxes
+   ============================================ */
+.batch-select-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--accent);
+    margin-right: var(--spacing-sm);
+}
+
+.batch-select-all {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+.document-row {
+    transition: background-color 0.2s;
+}
+
+.document-row.selected {
+    background: rgba(201, 168, 76, 0.15); /* --accent with opacity */
+    border-left: 3px solid var(--accent);
+    padding-left: calc(var(--spacing-md) - 3px);
+}
+
+/* ============================================
+   Floating Action Bar (Gmail-style)
+   ============================================ */
+.batch-action-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    box-shadow: var(--shadow-xl);
+    z-index: 1000;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.batch-action-bar.hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+    pointer-events: none;
+}
+
+.batch-selection-count {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 1.1em;
+    min-width: 100px;
+}
+
+/* ============================================
+   Cost Confirmation Modal
+   ============================================ */
+.cost-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cost-modal .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.cost-modal-content {
+    position: relative;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 550px;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-medium);
+}
+
+.cost-estimate {
+    text-align: center;
+    padding: var(--spacing-lg) var(--spacing-md);
+    background: var(--bg-panel);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.cost-label {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.cost-total {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: var(--spacing-xs) 0;
+}
+
+.cost-details {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-top: var(--spacing-sm);
+}
+
+.cost-warning {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: rgba(251, 191, 36, 0.1); /* --warning with opacity */
+    border-left: 3px solid var(--warning);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-md);
+    color: var(--warning);
+}
+
+.cost-warning svg {
+    flex-shrink: 0;
+}
+
+.concurrency-control {
+    margin: var(--spacing-md) 0;
+}
+
+.concurrency-control label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 500;
+}
+
+.concurrency-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-panel);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.concurrency-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.concurrency-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.concurrency-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+}
+
+.concurrency-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+}
+
+.concurrency-help {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+}
+
+.cost-disclaimer {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    text-align: center;
+    font-style: italic;
+    margin-top: var(--spacing-md);
+}
+
+/* ============================================
+   Progress Modal
+   ============================================ */
+.batch-progress-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.batch-progress-modal .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.progress-modal-content {
+    position: relative;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-medium);
+    display: flex;
+    flex-direction: column;
+}
+
+.progress-modal-content .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-medium);
+}
+
+.progress-modal-content .modal-header h3 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.progress-modal-content .modal-body {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.progress-summary {
+    margin-bottom: var(--spacing-lg);
+}
+
+.progress-bar-container {
+    height: 10px;
+    background: var(--bg-panel);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: var(--spacing-sm);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+    transition: width 0.5s ease-out;
+    border-radius: 5px;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.95em;
+    color: var(--text-secondary);
+}
+
+.failed-count {
+    color: var(--danger);
+}
+
+.documents-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-panel);
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background-color 0.2s;
+}
+
+.document-item:last-child {
+    border-bottom: none;
+}
+
+.document-item .status-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.document-item.pending .status-icon {
+    color: var(--text-muted);
+}
+
+.document-item.running .status-icon {
+    color: var(--info);
+    animation: spin 1s linear infinite;
+}
+
+.document-item.completed {
+    background: rgba(74, 222, 128, 0.05); /* --success with opacity */
+}
+
+.document-item.completed .status-icon {
+    color: var(--success);
+}
+
+.document-item.failed {
+    background: rgba(239, 68, 68, 0.05); /* --danger with opacity */
+}
+
+.document-item.failed .status-icon {
+    color: var(--danger);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.document-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.item-info {
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.item-error {
+    font-size: 0.85em;
+    color: var(--danger);
+}
+
+.progress-modal-content .modal-footer {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--border-medium);
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ============================================
+   Batch Summary (after completion)
+   ============================================ */
+.batch-summary {
+    width: 100%;
+}
+
+.batch-summary h4 {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--accent);
+}
+
+.batch-summary-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.batch-summary-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-panel);
+    border-radius: var(--radius-sm);
+}
+
+.chain-offer {
+    background: rgba(201, 168, 76, 0.1); /* --accent with opacity */
+    border: 1px solid var(--accent);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-top: var(--spacing-md);
+    text-align: center;
+}
+
+.chain-offer p {
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Toast Notification (minimized modal)
+   ============================================ */
+.batch-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    transition: transform 0.2s;
+    z-index: 1500;
+    min-width: 250px;
+}
+
+.batch-toast:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+.batch-toast .mini-progress {
+    width: 100%;
+}
+
+/* ============================================
+   Modal Shared Styles
+   ============================================ */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-medium);
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--border-medium);
+}
+
+.btn-ghost {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-ghost:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 768px) {
+    .batch-action-bar {
+        left: 10px;
+        right: 10px;
+        transform: none;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .batch-action-bar.hidden {
+        transform: translateY(20px);
+    }
+
+    .batch-selection-count {
+        text-align: center;
+    }
+
+    .cost-modal-content,
+    .progress-modal-content {
+        width: 95%;
+        max-width: none;
+    }
+
+    .cost-total {
+        font-size: 32px;
+    }
+
+    .batch-toast {
+        right: 10px;
+        left: 10px;
+        bottom: 10px;
+    }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+.text-success {
+    color: var(--success);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.text-warning {
+    color: var(--warning);
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.text-center {
+    text-align: center;
+}
