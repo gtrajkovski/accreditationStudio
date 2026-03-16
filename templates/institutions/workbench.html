@@ -3,6 +3,10 @@
 
 {% block title %}Document Workbench - {{ institution.name }} - AccreditAI{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/batch.css') }}">
+{% endblock %}
+
 {% block header_actions %}
 <select id="remediationFilter" class="form-control" style="width: auto; display: inline-block; margin-right: var(--spacing-sm);">
     <option value="">Select Remediation</option>
@@ -23,6 +27,26 @@
     institution=institution,
     score=readiness_score
 ) }}
+
+<!-- Documents for Batch Remediation -->
+<div class="card mb-lg">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">Documents with Findings</h3>
+        <div>
+            <input type="checkbox" id="selectAllRemediation" class="batch-select-all">
+            <label for="selectAllRemediation" style="margin: 0 var(--spacing-sm); cursor: pointer;">Select All</label>
+        </div>
+    </div>
+    <div id="documentsWithFindingsList">
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <p>Loading documents...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Action Bar Container -->
+<div id="batchActionBar"></div>
+
 <!-- Status Cards -->
 <div class="dashboard-grid mb-lg" id="statusCards">
     <div class="card">
@@ -283,6 +307,27 @@
 .text-warning { color: var(--warning); }
 .mt-sm { margin-top: var(--spacing-sm); }
 
+.document-row {
+    transition: background 0.2s;
+}
+
+.document-row.selected {
+    background: rgba(218, 165, 32, 0.1);
+    border-left: 3px solid var(--accent-gold);
+}
+
+.document-row:hover {
+    background: var(--bg-secondary);
+}
+
+.batch-select-checkbox {
+    cursor: pointer;
+}
+
+.batch-select-all {
+    cursor: pointer;
+}
+
 .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .modal-backdrop { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); }
 .modal-content { position: relative; background: var(--bg-card); border-radius: var(--radius-lg); width: 90%; max-width: 500px; box-shadow: var(--shadow-lg); }
@@ -299,11 +344,13 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/batch_operations.js') }}"></script>
 <script>
 const institutionId = '{{ institution.id }}';
 let currentRemediationId = null;
 let currentRemediation = null;
 let allChanges = [];
+let batchOps = null;
 
 async function loadRemediations() {
     try {
@@ -555,6 +602,129 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Load documents with findings for batch remediation
+async function loadDocumentsWithFindings() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/documents`);
+        if (!res.ok) throw new Error('Failed to load documents');
+        const docs = await res.json();
+
+        // Filter to only show documents with findings (non-compliant or partial)
+        const docsWithFindings = docs.filter(doc =>
+            doc.audit_status === 'non_compliant' || doc.audit_status === 'partial'
+        );
+
+        renderDocumentsWithFindings(docsWithFindings);
+    } catch (err) {
+        console.error('Failed to load documents:', err);
+        document.getElementById('documentsWithFindingsList').innerHTML = '<div class="text-center text-muted" style="padding: var(--spacing-xl);"><p>Failed to load documents</p></div>';
+    }
+}
+
+function renderDocumentsWithFindings(docs) {
+    const listEl = document.getElementById('documentsWithFindingsList');
+
+    if (!docs || docs.length === 0) {
+        listEl.innerHTML = `
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <p>No documents with findings available for remediation</p>
+                <a href="/institutions/${institutionId}/compliance" class="btn btn-primary">Run Compliance Audit</a>
+            </div>
+        `;
+        return;
+    }
+
+    const statusBadges = {
+        partial: '<span class="badge badge-warning">Partial</span>',
+        non_compliant: '<span class="badge badge-danger">Non-Compliant</span>'
+    };
+
+    const html = `
+        <div style="padding: var(--spacing-md);">
+            ${docs.map(doc => {
+                const status = doc.audit_status || 'uploaded';
+                const badge = statusBadges[status] || statusBadges['uploaded'];
+
+                return `
+                    <div class="document-row" data-doc-id="${doc.id}" style="display: flex; align-items: center; padding: var(--spacing-sm) var(--spacing-md); border-bottom: 1px solid var(--border-subtle);">
+                        <input type="checkbox" class="batch-select-checkbox"
+                               data-doc-id="${doc.id}"
+                               data-doc-name="${escapeHtml(doc.original_filename || doc.title || doc.id)}"
+                               data-doc-type="${doc.doc_type}">
+                        <div style="flex: 1; margin-left: var(--spacing-sm);">
+                            <div style="font-weight: 500;">${escapeHtml(doc.original_filename || doc.title || doc.id)}</div>
+                            <div style="font-size: 0.85em; color: var(--text-muted);">${doc.doc_type.replace('_', ' ')}</div>
+                        </div>
+                        ${badge}
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    listEl.innerHTML = html;
+
+    // Initialize batch operations after rendering
+    if (!batchOps) {
+        batchOps = BatchOperations.init(institutionId, 'remediation');
+    }
+
+    // Attach checkbox listeners
+    document.querySelectorAll('.batch-select-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const row = e.target.closest('.document-row');
+            const docId = e.target.dataset.docId;
+            const docData = {
+                id: docId,
+                name: e.target.dataset.docName,
+                doc_type: e.target.dataset.docType
+            };
+
+            batchOps.selectionManager.toggle(docId, docData);
+            batchOps.actionBar.updateCount(batchOps.selectionManager.getCount());
+
+            // Visual feedback
+            if (e.target.checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
+        });
+    });
+
+    // Select all handler
+    const selectAllCb = document.getElementById('selectAllRemediation');
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', (e) => {
+            const allCheckboxes = document.querySelectorAll('.batch-select-checkbox');
+
+            if (e.target.checked) {
+                const allDocs = Array.from(allCheckboxes).map(cb => ({
+                    id: cb.dataset.docId,
+                    name: cb.dataset.docName,
+                    doc_type: cb.dataset.docType
+                }));
+
+                batchOps.selectionManager.selectAll(allDocs);
+
+                allCheckboxes.forEach(cb => {
+                    cb.checked = true;
+                    cb.closest('.document-row').classList.add('selected');
+                });
+            } else {
+                batchOps.selectionManager.clearSelection();
+
+                allCheckboxes.forEach(cb => {
+                    cb.checked = false;
+                    cb.closest('.document-row').classList.remove('selected');
+                });
+            }
+
+            batchOps.actionBar.updateCount(batchOps.selectionManager.getCount());
+        });
+    }
+}
+
 // Event listeners
 document.getElementById('remediationFilter').addEventListener('change', function() {
     if (this.value) {
@@ -564,6 +734,9 @@ document.getElementById('remediationFilter').addEventListener('change', function
 });
 
 // Load on page load
-loadRemediations();
+document.addEventListener('DOMContentLoaded', () => {
+    loadDocumentsWithFindings();
+    loadRemediations();
+});
 </script>
 {% endblock %}
