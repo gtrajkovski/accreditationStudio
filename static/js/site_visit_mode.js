@@ -30,8 +30,16 @@ window.SiteVisitMode = (function() {
      * Initialize Site Visit Mode for an institution.
      */
     function init(instId) {
+        // Store institution ID for potential legacy use
         institutionId = instId;
 
+        // If CommandPalette exists, just set up the redirect
+        if (window.CommandPalette) {
+            document.addEventListener('keydown', handleGlobalKeydown);
+            return;
+        }
+
+        // Legacy fallback - keep existing functionality
         const input = document.getElementById('site-visit-input');
         if (input) {
             input.addEventListener('input', handleInput);
@@ -49,35 +57,70 @@ window.SiteVisitMode = (function() {
     }
 
     /**
+     * Deprecation flag
+     */
+    let deprecationShown = false;
+
+    /**
      * Handle global keyboard shortcuts.
      */
     function handleGlobalKeydown(e) {
         // Don't trigger if in another input
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-            if (e.target.id !== 'site-visit-input') {
-                return;
+            return;
+        }
+
+        // F2 now redirects to Command Palette
+        if (e.key === 'F2') {
+            e.preventDefault();
+            showDeprecationNotice();
+            if (window.CommandPalette) {
+                window.CommandPalette.open();
+            }
+            return;
+        }
+
+        // Ctrl+Shift+S also redirects
+        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            showDeprecationNotice();
+            if (window.CommandPalette) {
+                window.CommandPalette.open();
+            }
+            return;
+        }
+    }
+
+    /**
+     * Show deprecation notice (once per session, up to 5 times total)
+     */
+    function showDeprecationNotice() {
+        if (deprecationShown) return;
+
+        const key = 'accreditai_f2_deprecation_shown';
+        const count = parseInt(localStorage.getItem(key) || '0') + 1;
+        localStorage.setItem(key, count.toString());
+
+        // Only show deprecation notice for first 5 uses
+        if (count <= 5) {
+            if (window.toast) {
+                window.toast.info('F2 shortcut is deprecated. Use Ctrl+K for unified search.', { duration: 5000 });
             }
         }
 
-        // F2 opens Site Visit Mode
-        if (e.key === 'F2') {
-            e.preventDefault();
-            toggle();
-            return;
-        }
-
-        // Ctrl+Shift+S also opens
-        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 's') {
-            e.preventDefault();
-            toggle();
-            return;
-        }
+        deprecationShown = true;
     }
 
     /**
      * Toggle the overlay.
      */
     function toggle() {
+        if (window.CommandPalette) {
+            showDeprecationNotice();
+            window.CommandPalette.toggle();
+            return;
+        }
+
         if (isOpen) {
             close();
         } else {
@@ -89,6 +132,12 @@ window.SiteVisitMode = (function() {
      * Open the Site Visit Mode overlay.
      */
     function open() {
+        if (window.CommandPalette) {
+            showDeprecationNotice();
+            window.CommandPalette.open();
+            return;
+        }
+
         if (!institutionId) {
             console.warn('SiteVisitMode: No institution ID set');
             return;
