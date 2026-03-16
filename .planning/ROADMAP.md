@@ -86,14 +86,14 @@
 
 ## Milestone: v1.2 - Productivity & Polish
 
-### Phase 12: Bulk Operations (1/4 plans complete)
+### Phase 12: Bulk Operations (3/4 plans complete)
 **Goal:** Multi-document batch processing for audit and remediation with cost estimation, progress tracking, and batch history
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [x] 12-01-PLAN.md — Database schema + BatchService with cost estimation ✅ **COMPLETE** (b79fdf9, b1c3c3a, 0c335c0)
-- [ ] 12-02-PLAN.md — Batch API endpoints (audit, remediation, history)
-- [ ] 12-03-PLAN.md — Frontend UI (selection, action bar, progress modal)
+- [x] 12-02-PLAN.md — Batch API endpoints (audit, remediation, history) ✅ **COMPLETE** (275b18c, 8c26882, 2bb7218)
+- [x] 12-03-PLAN.md — Frontend UI (selection, action bar, progress modal) ✅ **COMPLETE** (682c8dc, 9bb6f7b, 7a6010a)
 - [ ] 12-04-PLAN.md — Batch history page + workbench integration
 
 55. Batch Remediation (multi-document correction workflow) - Foundation complete
