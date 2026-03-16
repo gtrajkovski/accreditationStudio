@@ -228,7 +228,16 @@
     "action_run_autopilot_desc": "Ejecutar tareas nocturnas inmediatamente",
     "help_shortcuts": "Mostrar Atajos de Teclado",
     "action_success": "Acción completada",
-    "action_failed": "Acción fallida"
+    "action_failed": "Acción fallida",
+    "add_filter": "Agregar filtro",
+    "clear_filters": "Limpiar todo",
+    "doc_type": "Tipo de Documento",
+    "compliance": "Estado de Cumplimiento",
+    "presets": "Filtros Guardados",
+    "saved_presets": "Filtros Guardados",
+    "save_current": "Guardar Actual",
+    "no_presets": "No hay filtros guardados",
+    "preset_name_prompt": "Ingresa un nombre para este filtro:"
   },
   "fab": {
     "quick_actions": "Acciones rápidas",
