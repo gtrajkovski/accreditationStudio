@@ -18,6 +18,54 @@
             <kbd class="command-palette-kbd">esc</kbd>
         </div>
 
+        <!-- Filter bar -->
+        <div class="command-palette-filter-bar">
+            <div id="filter-chips" class="filter-chips">
+                <!-- Filter chips rendered dynamically -->
+            </div>
+            <div class="filter-actions">
+                <button class="filter-btn" onclick="CommandPalette.showFilterDropdown()" title="{{ t('commands.add_filter') }}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                    </svg>
+                </button>
+                <div id="filter-dropdown" class="filter-dropdown" style="display: none;">
+                    <div class="filter-section">
+                        <div class="filter-section-title">{{ t('commands.doc_type') }}</div>
+                        <button onclick="CommandPalette.addFilter('doc_types', 'policy')">Policy</button>
+                        <button onclick="CommandPalette.addFilter('doc_types', 'catalog')">Catalog</button>
+                        <button onclick="CommandPalette.addFilter('doc_types', 'syllabus')">Syllabus</button>
+                        <button onclick="CommandPalette.addFilter('doc_types', 'handbook')">Handbook</button>
+                    </div>
+                    <div class="filter-section">
+                        <div class="filter-section-title">{{ t('commands.compliance') }}</div>
+                        <button onclick="CommandPalette.addFilter('compliance_status', 'compliant')">Compliant</button>
+                        <button onclick="CommandPalette.addFilter('compliance_status', 'non_compliant')">Non-Compliant</button>
+                        <button onclick="CommandPalette.addFilter('compliance_status', 'partial')">Partial</button>
+                    </div>
+                </div>
+                <button class="preset-btn" onclick="CommandPalette.showPresetDropdown()" title="{{ t('commands.presets') }}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+                    </svg>
+                </button>
+                <div id="preset-dropdown-container" class="preset-dropdown-container" style="display: none;">
+                    <div class="preset-header">
+                        <span>{{ t('commands.saved_presets') }}</span>
+                        <button onclick="CommandPalette.showSavePresetModal()">{{ t('commands.save_current') }}</button>
+                    </div>
+                    <div id="preset-dropdown" class="preset-dropdown">
+                        <!-- Presets rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result tabs -->
+        <div id="search-result-tabs" class="search-result-tabs">
+            <!-- Tabs rendered dynamically -->
+        </div>
+
         <div class="command-palette-results" id="command-palette-results">
             <!-- Commands will be rendered here -->
         </div>
@@ -384,5 +432,239 @@
     border-radius: var(--radius-sm);
     font-family: monospace;
     text-align: center;
+}
+
+/* Filter bar */
+.command-palette-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-subtle);
+    min-height: 36px;
+}
+
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    flex: 1;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--accent);
+    color: white;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+}
+
+.filter-chip-remove {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.8;
+}
+
+.filter-chip-remove:hover {
+    opacity: 1;
+}
+
+.filter-chip-clear {
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none;
+}
+
+.filter-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    position: relative;
+}
+
+.filter-btn, .preset-btn {
+    background: none;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.filter-btn:hover, .preset-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Filter dropdown */
+.filter-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 40px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    min-width: 200px;
+    z-index: 10001;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.filter-section {
+    margin-bottom: var(--spacing-sm);
+}
+
+.filter-section-title {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.filter-section button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+}
+
+.filter-section button:hover {
+    background: var(--bg-secondary);
+}
+
+/* Preset dropdown */
+.preset-dropdown-container {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    min-width: 220px;
+    z-index: 10001;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.preset-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 0.8rem;
+}
+
+.preset-header button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.7rem;
+}
+
+.preset-dropdown {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.preset-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm);
+    cursor: pointer;
+}
+
+.preset-item:hover {
+    background: var(--bg-secondary);
+}
+
+.preset-delete {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    opacity: 0;
+}
+
+.preset-item:hover .preset-delete {
+    opacity: 1;
+}
+
+.preset-empty {
+    padding: var(--spacing-md);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Result tabs */
+.search-result-tabs {
+    display: flex;
+    gap: 2px;
+    padding: var(--spacing-xs) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-subtle);
+    overflow-x: auto;
+}
+
+.result-tab {
+    padding: 4px 12px;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.result-tab:hover:not(.disabled) {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.result-tab.active {
+    background: var(--accent);
+    color: white;
+}
+
+.result-tab.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.tab-count {
+    font-size: 0.7rem;
+    padding: 0 4px;
+    border-radius: var(--radius-full);
+    background: rgba(255,255,255,0.2);
+}
+
+.result-tab.active .tab-count {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Citation code styling */
+.citation-code {
+    font-family: monospace;
+    background: var(--bg-secondary);
+    padding: 0 4px;
+    border-radius: 2px;
 }
 </style>
