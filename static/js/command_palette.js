@@ -45,6 +45,16 @@ window.CommandPalette = (function() {
     const RECENT_SEARCHES_KEY = 'accreditai_recent_searches';
     const MAX_RECENT = 5;
 
+    // Filter state (session-based)
+    let activeFilters = {
+        doc_types: [],
+        compliance_status: [],
+        date_range: null,
+        sources: []  // For tab filtering
+    };
+    let filterPresets = [];
+    let activeTab = 'all';
+
     // DOM elements
     let paletteEl = null;
     let inputEl = null;
@@ -223,6 +233,168 @@ window.CommandPalette = (function() {
     };
 
     /**
+     * FilterChipManager - Manages filter chips UI and state
+     */
+    const FilterChipManager = {
+        add(type, value) {
+            if (type === 'date_range') {
+                activeFilters.date_range = value;
+            } else {
+                if (!activeFilters[type].includes(value)) {
+                    activeFilters[type].push(value);
+                }
+            }
+            this.persist();
+            this.render();
+            triggerSearchWithFilters();
+        },
+
+        remove(type, value) {
+            if (type === 'date_range') {
+                activeFilters.date_range = null;
+            } else {
+                activeFilters[type] = activeFilters[type].filter(v => v !== value);
+            }
+            this.persist();
+            this.render();
+            triggerSearchWithFilters();
+        },
+
+        clear() {
+            activeFilters = {
+                doc_types: [],
+                compliance_status: [],
+                date_range: null,
+                sources: []
+            };
+            this.persist();
+            this.render();
+            triggerSearchWithFilters();
+        },
+
+        persist() {
+            // Store in sessionStorage (not localStorage - filters are session-only)
+            sessionStorage.setItem('accreditai_search_filters', JSON.stringify(activeFilters));
+        },
+
+        restore() {
+            const stored = sessionStorage.getItem('accreditai_search_filters');
+            if (stored) {
+                try {
+                    activeFilters = JSON.parse(stored);
+                } catch (e) {
+                    // Invalid JSON, use defaults
+                }
+            }
+            this.render();
+        },
+
+        render() {
+            const container = document.getElementById('filter-chips');
+            if (!container) return;
+
+            let html = '';
+
+            // Doc type chips
+            activeFilters.doc_types.forEach(type => {
+                html += createChipHtml('doc_types', type, formatDocType(type));
+            });
+
+            // Compliance status chips
+            activeFilters.compliance_status.forEach(status => {
+                html += createChipHtml('compliance_status', status, formatComplianceStatus(status));
+            });
+
+            // Date range chip
+            if (activeFilters.date_range) {
+                const { start, end } = activeFilters.date_range;
+                const label = `${formatDate(start)} - ${formatDate(end)}`;
+                html += createChipHtml('date_range', 'range', label);
+            }
+
+            // Clear all button if any filters active
+            if (html) {
+                html += `
+                    <button class="filter-chip filter-chip-clear" onclick="CommandPalette.clearFilters()">
+                        <span>${t('commands.clear_filters')}</span>
+                    </button>
+                `;
+            }
+
+            container.innerHTML = html;
+        },
+
+        hasActive() {
+            return activeFilters.doc_types.length > 0 ||
+                   activeFilters.compliance_status.length > 0 ||
+                   activeFilters.date_range !== null;
+        }
+    };
+
+    function createChipHtml(type, value, label) {
+        return `
+            <div class="filter-chip">
+                <span class="filter-chip-label">${escapeHtml(label)}</span>
+                <button class="filter-chip-remove" onclick="CommandPalette.removeFilter('${type}', '${escapeAttr(value)}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+    }
+
+    function formatDocType(type) {
+        const labels = {
+            policy: 'Policy',
+            catalog: 'Catalog',
+            syllabus: 'Syllabus',
+            handbook: 'Handbook',
+            report: 'Report',
+            form: 'Form'
+        };
+        return labels[type] || type;
+    }
+
+    function formatComplianceStatus(status) {
+        const labels = {
+            compliant: 'Compliant',
+            non_compliant: 'Non-Compliant',
+            partial: 'Partial'
+        };
+        return labels[status] || status;
+    }
+
+    function formatDate(isoDate) {
+        if (!isoDate) return '';
+        return new Date(isoDate).toLocaleDateString();
+    }
+
+    function showFilterDropdown() {
+        const dropdown = document.getElementById('filter-dropdown');
+        if (dropdown) {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    function addFilter(type, value) {
+        FilterChipManager.add(type, value);
+        hideFilterDropdown();
+    }
+
+    function hideFilterDropdown() {
+        const dropdown = document.getElementById('filter-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+    }
+
+    function triggerSearchWithFilters() {
+        const query = inputEl.value.trim();
+        if (query.length >= 2 && currentMode === MODES.SEARCH) {
+            search(query);
+        }
+    }
+
+    /**
      * Initialize command palette
      */
     function init() {
@@ -257,8 +429,14 @@ window.CommandPalette = (function() {
         // Global keyboard shortcuts
         document.addEventListener('keydown', handleGlobalKeydown);
 
+        // Restore filters from session
+        FilterChipManager.restore();
+
         // Load commands from server (optional enhancement)
         loadServerCommands();
+
+        // Load filter presets
+        loadFilterPresets();
     }
 
     /**
@@ -480,12 +658,21 @@ window.CommandPalette = (function() {
         renderLoading();
 
         try {
+            const payload = {
+                query,
+                filters: {
+                    ...activeFilters,
+                    sources: activeTab === 'all' ? [] : [activeTab]
+                },
+                limit: 30
+            };
+
             const response = await fetch(
                 `/api/institutions/${context.institution_id}/global-search`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query, limit: 20 })
+                    body: JSON.stringify(payload)
                 }
             );
 
@@ -495,7 +682,7 @@ window.CommandPalette = (function() {
             searchResults = data.results || [];
             selectedIndex = 0;
             saveRecentSearch(query);
-            renderSearchResults(data);
+            renderSearchResultsWithTabs(data);
         } catch (error) {
             if (searchId !== currentSearchId) return;
             renderSearchError();
@@ -979,7 +1166,12 @@ window.CommandPalette = (function() {
         execute,
         executeRecentSearch,
         showShortcuts,
-        closeShortcuts
+        closeShortcuts,
+        // Filter management
+        removeFilter: (type, value) => FilterChipManager.remove(type, value),
+        clearFilters: () => FilterChipManager.clear(),
+        showFilterDropdown,
+        addFilter
     };
 })();
 
