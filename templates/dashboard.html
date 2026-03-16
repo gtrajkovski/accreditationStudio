@@ -3,6 +3,10 @@
 {% block title %}Dashboard - AccreditAI{% endblock %}
 {% block header_title %}Dashboard{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+{% endblock %}
+
 {% block content %}
 <!-- Risk Alerts Banner -->
 <div class="risk-alerts-banner" id="risk-alerts-banner" style="display: none;">
@@ -24,63 +28,86 @@
     <div class="risk-alerts-list" id="risk-alerts-list"></div>
 </div>
 
-<div class="dashboard-grid mb-lg">
-    <!-- Quick Stats -->
-    <div class="card">
-        <div class="stat-card">
-            <div class="stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
-                </svg>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ institutions|length }}</div>
-                <div class="stat-label">Institutions</div>
-            </div>
+<div class="dashboard-grid mb-lg" id="stats-container">
+    <!-- Skeleton placeholders (shown on load) -->
+    <div class="skeleton-content loading" aria-label="{{ t('loading.content_loading') }}">
+        <div class="skeleton-stats-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+        </div>
+        <div class="skeleton-stats-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+        </div>
+        <div class="skeleton-stats-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+        </div>
+        <div class="skeleton-stats-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="stat-card">
-            <div class="stat-icon" style="background-color: var(--success);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 11l3 3L22 4"/>
-                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-                </svg>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ compliance_rate }}%</div>
-                <div class="stat-label">Average Compliance</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="stat-card">
-            <div class="stat-icon" style="background-color: var(--warning);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 8v4M12 16h.01"/>
-                </svg>
-            </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ pending_actions }}</div>
-                <div class="stat-label">Pending Actions</div>
+    <!-- Real content (shown after load) -->
+    <div class="real-content" style="display: contents;">
+        <!-- Quick Stats -->
+        <div class="card">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ institutions|length }}</div>
+                    <div class="stat-label">Institutions</div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="card">
-        <div class="stat-card">
-            <div class="stat-icon" style="background-color: var(--info);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                    <path d="M14 2v6h6"/>
-                </svg>
+        <div class="card">
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: var(--success);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ compliance_rate }}%</div>
+                    <div class="stat-label">Average Compliance</div>
+                </div>
             </div>
-            <div class="stat-content">
-                <div class="stat-value">{{ total_documents }}</div>
-                <div class="stat-label">Documents</div>
+        </div>
+
+        <div class="card">
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: var(--warning);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 8v4M12 16h.01"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ pending_actions }}</div>
+                    <div class="stat-label">Pending Actions</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: var(--info);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <path d="M14 2v6h6"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">{{ total_documents }}</div>
+                    <div class="stat-label">Documents</div>
+                </div>
             </div>
         </div>
     </div>
@@ -138,50 +165,80 @@
             <a href="{{ url_for('agent_sessions') }}" class="btn btn-secondary btn-sm">View All</a>
         </div>
 
-        {% if active_sessions %}
-        <div class="flex flex-col gap-md" id="active-sessions-list">
-            {% for session in active_sessions[:5] %}
-            <div class="session-card" data-session-id="{{ session.id }}" data-status="{{ session.status }}">
-                <div class="session-info">
-                    <div class="session-header">
-                        <span class="session-type">{{ session.agent_type }}</span>
-                        <span class="badge badge-{{ 'info' if session.status == 'running' else ('paused' if session.status == 'paused' else 'warning') }}">
-                            {{ session.status }}
-                        </span>
-                    </div>
-                    <div class="text-muted" style="font-size: var(--font-size-sm);">
-                        {{ session.institution_name }}
+        <div id="sessions-container">
+            <!-- Skeleton placeholders (shown on load) -->
+            <div class="skeleton-content loading" aria-label="{{ t('loading.content_loading') }}">
+                <div class="skeleton-list-item">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div class="skeleton-text-group">
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text-short"></div>
                     </div>
                 </div>
-                <div class="session-actions">
-                    {% if session.status == 'running' %}
-                    <button class="btn btn-sm btn-secondary" onclick="pauseSession('{{ session.id }}')" title="Pause">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="cancelSession('{{ session.id }}')" title="Cancel">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                    {% elif session.status == 'paused' or session.status == 'waiting_for_human' %}
-                    <button class="btn btn-sm btn-primary" onclick="resumeSession('{{ session.id }}')" title="Resume">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="cancelSession('{{ session.id }}')" title="Cancel">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                    {% elif session.status in ['pending'] %}
-                    <button class="btn btn-sm btn-primary" onclick="startSession('{{ session.id }}')" title="Start">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-                    </button>
-                    {% endif %}
+                <div class="skeleton-list-item">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div class="skeleton-text-group">
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text-short"></div>
+                    </div>
+                </div>
+                <div class="skeleton-list-item">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div class="skeleton-text-group">
+                        <div class="skeleton skeleton-text"></div>
+                        <div class="skeleton skeleton-text-short"></div>
+                    </div>
                 </div>
             </div>
-            {% endfor %}
+
+            <!-- Real content (shown after load) -->
+            <div class="real-content">
+                {% if active_sessions %}
+                <div class="flex flex-col gap-md" id="active-sessions-list">
+                    {% for session in active_sessions[:5] %}
+                    <div class="session-card" data-session-id="{{ session.id }}" data-status="{{ session.status }}">
+                        <div class="session-info">
+                            <div class="session-header">
+                                <span class="session-type">{{ session.agent_type }}</span>
+                                <span class="badge badge-{{ 'info' if session.status == 'running' else ('paused' if session.status == 'paused' else 'warning') }}">
+                                    {{ session.status }}
+                                </span>
+                            </div>
+                            <div class="text-muted" style="font-size: var(--font-size-sm);">
+                                {{ session.institution_name }}
+                            </div>
+                        </div>
+                        <div class="session-actions">
+                            {% if session.status == 'running' %}
+                            <button class="btn btn-sm btn-secondary" onclick="pauseSession('{{ session.id }}')" title="Pause">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="cancelSession('{{ session.id }}')" title="Cancel">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                            {% elif session.status == 'paused' or session.status == 'waiting_for_human' %}
+                            <button class="btn btn-sm btn-primary" onclick="resumeSession('{{ session.id }}')" title="Resume">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="cancelSession('{{ session.id }}')" title="Cancel">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                            {% elif session.status in ['pending'] %}
+                            <button class="btn btn-sm btn-primary" onclick="startSession('{{ session.id }}')" title="Start">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                    <p>No active sessions.</p>
+                </div>
+                {% endif %}
+            </div>
         </div>
-        {% else %}
-        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
-            <p>No active sessions.</p>
-        </div>
-        {% endif %}
     </div>
 </div>
 
@@ -451,5 +508,18 @@ document.getElementById('risk-alerts-dismiss')?.addEventListener('click', functi
 });
 
 document.addEventListener('DOMContentLoaded', loadRiskAlerts);
+
+// Hide skeleton loaders and show real content on window load
+window.addEventListener('load', () => {
+    document.querySelectorAll('.skeleton-content.loading').forEach(el => {
+        el.classList.remove('loading');
+        el.style.display = 'none';
+    });
+    document.querySelectorAll('.real-content').forEach(el => {
+        if (el.style.display === 'none') {
+            el.style.display = '';
+        }
+    });
+});
 </script>
 {% endblock %}
