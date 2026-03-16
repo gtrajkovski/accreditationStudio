@@ -61,6 +61,10 @@
     "upload": "Subir",
     "refresh": "Actualizar"
   },
+  "loading": {
+    "skeleton_loading": "Cargando...",
+    "content_loading": "Cargando contenido..."
+  },
   "theme": {
     "label": "Tema",
     "light": "Claro",
@@ -260,5 +264,26 @@
     "preview": "Vista previa",
     "no_results": "No se encontraron resultados",
     "try_different": "Intente palabras clave diferentes o ajuste los filtros"
+  },
+  "help": {
+    "keyboard_shortcuts": "Atajos de Teclado",
+    "shortcuts": {
+      "navigation": "Navegación",
+      "actions": "Acciones",
+      "general": "General",
+      "open_command_palette": "Abrir paleta de comandos",
+      "go_dashboard": "Ir al panel",
+      "go_work_queue": "Ir a cola de trabajo",
+      "go_documents": "Ir a documentos",
+      "go_standards": "Ir a estándares",
+      "go_packets": "Ir a paquetes",
+      "go_evidence": "Explorador de evidencia",
+      "run_audit": "Ejecutar auditoría",
+      "consistency_check": "Verificación de consistencia",
+      "fix_finding": "Corregir hallazgo",
+      "show_help": "Mostrar esta ayuda",
+      "close_modal": "Cerrar modal",
+      "toggle_sidebar": "Alternar barra lateral"
+    }
   }
 }

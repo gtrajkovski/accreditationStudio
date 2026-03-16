@@ -61,6 +61,10 @@
     "upload": "Upload",
     "refresh": "Refresh"
   },
+  "loading": {
+    "skeleton_loading": "Loading...",
+    "content_loading": "Loading content..."
+  },
   "theme": {
     "label": "Theme",
     "light": "Light",
@@ -260,5 +264,26 @@
     "preview": "Preview",
     "no_results": "No results found",
     "try_different": "Try different keywords or adjust filters"
+  },
+  "help": {
+    "keyboard_shortcuts": "Keyboard Shortcuts",
+    "shortcuts": {
+      "navigation": "Navigation",
+      "actions": "Actions",
+      "general": "General",
+      "open_command_palette": "Open command palette",
+      "go_dashboard": "Go to dashboard",
+      "go_work_queue": "Go to work queue",
+      "go_documents": "Go to documents",
+      "go_standards": "Go to standards",
+      "go_packets": "Go to packets",
+      "go_evidence": "Evidence explorer",
+      "run_audit": "Run audit",
+      "consistency_check": "Consistency check",
+      "fix_finding": "Fix finding",
+      "show_help": "Show this help",
+      "close_modal": "Close modal",
+      "toggle_sidebar": "Toggle sidebar"
+    }
   }
 }

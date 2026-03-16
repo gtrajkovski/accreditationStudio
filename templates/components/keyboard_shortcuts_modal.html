@@ -1,0 +1,88 @@
+<div id="keyboard-shortcuts-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" aria-hidden="true" style="display: none;">
+  <div class="modal-backdrop" onclick="window.KeyboardShortcuts.close()"></div>
+  <div class="modal-content" style="max-width: 700px;">
+    <div class="modal-header">
+      <h2 id="shortcuts-title">{{ t('help.keyboard_shortcuts') }}</h2>
+      <button type="button" class="modal-close" onclick="window.KeyboardShortcuts.close()" aria-label="{{ t('common.close') }}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <!-- Navigation shortcuts -->
+      <div class="shortcuts-section">
+        <h3>{{ t('help.shortcuts.navigation') }}</h3>
+        <dl class="shortcuts-list">
+          <div class="shortcut-item">
+            <dt><kbd>Ctrl</kbd> + <kbd>K</kbd></dt>
+            <dd>{{ t('help.shortcuts.open_command_palette') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>G</kbd> then <kbd>D</kbd></dt>
+            <dd>{{ t('help.shortcuts.go_dashboard') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>W</kbd></dt>
+            <dd>{{ t('help.shortcuts.go_work_queue') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>D</kbd></dt>
+            <dd>{{ t('help.shortcuts.go_documents') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>S</kbd></dt>
+            <dd>{{ t('help.shortcuts.go_standards') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>P</kbd></dt>
+            <dd>{{ t('help.shortcuts.go_packets') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>E</kbd></dt>
+            <dd>{{ t('help.shortcuts.go_evidence') }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- Actions shortcuts -->
+      <div class="shortcuts-section">
+        <h3>{{ t('help.shortcuts.actions') }}</h3>
+        <dl class="shortcuts-list">
+          <div class="shortcut-item">
+            <dt><kbd>A</kbd></dt>
+            <dd>{{ t('help.shortcuts.run_audit') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>C</kbd></dt>
+            <dd>{{ t('help.shortcuts.consistency_check') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>F</kbd></dt>
+            <dd>{{ t('help.shortcuts.fix_finding') }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- General shortcuts -->
+      <div class="shortcuts-section">
+        <h3>{{ t('help.shortcuts.general') }}</h3>
+        <dl class="shortcuts-list">
+          <div class="shortcut-item">
+            <dt><kbd>?</kbd></dt>
+            <dd>{{ t('help.shortcuts.show_help') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>Esc</kbd></dt>
+            <dd>{{ t('help.shortcuts.close_modal') }}</dd>
+          </div>
+          <div class="shortcut-item">
+            <dt><kbd>Ctrl</kbd> + <kbd>B</kbd></dt>
+            <dd>{{ t('help.shortcuts.toggle_sidebar') }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
