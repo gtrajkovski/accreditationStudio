@@ -1100,9 +1100,22 @@ window.CommandPalette = (function() {
     }
 
     /**
-     * Render search results
+     * Source tabs configuration
      */
-    function renderSearchResults(data) {
+    const SOURCE_TABS = [
+        { key: 'all', label: 'All' },
+        { key: 'documents', label: 'Documents' },
+        { key: 'standards', label: 'Standards' },
+        { key: 'findings', label: 'Findings' },
+        { key: 'faculty', label: 'Faculty' },
+        { key: 'truth_index', label: 'Facts' },
+        { key: 'knowledge_graph', label: 'Knowledge' }
+    ];
+
+    /**
+     * Render search results with tabs
+     */
+    function renderSearchResultsWithTabs(data) {
         if (!data.results || data.results.length === 0) {
             resultsEl.innerHTML = `
                 <div class="command-empty">
@@ -1110,14 +1123,27 @@ window.CommandPalette = (function() {
                     <span class="command-hint-text">${t('commands.try_different')}</span>
                 </div>
             `;
+            renderTabs({});
             return;
         }
 
-        // For now, render flat list - tabs will be added in 13-03
-        let html = '<div class="command-group">';
-        html += `<div class="command-group-title">${data.total} ${t('commands.results')} (${data.query_time_ms}ms)</div>`;
+        // Group results by source_type
+        const grouped = groupResultsBySource(data.results);
+        const counts = data.grouped_counts || calculateCounts(grouped);
 
-        data.results.forEach((item, idx) => {
+        // Render tabs
+        renderTabs(counts);
+
+        // Get results for active tab
+        const displayResults = activeTab === 'all'
+            ? data.results
+            : grouped[activeTab] || [];
+
+        // Render results
+        let html = '<div class="command-group">';
+        html += `<div class="command-group-title">${displayResults.length} ${t('commands.results')}</div>`;
+
+        displayResults.forEach((item, idx) => {
             const isSelected = idx === selectedIndex;
             const citation = item.citation || {};
             const sourceIcon = getSourceIcon(item.source_type);
@@ -1131,10 +1157,11 @@ window.CommandPalette = (function() {
                     </svg>
                     <div class="command-item-content">
                         <div class="command-item-title">${escapeHtml(item.title)}</div>
-                        <div class="command-item-snippet">${escapeHtml(truncate(item.snippet, 80))}</div>
+                        <div class="command-item-snippet">${escapeHtml(truncate(item.snippet, 100))}</div>
                         <div class="command-item-citation">
                             ${citation.document ? `<span>${escapeHtml(citation.document)}</span>` : ''}
                             ${citation.page ? `<span>p. ${citation.page}</span>` : ''}
+                            ${citation.standard_code ? `<span class="citation-code">${escapeHtml(citation.standard_code)}</span>` : ''}
                         </div>
                     </div>
                     <div class="command-item-source">${formatSourceType(item.source_type)}</div>
@@ -1144,6 +1171,85 @@ window.CommandPalette = (function() {
 
         html += '</div>';
         resultsEl.innerHTML = html;
+
+        // Update searchResults for execute()
+        searchResults = displayResults;
+    }
+
+    /**
+     * Group results by source type
+     */
+    function groupResultsBySource(results) {
+        const grouped = {};
+        SOURCE_TABS.forEach(tab => {
+            if (tab.key !== 'all') {
+                grouped[tab.key] = [];
+            }
+        });
+
+        results.forEach(r => {
+            const key = r.source_type === 'document' ? 'documents' : r.source_type;
+            if (grouped[key]) {
+                grouped[key].push(r);
+            }
+        });
+
+        return grouped;
+    }
+
+    /**
+     * Calculate counts from grouped results
+     */
+    function calculateCounts(grouped) {
+        const counts = { all: 0 };
+        Object.entries(grouped).forEach(([key, results]) => {
+            counts[key] = results.length;
+            counts.all += results.length;
+        });
+        return counts;
+    }
+
+    /**
+     * Render result tabs
+     */
+    function renderTabs(counts) {
+        const tabsEl = document.getElementById('search-result-tabs');
+        if (!tabsEl) return;
+
+        let html = '';
+        SOURCE_TABS.forEach(tab => {
+            const count = counts[tab.key] || 0;
+            const isActive = tab.key === activeTab;
+            const isDisabled = tab.key !== 'all' && count === 0;
+
+            html += `
+                <button class="result-tab ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}"
+                        data-source="${tab.key}"
+                        ${isDisabled ? 'disabled' : ''}
+                        onclick="CommandPalette.switchTab('${tab.key}')">
+                    ${tab.label}
+                    ${tab.key === 'all' || count > 0 ? `<span class="tab-count">${count}</span>` : ''}
+                </button>
+            `;
+        });
+
+        tabsEl.innerHTML = html;
+    }
+
+    /**
+     * Switch active tab
+     */
+    function switchTab(tabKey) {
+        activeTab = tabKey;
+        // Re-trigger search to get filtered results
+        triggerSearchWithFilters();
+    }
+
+    /**
+     * Render search results (legacy for backwards compatibility)
+     */
+    function renderSearchResults(data) {
+        renderSearchResultsWithTabs(data);
     }
 
     /**
@@ -1171,7 +1277,9 @@ window.CommandPalette = (function() {
         removeFilter: (type, value) => FilterChipManager.remove(type, value),
         clearFilters: () => FilterChipManager.clear(),
         showFilterDropdown,
-        addFilter
+        addFilter,
+        // Tab management
+        switchTab
     };
 })();
 
