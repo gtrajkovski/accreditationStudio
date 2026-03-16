@@ -3,6 +3,10 @@
 
 {% block title %}Compliance - {{ institution.name }} - AccreditAI{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/batch.css') }}">
+{% endblock %}
+
 {% block header_actions %}
 <select id="auditFilter" class="form-control" style="width: auto; display: inline-block; margin-right: var(--spacing-sm);">
     <option value="">All Audits</option>
@@ -23,6 +27,22 @@
     institution=institution,
     score=readiness_score
 ) }}
+<!-- Documents for Batch Audit -->
+<div class="card mb-lg">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">Documents</h3>
+        <div>
+            <input type="checkbox" id="selectAll" class="batch-select-all">
+            <label for="selectAll" style="margin: 0 var(--spacing-sm); cursor: pointer;">Select All</label>
+        </div>
+    </div>
+    <div id="documentsList">
+        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+            <p>Loading documents...</p>
+        </div>
+    </div>
+</div>
+
 <!-- Summary Cards -->
 <div class="dashboard-grid mb-lg" id="summaryCards">
     <div class="card">
@@ -84,10 +104,12 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/batch_operations.js') }}"></script>
 <script>
 const institutionId = '{{ institution.id }}';
 let allFindings = [];
 let currentAuditId = null;
+let batchOps = null;
 
 async function loadAudits() {
     try {
@@ -221,7 +243,135 @@ document.getElementById('auditFilter').addEventListener('change', function() {
 document.getElementById('statusFilter').addEventListener('change', renderFindings);
 document.getElementById('severityFilter').addEventListener('change', renderFindings);
 
+// Batch Operations Functions
+async function loadDocuments() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/documents`);
+        if (!res.ok) throw new Error('Failed to load documents');
+        const docs = await res.json();
+
+        renderDocuments(docs);
+    } catch (err) {
+        console.error(err);
+        document.getElementById('documentsList').innerHTML = '<div class="text-center text-muted" style="padding: var(--spacing-xl);"><p>Failed to load documents</p></div>';
+    }
+}
+
+function renderDocuments(docs) {
+    const listEl = document.getElementById('documentsList');
+
+    if (!docs || docs.length === 0) {
+        listEl.innerHTML = `
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <p>No documents available for audit</p>
+                <a href="/institutions/${institutionId}/documents" class="btn btn-primary">Upload Documents</a>
+            </div>
+        `;
+        return;
+    }
+
+    const statusBadges = {
+        uploaded: '<span class="badge" style="background: var(--bg-panel); color: var(--text-muted);">Not Audited</span>',
+        compliant: '<span class="badge badge-success">Compliant</span>',
+        partial: '<span class="badge badge-warning">Partial</span>',
+        non_compliant: '<span class="badge badge-danger">Non-Compliant</span>'
+    };
+
+    const html = `
+        <div style="padding: var(--spacing-md);">
+            ${docs.map(doc => {
+                const status = doc.audit_status || 'uploaded';
+                const badge = statusBadges[status] || statusBadges['uploaded'];
+
+                return `
+                    <div class="document-row" data-doc-id="${doc.id}" style="display: flex; align-items: center; padding: var(--spacing-sm) var(--spacing-md); border-bottom: 1px solid var(--border-subtle);">
+                        <input type="checkbox" class="batch-select-checkbox"
+                               data-doc-id="${doc.id}"
+                               data-doc-name="${escapeHtml(doc.original_filename || doc.title || doc.id)}"
+                               data-doc-type="${doc.doc_type}">
+                        <div style="flex: 1; margin-left: var(--spacing-sm);">
+                            <div style="font-weight: 500;">${escapeHtml(doc.original_filename || doc.title || doc.id)}</div>
+                            <div style="font-size: 0.85em; color: var(--text-muted);">${doc.doc_type.replace('_', ' ')}</div>
+                        </div>
+                        ${badge}
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    listEl.innerHTML = html;
+
+    // Initialize batch operations after rendering
+    if (!batchOps) {
+        batchOps = BatchOperations.init(institutionId, 'audit');
+    }
+
+    // Attach checkbox listeners
+    document.querySelectorAll('.batch-select-checkbox').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const row = e.target.closest('.document-row');
+            const docId = e.target.dataset.docId;
+            const docData = {
+                id: docId,
+                name: e.target.dataset.docName,
+                doc_type: e.target.dataset.docType
+            };
+
+            batchOps.selectionManager.toggle(docId, docData);
+            batchOps.actionBar.updateCount(batchOps.selectionManager.getCount());
+
+            // Visual feedback
+            if (e.target.checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
+            }
+        });
+    });
+
+    // Select all handler
+    const selectAllCb = document.getElementById('selectAll');
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', (e) => {
+            const allCheckboxes = document.querySelectorAll('.batch-select-checkbox');
+
+            if (e.target.checked) {
+                const allDocs = Array.from(allCheckboxes).map(cb => ({
+                    id: cb.dataset.docId,
+                    name: cb.dataset.docName,
+                    doc_type: cb.dataset.docType
+                }));
+
+                batchOps.selectionManager.selectAll(allDocs);
+
+                allCheckboxes.forEach(cb => {
+                    cb.checked = true;
+                    cb.closest('.document-row').classList.add('selected');
+                });
+            } else {
+                batchOps.selectionManager.clearSelection();
+
+                allCheckboxes.forEach(cb => {
+                    cb.checked = false;
+                    cb.closest('.document-row').classList.remove('selected');
+                });
+            }
+
+            batchOps.actionBar.updateCount(batchOps.selectionManager.getCount());
+        });
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Load on page load
+loadDocuments();
 loadAudits();
 </script>
 {% endblock %}
