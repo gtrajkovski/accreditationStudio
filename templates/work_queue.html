@@ -2,6 +2,10 @@
 
 {% block title %}Work Queue - {{ t('app.name') }}{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div class="page-header-content">
@@ -84,9 +88,33 @@
 
 <!-- Work Queue List -->
 <div class="queue-list" id="queue-list">
-    <div class="queue-loading">
-        <div class="spinner"></div>
-        <span>Loading work queue...</span>
+    <!-- Skeleton placeholders (shown on load) -->
+    <div class="skeleton-content loading" aria-label="{{ t('loading.content_loading') }}">
+        <div class="skeleton-task-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-button"></div>
+        </div>
+        <div class="skeleton-task-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-button"></div>
+        </div>
+        <div class="skeleton-task-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-button"></div>
+        </div>
+    </div>
+    <!-- Real content (loaded via JS) -->
+    <div class="real-content">
+        <div class="queue-loading">
+            <div class="spinner"></div>
+            <span>Loading work queue...</span>
+        </div>
     </div>
 </div>
 
@@ -628,5 +656,18 @@ async function rejectItem(sessionId, checkpointId) {
         window.Toast?.error('Failed to reject item');
     }
 }
+
+// Hide skeleton loaders and show real content on window load
+window.addEventListener('load', () => {
+    document.querySelectorAll('.skeleton-content.loading').forEach(el => {
+        el.classList.remove('loading');
+        el.style.display = 'none';
+    });
+    document.querySelectorAll('.real-content').forEach(el => {
+        if (el.style.display === 'none') {
+            el.style.display = '';
+        }
+    });
+});
 </script>
 {% endblock %}

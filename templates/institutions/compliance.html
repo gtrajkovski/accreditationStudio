@@ -4,6 +4,7 @@
 {% block title %}Compliance - {{ institution.name }} - AccreditAI{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/batch.css') }}">
 {% endblock %}
 
@@ -82,8 +83,39 @@
         </div>
     </div>
     <div id="findingsList">
-        <div class="text-center text-muted" style="padding: var(--spacing-xl);">
-            <p>Loading audits...</p>
+        <!-- Skeleton placeholders (shown on load) -->
+        <div class="skeleton-content loading" aria-label="{{ t('loading.content_loading') }}">
+            <div class="skeleton-finding">
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text-short"></div>
+                <div class="skeleton skeleton-badge"></div>
+            </div>
+            <div class="skeleton-finding">
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text-short"></div>
+                <div class="skeleton skeleton-badge"></div>
+            </div>
+            <div class="skeleton-finding">
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text-short"></div>
+                <div class="skeleton skeleton-badge"></div>
+            </div>
+            <div class="skeleton-finding">
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text-short"></div>
+                <div class="skeleton skeleton-badge"></div>
+            </div>
+            <div class="skeleton-finding">
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text-short"></div>
+                <div class="skeleton skeleton-badge"></div>
+            </div>
+        </div>
+        <!-- Real content (loaded via JS) -->
+        <div class="real-content">
+            <div class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <p>Loading audits...</p>
+            </div>
         </div>
     </div>
 </div>
@@ -373,5 +405,18 @@ function escapeHtml(text) {
 // Load on page load
 loadDocuments();
 loadAudits();
+
+// Hide skeleton loaders and show real content on window load
+window.addEventListener('load', () => {
+    document.querySelectorAll('.skeleton-content.loading').forEach(el => {
+        el.classList.remove('loading');
+        el.style.display = 'none';
+    });
+    document.querySelectorAll('.real-content').forEach(el => {
+        if (el.style.display === 'none') {
+            el.style.display = '';
+        }
+    });
+});
 </script>
 {% endblock %}
