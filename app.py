@@ -54,6 +54,7 @@ from src.api.simulation import simulation_bp, init_simulation_bp
 from src.api.portfolios import portfolios_bp, init_portfolios_bp
 from src.api.evidence_highlighting import evidence_highlighting_bp, init_evidence_highlighting_bp
 from src.api.compliance_heatmap import compliance_heatmap_bp, init_compliance_heatmap_bp
+from src.api.batch_history import batch_history_bp, init_batch_history_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 
@@ -106,6 +107,7 @@ init_simulation_bp(workspace_manager)
 init_portfolios_bp(workspace_manager)
 init_evidence_highlighting_bp(workspace_manager)
 init_compliance_heatmap_bp(workspace_manager)
+init_batch_history_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -139,6 +141,7 @@ app.register_blueprint(simulation_bp)
 app.register_blueprint(portfolios_bp)
 app.register_blueprint(evidence_highlighting_bp)
 app.register_blueprint(compliance_heatmap_bp)
+app.register_blueprint(batch_history_bp)
 
 
 # =============================================================================
