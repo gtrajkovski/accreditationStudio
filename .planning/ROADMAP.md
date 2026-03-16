@@ -101,6 +101,14 @@ Plans:
 57. ✅ Progress Tracking Dashboard (batch operation status)
 
 ### Phase 13: Search Enhancement
+**Goal:** Unified command palette with dual-mode search (Ctrl+K), live results, filter chips, result tabs with counts, and filter presets
+**Plans:** 3 plans in 3 waves
+
+Plans:
+- [ ] 13-01-PLAN.md — Database migration + global search API blueprint
+- [ ] 13-02-PLAN.md — Command palette dual-mode with live search
+- [ ] 13-03-PLAN.md — Filter chips, result tabs, presets, F2 deprecation
+
 58. Global Search UI (unified search bar with keyboard shortcut)
 59. Search Autocomplete (recent searches, suggested queries)
 60. Search Filters (date range, document type, compliance status)
