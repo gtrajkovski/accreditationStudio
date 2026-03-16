@@ -15,53 +15,36 @@ progress:
 
 ## Next Session: Start Here
 
-**Phase 13 Just Completed: Search Enhancement** ✅
+**Phase 14 In Progress: Polish & UX** 🔄
 
-Phase 13 is now complete with all 3 plans executed:
+Phase 14 plan 02 just completed:
 
-1. **13-01: Global Search API Foundation** ✅
-   - Global search service with 6 data sources
-   - Filter presets (save/load/delete)
-   - 6 API endpoints
-   - Duration: 15 minutes
-
-2. **13-02: Command Palette UI** ✅
-   - Dual-mode detection (search/command) with '>' prefix
-   - Live search with 250ms debounce
-   - Recent searches in localStorage
-   - Search result rendering with source icons and citations
-   - Duration: 10 minutes
-
-3. **13-03: Search Enhancements** ✅
-   - Filter chips with session persistence
-   - Result tabs with counts (All, Documents, Standards, Findings, Faculty, Facts, Knowledge)
-   - Filter preset management UI
-   - F2 deprecation redirect to Ctrl+K
+1. **14-02: Keyboard Shortcuts Help Modal** ✅
+   - Accessible modal with ARIA attributes and focus trap
+   - 13 shortcuts grouped in 3 categories (Navigation, Actions, General)
+   - ? key global trigger, ESC to close
+   - Focus restoration to previous element
    - Full i18n support (en-US, es-PR)
-   - Duration: 12 minutes
+   - WCAG 2.1 Level AA compliant
+   - Duration: 6 minutes
 
-**Commits (Plan 13-03):**
-- `c1dc606` - feat(13-03): add filter chip management to command palette
-- `3ee1bc6` - feat(13-03): add result tabs with counts to command palette
-- `7eea0d6` - feat(13-03): add filter preset management to command palette
-- `289b5a9` - feat(13-03): add filter UI and tabs to command palette template
-- `adfd694` - feat(13-03): add i18n strings for search filters and presets
-- `d07962f` - feat(13-03): add F2 deprecation redirect to command palette
+**Commits (Plan 14-02):**
+- `93a6e64` - feat(14-02): create keyboard shortcuts modal HTML template
+- `396f611` - feat(14-02): create keyboard shortcuts modal JavaScript controller
+- `938ac0d` - feat(14-02): integrate keyboard shortcuts modal into base template
 
 **Key Decisions:**
-- sessionStorage for active filters (session-scoped)
-- localStorage for filter presets (persisted, institution-specific)
-- F2 deprecation strategy: redirect + toast (shown 5 times max)
+- Use ? key as global trigger (standard web app pattern like GitHub/Gmail)
+- Implement focus trap with Tab cycling for WCAG 2.1 Level AA compliance
+- Store and restore previous focus element for accessibility
 
-**Next: Phase 14 - Polish & UX**
-- Loading skeletons for search results
-- Keyboard shortcuts modal (visible help)
-- Onboarding tooltips for first-time users
+**Next:**
+- 14-03: Onboarding tooltips for first-time users
 
 ---
 
 ## Current Phase
-**Phase 13: Search Enhancement** ✅ Complete (3/3 plans)
+**Phase 14: Polish & UX** 🔄 In Progress (1/3 plans complete)
 
 ## Session Date
 2026-03-16
@@ -113,6 +96,13 @@ Phase 13 is now complete with all 3 plans executed:
    - Filter preset management UI
    - F2 deprecation redirect
    - Duration: 12 minutes
+
+8. **Phase 14-02** - Keyboard Shortcuts Help Modal
+   - Accessible modal with ARIA and focus trap
+   - 13 shortcuts in 3 categories
+   - ? key trigger, ESC to close
+   - Focus restoration
+   - Duration: 6 minutes
 
 ## Current Blueprints (32 total)
 ```
