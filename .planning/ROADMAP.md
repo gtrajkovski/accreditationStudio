@@ -114,6 +114,14 @@ Plans:
 60. Search Filters (date range, document type, compliance status)
 
 ### Phase 14: Polish & UX
+**Goal:** Improve perceived performance, discoverability, and first-time user experience with skeleton loaders, keyboard shortcuts modal, and onboarding tooltips
+**Plans:** 3 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — Synchronized skeleton loaders replacing spinners
+- [ ] 14-02-PLAN.md — Accessible keyboard shortcuts modal (? key trigger)
+- [ ] 14-03-PLAN.md — Lightweight onboarding tooltips (per-institution state)
+
 61. Loading Skeletons (replace spinners with skeleton loaders)
 62. Keyboard Shortcuts Modal (help overlay showing all shortcuts)
 63. Onboarding Flow (first-run tutorial, setup wizard)
