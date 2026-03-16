@@ -406,6 +406,21 @@ def institution_workbench(id):
     )
 
 
+@app.route('/institutions/<id>/batch-history')
+def institution_batch_history(id):
+    """Batch history page for institution."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/batch_history.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
 @app.route('/institutions/<id>/submissions')
 def institution_submissions(id):
     """Submission organizer page for packet assembly."""
