@@ -11,7 +11,7 @@
                 type="text"
                 id="command-palette-input"
                 class="command-palette-input"
-                placeholder="{{ t('commands.placeholder') }}"
+                placeholder="{{ t('commands.search_or_command') }}"
                 autocomplete="off"
                 spellcheck="false"
             />
@@ -28,6 +28,9 @@
             </span>
             <span class="command-hint">
                 <kbd>&crarr;</kbd> {{ t('commands.select') }}
+            </span>
+            <span class="command-hint">
+                <kbd>></kbd> {{ t('commands.commands') }}
             </span>
             <span class="command-hint">
                 <kbd>esc</kbd> {{ t('commands.close') }}
@@ -142,7 +145,7 @@
 }
 
 .command-palette-results {
-    max-height: 400px;
+    max-height: 450px;
     overflow-y: auto;
 }
 
@@ -198,6 +201,73 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Search result items */
+.command-item.search-result .command-item-snippet {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.command-item.search-result .command-item-citation {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: 2px;
+}
+
+.command-item-source {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Source type colors */
+.command-item-icon.source-document { color: var(--accent); }
+.command-item-icon.source-standard { color: var(--accreditor); }
+.command-item-icon.source-finding { color: var(--warning); }
+.command-item-icon.source-faculty { color: var(--success); }
+.command-item-icon.source-truth_index { color: var(--federal); }
+.command-item-icon.source-knowledge_graph { color: var(--state); }
+
+/* Loading state */
+.command-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+}
+
+.command-loading .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Hint text */
+.command-hint-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    opacity: 0.7;
 }
 
 .command-item-shortcut {
