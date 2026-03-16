@@ -395,6 +395,172 @@ window.CommandPalette = (function() {
     }
 
     /**
+     * Load filter presets from server
+     */
+    async function loadFilterPresets() {
+        if (!context.institution_id) return;
+
+        try {
+            const response = await fetch(
+                `/api/institutions/${context.institution_id}/global-search/presets`
+            );
+            if (response.ok) {
+                filterPresets = await response.json();
+                renderPresetDropdown();
+            }
+        } catch (error) {
+            console.error('Failed to load presets:', error);
+        }
+    }
+
+    /**
+     * Save current filters as a preset
+     */
+    async function saveFilterPreset(name) {
+        if (!context.institution_id || !name) return;
+
+        try {
+            const response = await fetch(
+                `/api/institutions/${context.institution_id}/global-search/presets`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        filters: activeFilters
+                    })
+                }
+            );
+
+            if (response.ok) {
+                const preset = await response.json();
+                window.toast && window.toast.success(`Saved preset: ${name}`);
+                loadFilterPresets();
+            }
+        } catch (error) {
+            window.toast && window.toast.error('Failed to save preset');
+        }
+    }
+
+    /**
+     * Apply a saved preset
+     */
+    async function applyPreset(presetId) {
+        const preset = filterPresets.find(p => p.id === presetId);
+        if (!preset) return;
+
+        try {
+            // Mark preset as used
+            await fetch(
+                `/api/institutions/${context.institution_id}/global-search/presets/${presetId}/use`,
+                { method: 'POST' }
+            );
+        } catch (error) {
+            // Non-critical, continue
+        }
+
+        // Apply filters
+        const filters = typeof preset.filters === 'string'
+            ? JSON.parse(preset.filters)
+            : preset.filters;
+
+        activeFilters = {
+            doc_types: filters.doc_types || [],
+            compliance_status: filters.compliance_status || [],
+            date_range: filters.date_range || null,
+            sources: filters.sources || []
+        };
+
+        FilterChipManager.persist();
+        FilterChipManager.render();
+        triggerSearchWithFilters();
+        hidePresetDropdown();
+    }
+
+    /**
+     * Delete a saved preset
+     */
+    async function deletePreset(presetId) {
+        if (!context.institution_id) return;
+
+        try {
+            const response = await fetch(
+                `/api/institutions/${context.institution_id}/global-search/presets/${presetId}`,
+                { method: 'DELETE' }
+            );
+
+            if (response.ok) {
+                window.toast && window.toast.success('Preset deleted');
+                loadFilterPresets();
+            }
+        } catch (error) {
+            window.toast && window.toast.error('Failed to delete preset');
+        }
+    }
+
+    /**
+     * Render preset dropdown
+     */
+    function renderPresetDropdown() {
+        const dropdown = document.getElementById('preset-dropdown');
+        if (!dropdown) return;
+
+        if (filterPresets.length === 0) {
+            dropdown.innerHTML = `<div class="preset-empty">${t('commands.no_presets')}</div>`;
+            return;
+        }
+
+        let html = '';
+        filterPresets.forEach(preset => {
+            html += `
+                <div class="preset-item" onclick="CommandPalette.applyPreset('${preset.id}')">
+                    <span class="preset-name">${escapeHtml(preset.name)}</span>
+                    <button class="preset-delete" onclick="event.stopPropagation(); CommandPalette.deletePreset('${preset.id}')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        });
+
+        dropdown.innerHTML = html;
+    }
+
+    /**
+     * Show save preset modal
+     */
+    function showSavePresetModal() {
+        if (!FilterChipManager.hasActive()) {
+            window.toast && window.toast.warning('Add filters before saving a preset');
+            return;
+        }
+
+        const name = prompt(t('commands.preset_name_prompt'));
+        if (name && name.trim()) {
+            saveFilterPreset(name.trim());
+        }
+    }
+
+    /**
+     * Show preset dropdown
+     */
+    function showPresetDropdown() {
+        const dropdown = document.getElementById('preset-dropdown-container');
+        if (dropdown) {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    /**
+     * Hide preset dropdown
+     */
+    function hidePresetDropdown() {
+        const dropdown = document.getElementById('preset-dropdown-container');
+        if (dropdown) dropdown.style.display = 'none';
+    }
+
+    /**
      * Initialize command palette
      */
     function init() {
@@ -1279,7 +1445,12 @@ window.CommandPalette = (function() {
         showFilterDropdown,
         addFilter,
         // Tab management
-        switchTab
+        switchTab,
+        // Preset management
+        applyPreset,
+        deletePreset,
+        showSavePresetModal,
+        showPresetDropdown
     };
 })();
 
