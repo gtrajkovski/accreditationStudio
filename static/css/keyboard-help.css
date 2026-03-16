@@ -1,0 +1,94 @@
+/* ============================================
+   Keyboard Shortcuts Modal Styles
+   ============================================ */
+
+/* Shortcuts section spacing */
+.shortcuts-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.shortcuts-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Section headers with gold accent */
+.shortcuts-section h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--accent-primary);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--spacing-sm);
+  font-family: var(--font-sans);
+}
+
+/* Shortcuts list */
+.shortcuts-list {
+  display: grid;
+  gap: var(--spacing-md);
+  margin: 0;
+  padding: 0;
+}
+
+/* Individual shortcut item */
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-hover);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+  margin: 0;
+}
+
+.shortcut-item:hover {
+  background-color: var(--bg-panel);
+}
+
+/* Key combination (left side) */
+.shortcut-item dt {
+  display: flex;
+  gap: var(--spacing-xs);
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Description (right side) */
+.shortcut-item dd {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  text-align: right;
+}
+
+/* Keyboard key styling */
+.shortcut-item kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.25rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .shortcut-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .shortcut-item dd {
+    text-align: left;
+  }
+}
