@@ -30,6 +30,21 @@ window.CommandPalette = (function() {
     let pendingKeyTime = 0;
     const KEY_SEQUENCE_TIMEOUT = 800; // ms
 
+    // Dual-mode state (search vs command)
+    const MODES = {
+        SEARCH: 'search',
+        COMMAND: 'command'
+    };
+    let currentMode = MODES.SEARCH;
+    let searchResults = [];
+    let currentSearchId = 0;  // For race condition prevention
+    let searchTimeout = null;
+    const DEBOUNCE_MS = 250;  // 200-300ms per CONTEXT.md
+
+    // Recent searches (localStorage per institution)
+    const RECENT_SEARCHES_KEY = 'accreditai_recent_searches';
+    const MAX_RECENT = 5;
+
     // DOM elements
     let paletteEl = null;
     let inputEl = null;
@@ -264,6 +279,25 @@ window.CommandPalette = (function() {
     }
 
     /**
+     * localStorage helpers for recent searches
+     */
+    function saveRecentSearch(query) {
+        if (!context.institution_id || !query || query.length < 2) return;
+        const key = `${RECENT_SEARCHES_KEY}_${context.institution_id}`;
+        let recent = JSON.parse(localStorage.getItem(key) || '[]');
+        recent = recent.filter(r => r !== query);  // Remove duplicates
+        recent.unshift(query);
+        recent = recent.slice(0, MAX_RECENT);
+        localStorage.setItem(key, JSON.stringify(recent));
+    }
+
+    function getRecentSearches() {
+        if (!context.institution_id) return [];
+        const key = `${RECENT_SEARCHES_KEY}_${context.institution_id}`;
+        return JSON.parse(localStorage.getItem(key) || '[]');
+    }
+
+    /**
      * Open command palette
      */
     function open() {
@@ -272,9 +306,11 @@ window.CommandPalette = (function() {
         paletteEl.style.display = 'flex';
         inputEl.value = '';
         inputEl.focus();
+        currentMode = MODES.SEARCH;
         selectedIndex = 0;
-        filteredCommands = filterCommands('');
-        render();
+        filteredCommands = [];
+        searchResults = [];
+        renderRecentSearches();  // Show recent on open
     }
 
     /**
@@ -405,30 +441,111 @@ window.CommandPalette = (function() {
     }
 
     /**
-     * Handle input changes
+     * Handle input changes - dual-mode detection
      */
     function handleInput(e) {
         const query = e.target.value;
-        filteredCommands = filterCommands(query);
-        selectedIndex = 0;
-        render();
+
+        // Detect mode
+        if (query.startsWith('>')) {
+            currentMode = MODES.COMMAND;
+            const commandQuery = query.slice(1).trim();
+            filteredCommands = filterCommands(commandQuery);
+            searchResults = [];
+            selectedIndex = 0;
+            render();
+        } else {
+            currentMode = MODES.SEARCH;
+            filteredCommands = [];
+
+            if (query.length === 0) {
+                renderRecentSearches();
+            } else if (query.length === 1) {
+                renderMinLengthHint();
+            } else {
+                // Debounced search
+                if (searchTimeout) clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => search(query), DEBOUNCE_MS);
+            }
+        }
+    }
+
+    /**
+     * Perform debounced search with race condition handling
+     */
+    async function search(query) {
+        if (!context.institution_id) return;
+
+        const searchId = ++currentSearchId;
+        renderLoading();
+
+        try {
+            const response = await fetch(
+                `/api/institutions/${context.institution_id}/global-search`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, limit: 20 })
+                }
+            );
+
+            if (searchId !== currentSearchId) return;  // Stale result
+
+            const data = await response.json();
+            searchResults = data.results || [];
+            selectedIndex = 0;
+            saveRecentSearch(query);
+            renderSearchResults(data);
+        } catch (error) {
+            if (searchId !== currentSearchId) return;
+            renderSearchError();
+        }
     }
 
     /**
      * Handle keyboard navigation in palette
      */
     function handleKeydown(e) {
+        // Number keys for recent searches
+        if (currentMode === MODES.SEARCH && searchResults.length > 0) {
+            if (e.key >= '1' && e.key <= '5') {
+                const idx = parseInt(e.key) - 1;
+                if (searchResults[idx] && searchResults[idx].type === 'recent') {
+                    e.preventDefault();
+                    executeRecentSearch(searchResults[idx].query);
+                    return;
+                }
+            }
+        }
+
         switch (e.key) {
             case 'ArrowDown':
                 e.preventDefault();
-                selectedIndex = Math.min(selectedIndex + 1, filteredCommands.length - 1);
-                render();
+                const maxIndex = currentMode === MODES.COMMAND ? filteredCommands.length - 1 : searchResults.length - 1;
+                selectedIndex = Math.min(selectedIndex + 1, maxIndex);
+                if (currentMode === MODES.COMMAND) {
+                    render();
+                } else {
+                    // Re-render search results with new selection
+                    const recent = getRecentSearches();
+                    if (searchResults.length > 0 && searchResults[0].type === 'recent') {
+                        renderRecentSearches();
+                    }
+                }
                 break;
 
             case 'ArrowUp':
                 e.preventDefault();
                 selectedIndex = Math.max(selectedIndex - 1, 0);
-                render();
+                if (currentMode === MODES.COMMAND) {
+                    render();
+                } else {
+                    // Re-render search results with new selection
+                    const recent = getRecentSearches();
+                    if (searchResults.length > 0 && searchResults[0].type === 'recent') {
+                        renderRecentSearches();
+                    }
+                }
                 break;
 
             case 'Enter':
@@ -573,14 +690,57 @@ window.CommandPalette = (function() {
     }
 
     /**
-     * Execute command by index
+     * Execute command or search result by index
      */
     function execute(index) {
-        const cmd = filteredCommands[index];
-        if (!cmd) return;
+        if (currentMode === MODES.COMMAND) {
+            const cmd = filteredCommands[index];
+            if (cmd) {
+                close();
+                executeCommand(cmd);
+            }
+        } else {
+            const result = searchResults[index];
+            if (result) {
+                close();
+                openSearchResult(result);
+            }
+        }
+    }
 
-        close();
-        executeCommand(cmd);
+    /**
+     * Execute a recent search
+     */
+    function executeRecentSearch(query) {
+        inputEl.value = query;
+        search(query);
+    }
+
+    /**
+     * Open a search result
+     */
+    function openSearchResult(item) {
+        switch (item.source_type) {
+            case 'document':
+                window.location.href = `/institutions/${context.institution_id}/documents?highlight=${item.source_id}`;
+                break;
+            case 'standard':
+                window.location.href = `/standards?highlight=${item.source_id}`;
+                break;
+            case 'finding':
+                window.location.href = `/institutions/${context.institution_id}/compliance?finding=${item.source_id}`;
+                break;
+            case 'faculty':
+                window.location.href = `/institutions/${context.institution_id}/faculty?highlight=${item.source_id}`;
+                break;
+            case 'knowledge_graph':
+                window.location.href = `/institutions/${context.institution_id}/knowledge-graph?entity=${item.source_id}`;
+                break;
+            case 'truth_index':
+                // Show in preview or navigate to relevant page
+                console.log('Truth Index result:', item);
+                break;
+        }
     }
 
     /**
@@ -643,6 +803,173 @@ window.CommandPalette = (function() {
         }
     }
 
+    /**
+     * Helper functions for rendering
+     */
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function escapeAttr(text) {
+        return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    function truncate(text, len) {
+        if (!text) return '';
+        return text.length > len ? text.slice(0, len) + '...' : text;
+    }
+
+    function getSourceIcon(type) {
+        const iconPaths = {
+            document: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+            standard: '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>',
+            finding: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+            faculty: '<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+            truth_index: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+            knowledge_graph: '<circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/>'
+        };
+        return iconPaths[type] || iconPaths.document;
+    }
+
+    function formatSourceType(type) {
+        const labels = {
+            document: 'Doc',
+            standard: 'Std',
+            finding: 'Find',
+            faculty: 'Fac',
+            truth_index: 'Fact',
+            knowledge_graph: 'KG'
+        };
+        return labels[type] || type;
+    }
+
+    /**
+     * Render recent searches
+     */
+    function renderRecentSearches() {
+        const recent = getRecentSearches();
+
+        if (recent.length === 0) {
+            resultsEl.innerHTML = `
+                <div class="command-empty">
+                    <p>${t('commands.search_hint')}</p>
+                    <span class="command-hint-text">${t('commands.type_to_search')}</span>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="command-group">';
+        html += `<div class="command-group-title">${t('commands.recent_searches')}</div>`;
+
+        recent.forEach((query, idx) => {
+            const isSelected = idx === selectedIndex;
+            html += `
+                <div class="command-item ${isSelected ? 'selected' : ''}"
+                     data-index="${idx}"
+                     onclick="CommandPalette.executeRecentSearch('${escapeAttr(query)}')">
+                    <svg class="command-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <div class="command-item-content">
+                        <div class="command-item-title">${escapeHtml(query)}</div>
+                    </div>
+                    <span class="command-item-shortcut"><kbd>${idx + 1}</kbd></span>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        resultsEl.innerHTML = html;
+        searchResults = recent.map(q => ({ type: 'recent', query: q }));
+    }
+
+    /**
+     * Render min length hint
+     */
+    function renderMinLengthHint() {
+        resultsEl.innerHTML = `
+            <div class="command-empty">
+                <p>${t('commands.min_length_hint')}</p>
+            </div>
+        `;
+        searchResults = [];
+    }
+
+    /**
+     * Render loading state
+     */
+    function renderLoading() {
+        resultsEl.innerHTML = `
+            <div class="command-loading">
+                <div class="spinner"></div>
+                <span>${t('commands.searching')}</span>
+            </div>
+        `;
+    }
+
+    /**
+     * Render search results
+     */
+    function renderSearchResults(data) {
+        if (!data.results || data.results.length === 0) {
+            resultsEl.innerHTML = `
+                <div class="command-empty">
+                    <p>${t('commands.no_results')}</p>
+                    <span class="command-hint-text">${t('commands.try_different')}</span>
+                </div>
+            `;
+            return;
+        }
+
+        // For now, render flat list - tabs will be added in 13-03
+        let html = '<div class="command-group">';
+        html += `<div class="command-group-title">${data.total} ${t('commands.results')} (${data.query_time_ms}ms)</div>`;
+
+        data.results.forEach((item, idx) => {
+            const isSelected = idx === selectedIndex;
+            const citation = item.citation || {};
+            const sourceIcon = getSourceIcon(item.source_type);
+
+            html += `
+                <div class="command-item search-result ${isSelected ? 'selected' : ''}"
+                     data-index="${idx}"
+                     onclick="CommandPalette.execute(${idx})">
+                    <svg class="command-item-icon source-${item.source_type}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        ${sourceIcon}
+                    </svg>
+                    <div class="command-item-content">
+                        <div class="command-item-title">${escapeHtml(item.title)}</div>
+                        <div class="command-item-snippet">${escapeHtml(truncate(item.snippet, 80))}</div>
+                        <div class="command-item-citation">
+                            ${citation.document ? `<span>${escapeHtml(citation.document)}</span>` : ''}
+                            ${citation.page ? `<span>p. ${citation.page}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="command-item-source">${formatSourceType(item.source_type)}</div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        resultsEl.innerHTML = html;
+    }
+
+    /**
+     * Render search error
+     */
+    function renderSearchError() {
+        resultsEl.innerHTML = `
+            <div class="command-empty">
+                <p>${t('commands.search_error')}</p>
+            </div>
+        `;
+    }
+
     // Public API
     return {
         init,
@@ -650,6 +977,7 @@ window.CommandPalette = (function() {
         close,
         toggle,
         execute,
+        executeRecentSearch,
         showShortcuts,
         closeShortcuts
     };
