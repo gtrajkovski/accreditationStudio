@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/keyboard-help.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css') }}">
 
     <!-- Preload theme to prevent flash -->
     <script>
@@ -274,6 +275,14 @@
                 <div class="header-actions">
                     {% block header_actions %}{% endblock %}
 
+                    <!-- Command Palette Trigger -->
+                    <button class="btn btn-ghost" data-command-palette-trigger title="{{ t('commands.open_palette') }} (Ctrl+K)">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </button>
+
                     <!-- Language Selector -->
                     <div class="dropdown locale-selector">
                         <button class="btn btn-ghost dropdown-toggle" type="button" id="localeDropdown">
@@ -422,7 +431,8 @@
     <script src="{{ url_for('static', filename='js/fab.js') }}"></script>
     <script src="{{ url_for('static', filename='js/site_visit_mode.js') }}"></script>
     <script src="{{ url_for('static', filename='js/institution-switcher.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/keyboard-help.js') }}"></script></script>
+    <script src="{{ url_for('static', filename='js/keyboard-help.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/onboarding.js') }}"></script>
 
     <!-- Initialize i18n with server-provided strings -->
     <script>
@@ -433,6 +443,55 @@
         if (AccreditAI.context.institution_id) {
             SiteVisitMode.init(AccreditAI.context.institution_id);
         }
+
+        // Initialize Onboarding for current institution
+        {% if current_institution %}
+        document.addEventListener('DOMContentLoaded', () => {
+            const onboarding = new OnboardingManager('{{ current_institution.id }}');
+            window.onboarding = onboarding;  // Global access for feature modules
+
+            // Command palette trigger button
+            const paletteBtn = document.querySelector('[data-command-palette-trigger]');
+            if (paletteBtn) {
+                paletteBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (typeof CommandPalette !== 'undefined') {
+                        CommandPalette.open();
+                    }
+                });
+            }
+
+            // Dashboard tooltips (only on first visit to dashboard)
+            if (window.location.pathname === '/') {
+                // Wait for DOM to be fully ready
+                setTimeout(() => {
+                    onboarding.attachTooltip(
+                        '#work-queue-badge',
+                        'work_queue_intro',
+                        {
+                            text: '{{ t("onboarding.work_queue_intro") }}',
+                            icon: '⚡',
+                            position: 'bottom',
+                            timeout: 15000,
+                            dismissLabel: '{{ t("onboarding.dismiss") }}'
+                        }
+                    );
+
+                    onboarding.attachTooltip(
+                        '[data-command-palette-trigger]',
+                        'command_palette_intro',
+                        {
+                            text: '{{ t("onboarding.command_palette_intro") }}',
+                            icon: '⌘',
+                            position: 'bottom',
+                            timeout: 15000,
+                            dismissLabel: '{{ t("onboarding.dismiss") }}'
+                        }
+                    );
+                }, 500); // Small delay to ensure elements are visible
+            }
+        });
+        {% endif %}
 
         // Dropdown toggle behavior
         document.querySelectorAll('.dropdown-toggle').forEach(btn => {
