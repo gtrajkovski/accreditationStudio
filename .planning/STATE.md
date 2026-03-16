@@ -3,23 +3,31 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: - MVP
 status: unknown
-last_updated: "2026-03-16T19:48:41.225Z"
+last_updated: "2026-03-16T20:24:31Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 10
+  completed_plans: 10
 ---
 
 # AccreditAI State
 
 ## Next Session: Start Here
 
-**Phase 14 In Progress: Polish & UX** 🔄
+**Phase 14 Complete: Polish & UX** ✅
 
-Phase 14 plan 02 just completed:
+All 3 plans complete:
 
-1. **14-02: Keyboard Shortcuts Help Modal** ✅
+1. **14-01: Skeleton Loaders** ✅
+   - Synchronized skeleton CSS with background-attachment: fixed
+   - 7 skeleton variants (text, title, card, avatar, button, badge, etc.)
+   - Applied to dashboard, compliance, and work queue pages
+   - Theme-aware using CSS variables
+   - Window load listener swaps skeleton for real content
+   - Duration: 10 minutes
+
+2. **14-02: Keyboard Shortcuts Help Modal** ✅
    - Accessible modal with ARIA attributes and focus trap
    - 13 shortcuts grouped in 3 categories (Navigation, Actions, General)
    - ? key global trigger, ESC to close
@@ -28,23 +36,38 @@ Phase 14 plan 02 just completed:
    - WCAG 2.1 Level AA compliant
    - Duration: 6 minutes
 
+3. **14-03: Onboarding Tooltips** ✅
+   - OnboardingManager class with per-institution localStorage state
+   - Tooltip CSS with arrow indicators (4 positions)
+   - Dashboard integration with 2 tooltips (work queue, command palette)
+   - Auto-dismiss (15s timeout) + interaction-based completion
+   - Added command palette trigger button in header
+   - Full i18n support (en-US, es-PR)
+   - Duration: 10.5 minutes
+
+**Commits (Plan 14-01):**
+- `335f22a` - feat(14-01): create synchronized skeleton loader CSS
+- `a9124e1` - feat(14-01): add skeleton loaders to dashboard
+- `a241b4b` - feat(14-01): add skeleton loaders to compliance and work queue pages
+
 **Commits (Plan 14-02):**
 - `93a6e64` - feat(14-02): create keyboard shortcuts modal HTML template
 - `396f611` - feat(14-02): create keyboard shortcuts modal JavaScript controller
 - `938ac0d` - feat(14-02): integrate keyboard shortcuts modal into base template
 
-**Key Decisions:**
-- Use ? key as global trigger (standard web app pattern like GitHub/Gmail)
-- Implement focus trap with Tab cycling for WCAG 2.1 Level AA compliance
-- Store and restore previous focus element for accessibility
+**Key Decisions (14-01):**
+- Use background-attachment: fixed for synchronized shimmer across all skeleton elements
+- Window load event (not DOMContentLoaded) to ensure full page render before removing skeletons
+- Skeleton dimensions match real content to prevent cumulative layout shift
+- All skeleton styles use CSS variables for automatic theme adaptation
 
 **Next:**
-- 14-03: Onboarding tooltips for first-time users
+- Phase 15 or post-MVP features
 
 ---
 
 ## Current Phase
-**Phase 14: Polish & UX** 🔄 In Progress (1/3 plans complete)
+**Phase 14: Polish & UX** ✅ Complete (3/3 plans)
 
 ## Session Date
 2026-03-16
@@ -97,12 +120,25 @@ Phase 14 plan 02 just completed:
    - F2 deprecation redirect
    - Duration: 12 minutes
 
-8. **Phase 14-02** - Keyboard Shortcuts Help Modal
+8. **Phase 14-01** - Skeleton Loaders
+   - Synchronized skeleton CSS with background-attachment: fixed
+   - 7 skeleton variants
+   - Applied to dashboard, compliance, work queue pages
+   - Theme-aware using CSS variables
+   - Duration: 10 minutes
+
+9. **Phase 14-02** - Keyboard Shortcuts Help Modal
    - Accessible modal with ARIA and focus trap
    - 13 shortcuts in 3 categories
    - ? key trigger, ESC to close
    - Focus restoration
    - Duration: 6 minutes
+
+10. **Phase 14-03** - Onboarding Tooltips
+   - OnboardingManager with localStorage state
+   - Tooltip CSS with arrow indicators
+   - Dashboard integration
+   - Duration: 8 minutes
 
 ## Current Blueprints (32 total)
 ```
