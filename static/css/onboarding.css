@@ -1,0 +1,184 @@
+/* AccreditAI - Onboarding Tooltips - Phase 14 */
+/* Contextual tooltips for first-time users with arrow indicators */
+
+/* ============================================
+   Tooltip Base Styles
+   ============================================ */
+
+.onboarding-tooltip {
+  position: fixed;
+  z-index: var(--z-tooltip);
+  max-width: 300px;
+  padding: var(--spacing-md);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  animation: tooltip-fade-in var(--transition-fast) var(--transition-timing);
+  pointer-events: auto;
+}
+
+/* Fade-in animation */
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================
+   Tooltip Content
+   ============================================ */
+
+.tooltip-content {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: flex-start;
+}
+
+.tooltip-icon {
+  flex-shrink: 0;
+  font-size: var(--font-size-xl);
+  color: var(--accent-primary);
+  line-height: 1;
+}
+
+.tooltip-text {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   Dismiss Button
+   ============================================ */
+
+.tooltip-dismiss {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  transition: color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.tooltip-dismiss:hover {
+  color: var(--text-primary);
+}
+
+.tooltip-dismiss:focus {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================
+   Arrow Indicators (Position-specific)
+   ============================================ */
+
+.onboarding-tooltip::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+  pointer-events: none;
+}
+
+/* Bottom position - arrow points up */
+.onboarding-tooltip[data-position="bottom"]::before {
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom-color: var(--border-accent);
+}
+
+/* Top position - arrow points down */
+.onboarding-tooltip[data-position="top"]::before {
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-top-color: var(--border-accent);
+}
+
+/* Left position - arrow points right */
+.onboarding-tooltip[data-position="left"]::before {
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left-color: var(--border-accent);
+}
+
+/* Right position - arrow points left */
+.onboarding-tooltip[data-position="right"]::before {
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right-color: var(--border-accent);
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+  .onboarding-tooltip {
+    max-width: 280px;
+    padding: var(--spacing-sm);
+  }
+
+  .tooltip-text {
+    font-size: 0.8125rem; /* 13px */
+  }
+
+  .tooltip-icon {
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-tooltip {
+    animation: none;
+  }
+
+  @keyframes tooltip-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .onboarding-tooltip {
+    border-width: 2px;
+  }
+
+  .tooltip-dismiss {
+    border: 1px solid currentColor;
+    border-radius: var(--radius-sm);
+  }
+}
