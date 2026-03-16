@@ -285,5 +285,11 @@
       "close_modal": "Close modal",
       "toggle_sidebar": "Toggle sidebar"
     }
+  },
+  "onboarding": {
+    "work_queue_intro": "Your work queue shows pending tasks. Click to view details.",
+    "command_palette_intro": "Press Ctrl+K to quickly search and navigate anywhere.",
+    "dismiss": "Dismiss",
+    "skip_tour": "Skip tour"
   }
 }

@@ -285,5 +285,11 @@
       "close_modal": "Cerrar modal",
       "toggle_sidebar": "Alternar barra lateral"
     }
+  },
+  "onboarding": {
+    "work_queue_intro": "Su cola de trabajo muestra tareas pendientes. Haga clic para ver detalles.",
+    "command_palette_intro": "Presione Ctrl+K para buscar y navegar rápidamente.",
+    "dismiss": "Descartar",
+    "skip_tour": "Omitir recorrido"
   }
 }
