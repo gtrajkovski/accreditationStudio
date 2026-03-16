@@ -2,45 +2,41 @@
 
 ## Next Session: Start Here
 
-**v1.1 Deployment Prep Complete!**
+**Phase 12-01 Complete: Batch Operations Foundation**
 
-Files created/modified:
-- `Dockerfile` - Production container with Tesseract OCR
-- `docker-compose.yml` - Simple deployment configuration
-- `DEPLOYMENT.md` - Comprehensive setup and deployment guide
-- `pytest.ini` - Test configuration with warning filters
-- `scripts/smoke_test.py` - Deployment verification script
+Completed:
+- Database schema for batch operations tracking
+- BatchOperation and BatchItem domain models
+- BatchService with cost estimation (Anthropic pricing)
+- 11 comprehensive tests (100% pass rate)
 
-Changes made:
-- Fixed all `datetime.utcnow()` deprecations (10+ files)
-- Added security headers middleware in app.py
-- Secure SECRET_KEY generation in config.py
-- File size validation (50MB limit) for uploads
-- Committed pending UI changes (portfolio cards, institution switcher)
+Files created:
+- `src/db/migrations/0025_bulk_operations.sql`
+- `tests/test_batch_service.py`
+- `.planning/phases/12-bulk-operations/12-01-SUMMARY.md`
 
-To verify:
-```bash
-python -m pytest tests/ --ignore=_reference  # 191 tests pass
-python app.py                                 # Start server
-python scripts/smoke_test.py                  # Run smoke tests
-```
+Commits:
+- `b79fdf9` - feat(12-01): add batch operations database schema
+- `b1c3c3a` - feat(12-01): add BatchOperation and BatchItem domain models
+- `0c335c0` - test(12-01): add BatchService tests with cost estimation
 
-**Ready for v1.1.1 tag and v1.2 planning.**
+**Next: Phase 12-02 - Batch Audit API**
 
 ---
 
 ## Current Phase
-**Milestone Complete:** v1.1 - Post-MVP Enhancements
+**Phase 12: Bulk Operations** (In Progress - 1/4 plans complete)
 
 ## Session Date
-2026-03-14
+2026-03-16
 
 ## Just Completed (This Session)
-1. **Cleanup** - Committed pending UI changes, cleaned artifacts
-2. **Bug Fixes** - Fixed datetime.utcnow() deprecations in 10+ files
-3. **Security** - Added headers, secure key generation, upload validation
-4. **Deployment** - Dockerfile, docker-compose, DEPLOYMENT.md
-5. **Verification** - All 191 tests pass, smoke test script created
+1. **Phase 12-01** - Batch Operations Foundation
+   - Database migration (0025_bulk_operations.sql)
+   - BatchOperation and BatchItem models
+   - BatchService with cost estimation
+   - 11 tests (100% pass rate)
+   - Duration: 8 minutes
 
 ## Current Blueprints (32 total)
 ```
