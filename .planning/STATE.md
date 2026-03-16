@@ -55,6 +55,11 @@ All 3 plans complete:
 - `396f611` - feat(14-02): create keyboard shortcuts modal JavaScript controller
 - `938ac0d` - feat(14-02): integrate keyboard shortcuts modal into base template
 
+**Commits (Plan 14-03):**
+- `66dd8e6` - feat(14-03): create OnboardingManager with localStorage state management
+- `1b32d30` - feat(14-03): create onboarding tooltip CSS with arrow indicators
+- `41a79c7` - feat(14-03): integrate onboarding system with dashboard tooltips
+
 **Key Decisions (14-01):**
 - Use background-attachment: fixed for synchronized shimmer across all skeleton elements
 - Window load event (not DOMContentLoaded) to ensure full page render before removing skeletons
@@ -135,10 +140,12 @@ All 3 plans complete:
    - Duration: 6 minutes
 
 10. **Phase 14-03** - Onboarding Tooltips
-   - OnboardingManager with localStorage state
-   - Tooltip CSS with arrow indicators
-   - Dashboard integration
-   - Duration: 8 minutes
+   - OnboardingManager class (274 lines) with per-institution localStorage
+   - Tooltip CSS (184 lines) with 4-position arrow indicators
+   - Dashboard tooltips: work queue badge, command palette trigger
+   - Command palette trigger button added to header
+   - Auto-dismiss + interaction tracking
+   - Duration: 10.5 minutes
 
 ## Current Blueprints (32 total)
 ```
