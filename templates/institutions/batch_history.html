@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}Batch History - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='Batch History',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Batch History', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<!-- Stats Summary Cards -->
+<div class="dashboard-grid mb-lg" id="statsCards">
+    <div class="card">
+        <h3 class="card-title">Total Batches</h3>
+        <div id="totalBatches" class="stat-value">--</div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">Documents Processed</h3>
+        <div id="totalDocs" class="stat-value">--</div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">Total Cost</h3>
+        <div id="totalCost" class="stat-value">--</div>
+    </div>
+    <div class="card">
+        <h3 class="card-title">Avg Success Rate</h3>
+        <div id="avgSuccess" class="stat-value">--</div>
+    </div>
+</div>
+
+<!-- Batch List -->
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">Batch Operations</h3>
+        <div>
+            <select id="typeFilter" class="form-control" style="width: auto; display: inline-block;">
+                <option value="">All Types</option>
+                <option value="audit">Audit</option>
+                <option value="remediation">Remediation</option>
+            </select>
+        </div>
+    </div>
+    <div id="batchTableContainer">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Documents</th>
+                    <th>Success Rate</th>
+                    <th>Cost</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="batchList">
+                <tr>
+                    <td colspan="8" class="text-center text-muted" style="padding: var(--spacing-xl);">
+                        Loading batches...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Batch Detail Modal -->
+<div id="batchDetailModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeDetailModal()"></div>
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3 id="detailTitle">Batch Details</h3>
+            <button class="btn btn-ghost" onclick="closeDetailModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="batchDetailContent">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    text-align: center;
+    padding: var(--spacing-md);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead {
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.data-table th {
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.data-table tbody tr:hover {
+    background: var(--bg-secondary);
+}
+
+.data-table td {
+    padding: var(--spacing-md);
+}
+
+.batch-type-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.85em;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.badge-audit {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+}
+
+.badge-remediation {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.item-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.item-row:last-child {
+    border-bottom: none;
+}
+
+.item-name {
+    font-weight: 500;
+    flex: 1;
+}
+
+.item-stats {
+    display: flex;
+    gap: var(--spacing-md);
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 600px;
+    box-shadow: var(--shadow-lg);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.form-control {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.summary-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.summary-section h4 {
+    margin-bottom: var(--spacing-sm);
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.summary-label {
+    color: var(--text-muted);
+}
+
+.summary-value {
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = '{{ institution.id }}';
+
+async function loadStats() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batches/stats`);
+        if (!res.ok) throw new Error('Failed to load stats');
+        const stats = await res.json();
+
+        document.getElementById('totalBatches').textContent = stats.total_batches || 0;
+        document.getElementById('totalDocs').textContent = stats.total_documents_processed || 0;
+        document.getElementById('totalCost').textContent = `$${(stats.total_cost || 0).toFixed(2)}`;
+        document.getElementById('avgSuccess').textContent = `${(stats.avg_success_rate || 0).toFixed(1)}%`;
+    } catch (err) {
+        console.error('Failed to load stats:', err);
+        document.getElementById('totalBatches').textContent = '0';
+        document.getElementById('totalDocs').textContent = '0';
+        document.getElementById('totalCost').textContent = '$0.00';
+        document.getElementById('avgSuccess').textContent = '0%';
+    }
+}
+
+async function loadBatches(typeFilter = '') {
+    try {
+        const url = `/api/institutions/${institutionId}/batches?limit=20&operation_type=${typeFilter}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to load batches');
+        const data = await res.json();
+
+        renderBatchList(data.batches || []);
+    } catch (err) {
+        console.error('Failed to load batches:', err);
+        renderBatchList([]);
+    }
+}
+
+function renderBatchList(batches) {
+    const tbody = document.getElementById('batchList');
+
+    if (batches.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-muted" style="padding: var(--spacing-xl);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
+                        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <p style="font-size: 1.1em;">No batch operations yet</p>
+                    <p style="color: var(--text-muted);">Batch operations will appear here after running bulk audits or remediations.</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = batches.map(batch => {
+        const date = new Date(batch.created_at).toLocaleString();
+        const duration = batch.completed_at && batch.created_at
+            ? formatDuration(new Date(batch.completed_at) - new Date(batch.created_at))
+            : '--';
+        const successRate = batch.document_count > 0
+            ? ((batch.completed_count / batch.document_count) * 100).toFixed(1)
+            : 0;
+
+        return `
+            <tr onclick="showBatchDetail('${batch.id}')">
+                <td>${date}</td>
+                <td>
+                    <span class="batch-type-badge badge-${batch.operation_type}">${batch.operation_type}</span>
+                </td>
+                <td>${batch.document_count}</td>
+                <td>
+                    <span class="${successRate >= 80 ? 'text-success' : successRate >= 50 ? 'text-warning' : 'text-muted'}">
+                        ${successRate}%
+                    </span>
+                </td>
+                <td>$${(batch.actual_cost || batch.estimated_cost || 0).toFixed(2)}</td>
+                <td>${duration}</td>
+                <td>
+                    <span class="badge badge-${batch.status === 'completed' ? 'success' : batch.status === 'failed' ? 'danger' : 'warning'}">
+                        ${batch.status}
+                    </span>
+                </td>
+                <td>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+async function showBatchDetail(batchId) {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batches/${batchId}`);
+        if (!res.ok) throw new Error('Failed to load batch details');
+        const batch = await res.json();
+
+        document.getElementById('detailTitle').textContent = `Batch ${batchId.slice(0, 12)}... Details`;
+
+        const successRate = batch.success_rate || 0;
+        const totalDuration = formatDuration(batch.total_duration_ms);
+
+        const detailHtml = `
+            <div class="summary-section">
+                <h4>Overview</h4>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <span class="summary-label">Operation Type</span>
+                        <span class="summary-value">${batch.operation_type}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Status</span>
+                        <span class="summary-value badge badge-${batch.status === 'completed' ? 'success' : batch.status === 'failed' ? 'danger' : 'warning'}">${batch.status}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Total Documents</span>
+                        <span class="summary-value">${batch.document_count}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Success Rate</span>
+                        <span class="summary-value">${successRate.toFixed(1)}%</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Total Duration</span>
+                        <span class="summary-value">${totalDuration}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Total Tokens</span>
+                        <span class="summary-value">${(batch.total_tokens || 0).toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <h4>Items (${batch.items ? batch.items.length : 0})</h4>
+                <div class="item-list">
+                    ${batch.items && batch.items.length > 0 ? batch.items.map(item => `
+                        <div class="item-row">
+                            <div class="item-name">${escapeHtml(item.document_name || item.document_id)}</div>
+                            <div class="item-stats">
+                                <span class="badge badge-${item.status === 'completed' ? 'success' : item.status === 'failed' ? 'danger' : 'warning'}">
+                                    ${item.status}
+                                </span>
+                                ${item.findings_count !== undefined ? `<span>${item.findings_count} findings</span>` : ''}
+                                <span>${formatDuration(item.duration_ms)}</span>
+                            </div>
+                        </div>
+                    `).join('') : '<p class="text-muted text-center">No items</p>'}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('batchDetailContent').innerHTML = detailHtml;
+        document.getElementById('batchDetailModal').classList.remove('hidden');
+    } catch (err) {
+        console.error('Failed to load batch detail:', err);
+        window.toast?.error('Failed to load batch details');
+    }
+}
+
+function closeDetailModal() {
+    document.getElementById('batchDetailModal').classList.add('hidden');
+}
+
+function formatDuration(ms) {
+    if (!ms) return '--';
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (hours > 0) {
+        return `${hours}h ${minutes % 60}m`;
+    } else if (minutes > 0) {
+        return `${minutes}m ${seconds % 60}s`;
+    } else {
+        return `${seconds}s`;
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Event listeners
+document.getElementById('typeFilter').addEventListener('change', (e) => {
+    loadBatches(e.target.value);
+});
+
+// Load on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadStats();
+    loadBatches();
+});
+</script>
+{% endblock %}
