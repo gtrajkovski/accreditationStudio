@@ -33,7 +33,8 @@
         try {
             const resp = await fetch('/api/institutions');
             const data = await resp.json();
-            institutions = data.institutions || [];
+            // API returns array directly, not {institutions: [...]}
+            institutions = Array.isArray(data) ? data : (data.institutions || []);
         } catch (e) {
             console.error('Failed to load institutions:', e);
             institutions = [];

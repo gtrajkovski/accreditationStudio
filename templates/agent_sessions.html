@@ -55,23 +55,56 @@ async function loadSessions() {
         }
 
         container.innerHTML = sessions.map(session => `
-            <div class="flex items-center justify-between" style="padding: var(--spacing-md); border-bottom: 1px solid var(--border-subtle);">
-                <div>
-                    <div style="font-weight: 500;">${session.agent_type}</div>
-                    <div class="text-muted" style="font-size: var(--font-size-sm);">
-                        ${session.institution_id} &bull; Started ${session.created_at?.slice(0, 16) || 'N/A'}
+            <div class="session-card" style="padding: var(--spacing-md); border-bottom: 1px solid var(--border-subtle);">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div style="font-weight: 500;">${session.agent_type}</div>
+                        <div class="text-muted" style="font-size: var(--font-size-sm);">
+                            ${session.institution_id} &bull; Started ${session.created_at?.slice(0, 16) || 'N/A'}
+                        </div>
+                        <div class="text-muted" style="font-size: var(--font-size-sm); margin-top: 4px;">
+                            Tasks: ${session.completed_tasks || 0}/${session.total_tasks || 0} &bull;
+                            Tokens: ${(session.total_tokens || 0).toLocaleString()}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-sm">
+                        <span class="badge badge-${getStatusBadge(session.status)}">${session.status}</span>
+                        ${session.pending_checkpoints > 0 ? `
+                            <button class="btn btn-warning btn-sm" onclick="viewCheckpoints('${session.id}')">
+                                ${session.pending_checkpoints} Pending
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
-                <div class="flex items-center gap-md">
-                    <span class="badge badge-${getStatusBadge(session.status)}">${session.status}</span>
-                    ${session.pending_checkpoints > 0 ? `
-                        <button class="btn btn-warning btn-sm" onclick="viewCheckpoints('${session.id}')">
-                            ${session.pending_checkpoints} Pending
+                <div class="flex items-center gap-sm" style="margin-top: var(--spacing-sm);">
+                    ${session.status === 'running' ? `
+                        <button class="btn btn-warning btn-sm" onclick="pauseSession('${session.id}')">
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 12px; height: 12px; margin-right: 4px;">
+                                <rect x="6" y="4" width="4" height="16"/>
+                                <rect x="14" y="4" width="4" height="16"/>
+                            </svg>
+                            Pause
                         </button>
                     ` : ''}
-                    <button class="btn btn-secondary btn-sm" onclick="viewSession('${session.id}')">
-                        View
+                    ${session.status === 'paused' || session.status === 'waiting_for_human' ? `
+                        <button class="btn btn-success btn-sm" onclick="resumeSession('${session.id}')">
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 12px; height: 12px; margin-right: 4px;">
+                                <polygon points="5,3 19,12 5,21"/>
+                            </svg>
+                            Resume
+                        </button>
+                    ` : ''}
+                    ${['running', 'paused', 'waiting_for_human'].includes(session.status) ? `
+                        <button class="btn btn-error btn-sm" onclick="cancelSession('${session.id}')">
+                            Cancel
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-secondary btn-sm" onclick="toggleSessionDetails('${session.id}')">
+                        Details
                     </button>
+                </div>
+                <div id="session-details-${session.id}" class="session-details" style="display: none; margin-top: var(--spacing-md); padding: var(--spacing-md); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                    <div class="text-muted">Loading details...</div>
                 </div>
             </div>
         `).join('');
@@ -114,6 +147,8 @@ async function loadInstitutions() {
 function getStatusBadge(status) {
     const badges = {
         'running': 'info',
+        'paused': 'warning',
+        'waiting_for_human': 'warning',
         'awaiting_approval': 'warning',
         'completed': 'success',
         'failed': 'error',
@@ -122,12 +157,107 @@ function getStatusBadge(status) {
     return badges[status] || 'info';
 }
 
-function viewSession(sessionId) {
-    window.toast.info('Session details view coming soon!');
+async function pauseSession(sessionId) {
+    try {
+        await window.API.post(`/api/agents/sessions/${sessionId}/pause`);
+        window.toast.success('Session paused');
+        loadSessions();
+    } catch (error) {
+        window.toast.error(`Failed to pause: ${error.message}`);
+    }
+}
+
+async function resumeSession(sessionId) {
+    try {
+        const result = await window.API.post(`/api/agents/sessions/${sessionId}/resume`);
+        window.toast.success('Session resumed');
+        // Optionally redirect to stream view
+        if (result.stream_url) {
+            window.toast.info('Reconnecting to session stream...');
+        }
+        loadSessions();
+    } catch (error) {
+        window.toast.error(`Failed to resume: ${error.message}`);
+    }
+}
+
+async function cancelSession(sessionId) {
+    if (!confirm('Cancel this session? This cannot be undone.')) return;
+    try {
+        await window.API.post(`/api/agents/sessions/${sessionId}/cancel`);
+        window.toast.success('Session cancelled');
+        loadSessions();
+    } catch (error) {
+        window.toast.error(`Failed to cancel: ${error.message}`);
+    }
+}
+
+async function toggleSessionDetails(sessionId) {
+    const container = document.getElementById(`session-details-${sessionId}`);
+    if (!container) return;
+
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        await loadSessionDetails(sessionId, container);
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+async function loadSessionDetails(sessionId, container) {
+    try {
+        const session = await window.API.get(`/api/agents/sessions/${sessionId}`);
+
+        let html = `
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md);">
+                <div>
+                    <strong>Session ID:</strong> ${session.id}<br>
+                    <strong>Agent:</strong> ${session.agent_type}<br>
+                    <strong>Status:</strong> ${session.status}<br>
+                    <strong>Created:</strong> ${session.created_at || 'N/A'}
+                </div>
+                <div>
+                    <strong>Tasks:</strong> ${session.completed_tasks || 0}/${session.total_tasks || 0}<br>
+                    <strong>Tokens:</strong> ${(session.total_tokens || 0).toLocaleString()}<br>
+                    <strong>Tool Calls:</strong> ${session.tool_calls?.length || 0}
+                </div>
+            </div>
+        `;
+
+        if (session.tasks && session.tasks.length > 0) {
+            html += `
+                <div style="margin-top: var(--spacing-md);">
+                    <strong>Tasks:</strong>
+                    <ul style="margin: var(--spacing-sm) 0; padding-left: var(--spacing-lg);">
+                        ${session.tasks.map(t => `
+                            <li>${t.status === 'completed' ? '✓' : t.status === 'running' ? '◆' : '○'} ${t.name || t.id}</li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        if (session.checkpoints && session.checkpoints.length > 0) {
+            html += `
+                <div style="margin-top: var(--spacing-md);">
+                    <strong>Checkpoints:</strong>
+                    <ul style="margin: var(--spacing-sm) 0; padding-left: var(--spacing-lg);">
+                        ${session.checkpoints.map(cp => `
+                            <li class="badge badge-${cp.status === 'pending' ? 'warning' : 'success'}">${cp.type}: ${cp.status}</li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    } catch (error) {
+        container.innerHTML = `<div class="text-error">Failed to load details: ${error.message}</div>`;
+    }
 }
 
 function viewCheckpoints(sessionId) {
-    window.toast.info('Checkpoint review coming soon!');
+    toggleSessionDetails(sessionId);
 }
 
 function refreshSessions() {
