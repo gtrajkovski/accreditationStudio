@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('settings.title') }} - AccreditAI{% endblock %}
+{% block header_title %}{{ t('settings.title') }}{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+    <div class="settings-grid">
+        <!-- Preferences Section -->
+        <div class="card">
+            <h2 class="card-title">{{ t('settings.preferences') }}</h2>
+
+            <div class="settings-group">
+                <!-- Language & Region -->
+                <div class="setting-item">
+                    <label for="locale-select">{{ t('settings.locale') }}</label>
+                    <select id="locale-select" class="form-select">
+                        {% for loc in supported_locales %}
+                        <option value="{{ loc.code }}" {% if loc.code == locale %}selected{% endif %}>
+                            {{ loc.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Theme -->
+                <div class="setting-item">
+                    <label for="theme-select">{{ t('settings.theme') }}</label>
+                    <select id="theme-select" class="form-select">
+                        <option value="system" {% if theme == 'system' %}selected{% endif %}>{{ t('theme.system') }}</option>
+                        <option value="dark" {% if theme == 'dark' %}selected{% endif %}>{{ t('theme.dark') }}</option>
+                        <option value="light" {% if theme == 'light' %}selected{% endif %}>{{ t('theme.light') }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button type="button" class="btn btn-primary" id="save-preferences">
+                    {{ t('common.save') }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Glossary Link -->
+        <div class="card">
+            <h2 class="card-title">{{ t('settings.glossary') }}</h2>
+            <p class="card-description">{{ t('settings.glossary_description') }}</p>
+            <a href="{{ url_for('glossary_page') }}" class="btn btn-secondary">
+                {{ t('common.edit') }} {{ t('settings.glossary') }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.settings-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+.settings-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+.card-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+}
+
+.settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.setting-item label {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.settings-actions {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const localeSelect = document.getElementById('locale-select');
+    const themeSelect = document.getElementById('theme-select');
+    const saveBtn = document.getElementById('save-preferences');
+
+    saveBtn.addEventListener('click', async function() {
+        const locale = localeSelect.value;
+        const theme = themeSelect.value;
+
+        try {
+            const response = await fetch('/api/settings/preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ locale, theme })
+            });
+
+            if (response.ok) {
+                // Apply theme immediately
+                document.documentElement.dataset.themePreference = theme;
+                AccreditAI.theme.apply(theme);
+
+                // Show success message
+                AccreditAI.toast.success('{{ t("settings.saved") }}');
+
+                // Reload if locale changed to apply translations
+                if (locale !== '{{ locale }}') {
+                    window.location.reload();
+                }
+            } else {
+                AccreditAI.toast.error('{{ t("errors.generic") }}');
+            }
+        } catch (err) {
+            console.error('Failed to save settings:', err);
+            AccreditAI.toast.error('{{ t("errors.network") }}');
+        }
+    });
+});
+</script>
+{% endblock %}

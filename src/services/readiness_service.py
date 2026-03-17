@@ -249,12 +249,12 @@ def _compute_compliance_score(
     cursor = conn.execute("""
         SELECT
             severity,
-            compliance_status,
+            status,
             COUNT(*) as count
         FROM audit_findings
         WHERE audit_run_id = ?
-          AND compliance_status NOT IN ('compliant', 'resolved', 'dismissed')
-        GROUP BY severity, compliance_status
+          AND status NOT IN ('compliant', 'resolved', 'dismissed')
+        GROUP BY severity, status
     """, (audit_id,))
 
     # Penalty matrix
@@ -270,7 +270,7 @@ def _compute_compliance_score(
 
     for row in cursor.fetchall():
         severity = row["severity"] or "moderate"
-        status = row["compliance_status"] or "non_compliant"
+        status = row["status"] or "non_compliant"
         count = row["count"]
 
         penalty_map = penalties.get(severity, penalties["moderate"])
@@ -285,11 +285,11 @@ def _compute_compliance_score(
     # Get critical findings for blockers
     if critical_open > 0:
         cursor = conn.execute("""
-            SELECT id, title, standard_ref
+            SELECT id, summary
             FROM audit_findings
             WHERE audit_run_id = ?
               AND severity = 'critical'
-              AND compliance_status IN ('non_compliant', 'needs_info')
+              AND status IN ('non_compliant', 'needs_info')
             LIMIT 5
         """, (audit_id,))
 
@@ -297,7 +297,7 @@ def _compute_compliance_score(
             blockers.append(Blocker(
                 type="critical_finding",
                 severity="critical",
-                message=f"Critical finding: {row['title'][:60]}",
+                message=f"Critical finding: {row['summary'][:60]}",
                 action="Fix this finding",
                 link=f"/institutions/{institution_id}/compliance?finding={row['id']}",
                 finding_id=row["id"]
@@ -353,11 +353,11 @@ def _compute_evidence_score(
 
     # Count findings lacking evidence
     cursor = conn.execute("""
-        SELECT f.id, f.severity, f.title,
+        SELECT f.id, f.severity, f.summary,
                (SELECT COUNT(*) FROM evidence_refs e WHERE e.finding_id = f.id) as evidence_count
         FROM audit_findings f
         WHERE f.audit_run_id = ?
-          AND f.compliance_status NOT IN ('compliant', 'dismissed')
+          AND f.status NOT IN ('compliant', 'dismissed')
     """, (audit_id,))
 
     penalties = {"critical": 8, "significant": 5, "moderate": 4, "advisory": 2}
@@ -375,19 +375,18 @@ def _compute_evidence_score(
                 blockers.append(Blocker(
                     type="evidence",
                     severity="high" if severity == "critical" else "medium",
-                    message=f"Finding lacks evidence: {row['title'][:50]}",
+                    message=f"Finding lacks evidence: {row['summary'][:50]}",
                     action="Map evidence to this finding",
                     finding_id=row["id"]
                 ))
 
-    # Check for weak evidence (low confidence)
+    # Check for findings requiring human review (low confidence)
     cursor = conn.execute("""
         SELECT COUNT(*) as count
-        FROM evidence_refs
-        WHERE finding_id IN (
-            SELECT id FROM audit_findings WHERE audit_run_id = ?
-        )
-        AND (confidence < 0.70 OR human_review_required = 1)
+        FROM audit_findings
+        WHERE audit_run_id = ?
+          AND (confidence < 0.70 OR human_review_required = 1)
+          AND status NOT IN ('compliant', 'dismissed')
     """, (audit_id,))
 
     weak_row = cursor.fetchone()
@@ -398,7 +397,7 @@ def _compute_evidence_score(
     breakdown = {
         "audit_id": audit_id,
         "uncovered_standards": uncovered,
-        "weak_evidence_findings": weak_evidence,
+        "low_confidence_findings": weak_evidence,
         "total_findings_checked": uncovered + weak_evidence,
     }
 

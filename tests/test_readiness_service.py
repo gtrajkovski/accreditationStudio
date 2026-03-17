@@ -55,18 +55,16 @@ def test_db(tmp_path):
             id TEXT PRIMARY KEY,
             audit_run_id TEXT,
             severity TEXT DEFAULT 'moderate',
-            compliance_status TEXT DEFAULT 'non_compliant',
-            title TEXT,
-            standard_ref TEXT
+            status TEXT DEFAULT 'non_compliant',
+            summary TEXT,
+            confidence REAL DEFAULT 0.85,
+            human_review_required INTEGER DEFAULT 0
         );
 
         CREATE TABLE evidence_refs (
             id TEXT PRIMARY KEY,
             finding_id TEXT,
-            document_id TEXT,
-            chunk_id TEXT,
-            confidence REAL DEFAULT 0.85,
-            human_review_required INTEGER DEFAULT 0
+            document_id TEXT
         );
 
         CREATE TABLE readiness_consistency_issues (
@@ -164,7 +162,7 @@ class TestReadinessComputation:
             (audit_id, institution_id, "completed", datetime.now().isoformat())
         )
         test_db.execute(
-            "INSERT INTO audit_findings (id, audit_run_id, severity, compliance_status, title) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO audit_findings (id, audit_run_id, severity, status, summary) VALUES (?, ?, ?, ?, ?)",
             (f"find_{uuid4().hex[:8]}", audit_id, "critical", "non_compliant", "Test Finding")
         )
         test_db.commit()

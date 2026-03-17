@@ -528,6 +528,28 @@ class WorkspaceManager:
         with open(file_path, "rb") as f:
             return f.read()
 
+    def load_file(self, institution_id: str, relative_path: str) -> Optional[Dict[str, Any]]:
+        """Load and parse a JSON file from the workspace.
+
+        Args:
+            institution_id: Institution identifier.
+            relative_path: Path relative to institution directory (should be .json file).
+
+        Returns:
+            Parsed JSON data as dict, or None if not found or invalid.
+        """
+        inst_dir = self.get_institution_dir(institution_id)
+        file_path = inst_dir / relative_path
+
+        if not file_path.exists():
+            return None
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return None
+
     def list_files(
         self,
         institution_id: str,

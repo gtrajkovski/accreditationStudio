@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('settings.glossary') }} - AccreditAI{% endblock %}
+{% block header_title %}{{ t('settings.glossary') }}{% endblock %}
+
+{% block content %}
+<div class="glossary-page">
+    <div class="card">
+        <div class="glossary-header">
+            <div>
+                <h2 class="card-title">{{ t('settings.glossary') }}</h2>
+                <p class="card-description">{{ t('settings.glossary_description') }}</p>
+            </div>
+            <button type="button" class="btn btn-primary" id="add-term-btn">
+                {{ t('settings.add_term') }}
+            </button>
+        </div>
+
+        <div class="glossary-list" id="glossary-list">
+            <!-- Terms will be loaded dynamically -->
+            <div class="empty-state" id="empty-state">
+                <p>No custom terms defined yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Term Modal -->
+    <div class="modal" id="term-modal" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">{{ t('settings.add_term') }}</h3>
+                <button type="button" class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="source-term">{{ t('settings.source_term') }}</label>
+                    <input type="text" id="source-term" class="form-input" placeholder="e.g., Enrollment Agreement">
+                </div>
+                <div class="form-group">
+                    <label for="translated-term">{{ t('settings.translated_term') }}</label>
+                    <input type="text" id="translated-term" class="form-input" placeholder="e.g., Acuerdo de Inscripcion">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancel-btn">{{ t('common.cancel') }}</button>
+                <button type="button" class="btn btn-primary" id="save-term-btn">{{ t('common.save') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.glossary-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+.glossary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-lg);
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-primary);
+}
+
+.card-description {
+    color: var(--text-secondary);
+}
+
+.glossary-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.glossary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.glossary-item-content {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.glossary-term {
+    min-width: 200px;
+}
+
+.glossary-term-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    margin-bottom: var(--spacing-xs);
+}
+
+.glossary-term-value {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.glossary-item-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.btn-icon {
+    padding: var(--spacing-xs);
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--border-radius);
+}
+
+.btn-icon:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.btn-icon.danger:hover {
+    color: var(--danger);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 90%;
+    max-width: 500px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-input {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('term-modal');
+    const addBtn = document.getElementById('add-term-btn');
+    const closeBtn = document.getElementById('modal-close');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const saveBtn = document.getElementById('save-term-btn');
+    const sourceInput = document.getElementById('source-term');
+    const translatedInput = document.getElementById('translated-term');
+    const glossaryList = document.getElementById('glossary-list');
+    const emptyState = document.getElementById('empty-state');
+
+    let editingId = null;
+
+    // Load glossary terms
+    async function loadTerms() {
+        try {
+            const response = await fetch('/api/settings/glossary');
+            if (response.ok) {
+                const data = await response.json();
+                renderTerms(data.terms || []);
+            }
+        } catch (err) {
+            console.error('Failed to load glossary:', err);
+        }
+    }
+
+    function renderTerms(terms) {
+        if (terms.length === 0) {
+            emptyState.style.display = 'block';
+            return;
+        }
+        emptyState.style.display = 'none';
+
+        const html = terms.map(term => `
+            <div class="glossary-item" data-id="${term.id}">
+                <div class="glossary-item-content">
+                    <div class="glossary-term">
+                        <div class="glossary-term-label">Source</div>
+                        <div class="glossary-term-value">${term.source}</div>
+                    </div>
+                    <div class="glossary-term">
+                        <div class="glossary-term-label">Translation</div>
+                        <div class="glossary-term-value">${term.translated}</div>
+                    </div>
+                </div>
+                <div class="glossary-item-actions">
+                    <button class="btn-icon edit-btn" title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                    <button class="btn-icon danger delete-btn" title="Delete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3,6 5,6 21,6"/>
+                            <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        glossaryList.innerHTML = html + emptyState.outerHTML;
+    }
+
+    function openModal(term = null) {
+        editingId = term ? term.id : null;
+        sourceInput.value = term ? term.source : '';
+        translatedInput.value = term ? term.translated : '';
+        document.getElementById('modal-title').textContent = term ? 'Edit Term' : '{{ t("settings.add_term") }}';
+        modal.style.display = 'block';
+        sourceInput.focus();
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        editingId = null;
+        sourceInput.value = '';
+        translatedInput.value = '';
+    }
+
+    async function saveTerm() {
+        const source = sourceInput.value.trim();
+        const translated = translatedInput.value.trim();
+
+        if (!source || !translated) {
+            AccreditAI.toast.error('Please fill in both fields');
+            return;
+        }
+
+        try {
+            const url = editingId
+                ? `/api/settings/glossary/${editingId}`
+                : '/api/settings/glossary';
+            const method = editingId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source, translated })
+            });
+
+            if (response.ok) {
+                AccreditAI.toast.success('{{ t("settings.saved") }}');
+                closeModal();
+                loadTerms();
+            } else {
+                AccreditAI.toast.error('{{ t("errors.generic") }}');
+            }
+        } catch (err) {
+            console.error('Failed to save term:', err);
+            AccreditAI.toast.error('{{ t("errors.network") }}');
+        }
+    }
+
+    async function deleteTerm(id) {
+        if (!confirm('Delete this term?')) return;
+
+        try {
+            const response = await fetch(`/api/settings/glossary/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                AccreditAI.toast.success('Term deleted');
+                loadTerms();
+            } else {
+                AccreditAI.toast.error('{{ t("errors.generic") }}');
+            }
+        } catch (err) {
+            console.error('Failed to delete term:', err);
+            AccreditAI.toast.error('{{ t("errors.network") }}');
+        }
+    }
+
+    // Event listeners
+    addBtn.addEventListener('click', () => openModal());
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    saveBtn.addEventListener('click', saveTerm);
+
+    modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+
+    glossaryList.addEventListener('click', (e) => {
+        const item = e.target.closest('.glossary-item');
+        if (!item) return;
+
+        if (e.target.closest('.edit-btn')) {
+            const id = item.dataset.id;
+            const source = item.querySelector('.glossary-term:first-child .glossary-term-value').textContent;
+            const translated = item.querySelector('.glossary-term:last-child .glossary-term-value').textContent;
+            openModal({ id, source, translated });
+        } else if (e.target.closest('.delete-btn')) {
+            deleteTerm(item.dataset.id);
+        }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'block') {
+            closeModal();
+        }
+    });
+
+    // Initial load
+    loadTerms();
+});
+</script>
+{% endblock %}

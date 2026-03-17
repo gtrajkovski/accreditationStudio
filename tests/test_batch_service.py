@@ -217,7 +217,7 @@ class TestBatchService:
     def test_list_batches_returns_history(self, batch_service):
         """Should list batches for an institution."""
         # Get initial count
-        initial_batches = batch_service.list_batches("inst_277a77bc5d8d")
+        initial_batches = batch_service.list_batches("inst_277a77bc5d8d", limit=100)
         initial_count = len(initial_batches)
 
         # Create multiple batches
@@ -225,8 +225,8 @@ class TestBatchService:
         batch_service.create_batch("inst_277a77bc5d8d", "remediation", ["doc2"])
         batch_service.create_batch("inst_798fb35f75d0", "audit", ["doc3"])
 
-        # List batches for inst_277a77bc5d8d
-        batches = batch_service.list_batches("inst_277a77bc5d8d")
+        # List batches for inst_277a77bc5d8d (with higher limit to account for pagination)
+        batches = batch_service.list_batches("inst_277a77bc5d8d", limit=100)
 
         # Should have 2 more batches than before
         assert len(batches) == initial_count + 2
