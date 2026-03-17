@@ -10,6 +10,7 @@ services:
     ports:
       - "5003:5003"
     environment:
+      - ENVIRONMENT=production
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - MODEL=${MODEL:-claude-sonnet-4-20250514}
       - SECRET_KEY=${SECRET_KEY:-}

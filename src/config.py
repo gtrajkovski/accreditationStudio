@@ -15,6 +15,9 @@ load_dotenv()
 class Config:
     """Application configuration."""
 
+    # Environment
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
     # API Keys
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 

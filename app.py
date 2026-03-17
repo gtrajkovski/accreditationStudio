@@ -1,5 +1,5 @@
 """AccreditAI - Main Flask Application.
-app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["TEMPLATES_AUTO_RELOAD"] = Config.ENVIRONMENT != "production"
 
 AI-powered accreditation management platform for post-secondary
 educational institutions.
@@ -64,7 +64,7 @@ from src.services.readiness_service import compute_readiness
 # Initialize Flask app
 app = Flask(__name__)
 app.secret_key = Config.SECRET_KEY
-app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["TEMPLATES_AUTO_RELOAD"] = Config.ENVIRONMENT != "production"
 
 # Initialize core services
 workspace_manager = WorkspaceManager()

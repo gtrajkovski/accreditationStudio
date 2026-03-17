@@ -53,5 +53,5 @@ EXPOSE 5003
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5003/api/health')" || exit 1
 
-# Initialize database and start server
-CMD ["sh", "-c", "flask init-db && python app.py"]
+# Initialize database and start gunicorn production server
+CMD ["sh", "-c", "flask init-db && gunicorn --bind 0.0.0.0:5003 --workers 2 --timeout 120 --access-logfile - wsgi:app"]

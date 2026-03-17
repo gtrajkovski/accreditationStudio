@@ -67,7 +67,28 @@ All 3 plans complete:
 - All skeleton styles use CSS variables for automatic theme adaptation
 
 **Next:**
-- Phase 15 or post-MVP features
+- Additional production hardening (SSL, logging, monitoring) if needed
+
+---
+
+## Post-MVP: Production Prep ✅ Complete
+
+**Essential Docker Compose Production Deployment:**
+- Added gunicorn WSGI server (replaces Flask dev server)
+- Created wsgi.py entry point
+- Environment-aware TEMPLATES_AUTO_RELOAD (False in production)
+- Updated Dockerfile CMD to use gunicorn (2 workers, 120s timeout)
+- Updated docker-compose.yml with ENVIRONMENT=production
+- Documented in .env.example
+
+**Files Modified:**
+- `requirements.txt` - Added gunicorn>=21.0.0
+- `wsgi.py` - New WSGI entry point
+- `src/config.py` - Added ENVIRONMENT variable
+- `app.py` - Environment-aware template reload
+- `Dockerfile` - CMD now uses gunicorn
+- `docker-compose.yml` - ENVIRONMENT=production
+- `.env.example` - Production docs
 
 ---
 
