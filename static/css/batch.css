@@ -46,7 +46,7 @@
     align-items: center;
     gap: var(--spacing-md);
     box-shadow: var(--shadow-xl);
-    z-index: 1000;
+    z-index: var(--z-modal, 1300);
     transition: opacity 0.2s, transform 0.2s;
 }
 

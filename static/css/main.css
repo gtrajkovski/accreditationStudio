@@ -213,16 +213,37 @@ a:hover {
 .sidebar.collapsed .nav-item {
   justify-content: center;
   padding: var(--spacing-sm);
+  font-size: 0;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .nav-item svg {
+  font-size: initial;
+  flex-shrink: 0;
 }
 
 .sidebar.collapsed .nav-group-toggle {
   justify-content: center;
   padding: var(--spacing-sm);
+  font-size: 0;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .nav-group-toggle svg {
+  font-size: initial;
+  flex-shrink: 0;
 }
 
 .sidebar.collapsed .institution-switcher .switcher-trigger {
   justify-content: center;
   padding: var(--spacing-sm);
+  font-size: 0;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .institution-switcher .switcher-trigger svg {
+  font-size: initial;
+  flex-shrink: 0;
 }
 
 .sidebar.collapsed + .main-wrapper {
@@ -1250,8 +1271,8 @@ a:hover {
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1261,8 +1282,8 @@ a:hover {
 }
 
 .stat-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
 }
 
 .stat-content {
