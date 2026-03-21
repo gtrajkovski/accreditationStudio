@@ -12,13 +12,24 @@
 <div class="reports-dashboard">
   <!-- Hero Metrics -->
   <section class="hero-metrics">
-    <div class="metric-card primary">
+    <div class="section-header">
+      <h2>{{ t('reports.key_metrics') }}</h2>
+      <button id="customize-metrics-btn" class="btn btn-sm btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v6m0 6v6M1 12h6m6 0h6"/>
+        </svg>
+        {{ t('reports.customize') }}
+      </button>
+    </div>
+
+    <div class="metric-card primary" data-metric="readiness">
       <div class="metric-value" id="readiness-score">--</div>
       <div class="metric-label">{{ t('reports.overall_readiness') }}</div>
       <div class="metric-trend" id="readiness-trend"></div>
     </div>
 
-    <div class="metric-card">
+    <div class="metric-card" data-metric="compliance">
       <div class="metric-value" id="compliance-score">--</div>
       <div class="metric-label">{{ t('reports.sub_scores.compliance') }}</div>
       <div class="metric-progress">
@@ -28,7 +39,7 @@
       </div>
     </div>
 
-    <div class="metric-card">
+    <div class="metric-card" data-metric="evidence">
       <div class="metric-value" id="evidence-score">--</div>
       <div class="metric-label">{{ t('reports.sub_scores.evidence') }}</div>
       <div class="metric-progress">
@@ -38,7 +49,7 @@
       </div>
     </div>
 
-    <div class="metric-card">
+    <div class="metric-card" data-metric="documents">
       <div class="metric-value" id="documents-score">--</div>
       <div class="metric-label">{{ t('reports.sub_scores.documents') }}</div>
       <div class="metric-progress">
@@ -48,7 +59,7 @@
       </div>
     </div>
 
-    <div class="metric-card">
+    <div class="metric-card" data-metric="consistency">
       <div class="metric-value" id="consistency-score">--</div>
       <div class="metric-label">{{ t('reports.sub_scores.consistency') }}</div>
       <div class="metric-progress">
@@ -134,6 +145,24 @@
     </div>
   </section>
 
+  <!-- Report Comparison Section -->
+  <section class="report-comparison">
+    <h3>{{ t('reports.compare_reports') }}</h3>
+    <div class="comparison-controls">
+      <select id="compare-report-a" class="form-control">
+        <option value="">{{ t('reports.select_report') }}</option>
+      </select>
+      <span class="comparison-vs">vs</span>
+      <select id="compare-report-b" class="form-control">
+        <option value="">{{ t('reports.select_report') }}</option>
+      </select>
+      <button id="compare-btn" class="btn btn-accent" disabled>
+        {{ t('reports.compare') }}
+      </button>
+    </div>
+    <div id="comparison-results" class="comparison-results hidden"></div>
+  </section>
+
   <!-- Scheduled Reports Section -->
   <section class="scheduled-reports">
     <div class="section-header">
@@ -175,6 +204,28 @@
       </table>
     </div>
   </section>
+</div>
+
+<!-- Metrics Customization Modal -->
+<div id="metrics-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <h3>{{ t('reports.customize_metrics') }}</h3>
+    <p class="modal-description">{{ t('reports.customize_metrics_help') }}</p>
+    <form id="metrics-form">
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="readiness" value="readiness" checked disabled> {{ t('reports.overall_readiness') }}</label>
+        <label><input type="checkbox" name="compliance" value="compliance" checked> {{ t('reports.sub_scores.compliance') }}</label>
+        <label><input type="checkbox" name="evidence" value="evidence" checked> {{ t('reports.sub_scores.evidence') }}</label>
+        <label><input type="checkbox" name="documents" value="documents" checked> {{ t('reports.sub_scores.documents') }}</label>
+        <label><input type="checkbox" name="consistency" value="consistency" checked> {{ t('reports.sub_scores.consistency') }}</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="cancel-metrics-btn">{{ t('common.cancel') }}</button>
+        <button type="submit" class="btn btn-accent">{{ t('common.save') }}</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Schedule Modal -->

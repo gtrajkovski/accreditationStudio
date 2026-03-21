@@ -14,6 +14,7 @@ class ReportsManager {
     this.findingsData = null;
     this.trendChart = null;
     this.trendData = [];
+    this.visibleMetrics = [];
   }
 
   /**
@@ -25,6 +26,7 @@ class ReportsManager {
       return;
     }
 
+    this.loadMetricPreferences();
     await this.loadReadiness();
     await this.loadFindings();
     await this.loadReportHistory();
@@ -85,8 +87,10 @@ class ReportsManager {
       const response = await fetch(`/api/reports/institutions/${this.institutionId}`);
       if (!response.ok) throw new Error('Failed to load report history');
 
-      const reports = await response.json();
-      this.populateReportTable(reports);
+      const data = await response.json();
+      this.reportsData = data.reports || [];
+      this.populateReportTable(data);
+      this.populateComparisonDropdowns();
     } catch (error) {
       console.error('Error loading report history:', error);
       // Keep empty state visible
@@ -429,6 +433,81 @@ class ReportsManager {
         }
       }
     });
+  }
+
+  /**
+   * Load metric preferences from localStorage
+   */
+  loadMetricPreferences() {
+    const key = `metric-prefs-${this.institutionId}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        this.visibleMetrics = JSON.parse(saved);
+      } catch (e) {
+        this.visibleMetrics = ['readiness', 'compliance', 'evidence', 'documents', 'consistency'];
+      }
+    } else {
+      this.visibleMetrics = ['readiness', 'compliance', 'evidence', 'documents', 'consistency'];
+    }
+    this.applyMetricVisibility();
+  }
+
+  /**
+   * Apply metric visibility based on preferences
+   */
+  applyMetricVisibility() {
+    document.querySelectorAll('.metric-card[data-metric]').forEach(card => {
+      const metric = card.dataset.metric;
+      if (this.visibleMetrics.includes(metric)) {
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+  }
+
+  /**
+   * Save metric preferences to localStorage
+   */
+  saveMetricPreferences(selectedMetrics) {
+    const key = `metric-prefs-${this.institutionId}`;
+    this.visibleMetrics = selectedMetrics;
+    localStorage.setItem(key, JSON.stringify(selectedMetrics));
+    this.applyMetricVisibility();
+  }
+
+  /**
+   * Open metrics customization modal
+   */
+  openMetricsModal() {
+    const modal = document.getElementById('metrics-modal');
+    modal.classList.remove('hidden');
+
+    // Set checkboxes based on current preferences
+    this.visibleMetrics.forEach(metric => {
+      const checkbox = document.querySelector(`input[name="${metric}"]`);
+      if (checkbox) checkbox.checked = true;
+    });
+  }
+
+  /**
+   * Close metrics customization modal
+   */
+  closeMetricsModal() {
+    document.getElementById('metrics-modal').classList.add('hidden');
+  }
+
+  /**
+   * Handle metrics form submission
+   */
+  handleMetricsSubmit(e) {
+    e.preventDefault();
+    const checkboxes = document.querySelectorAll('#metrics-form input[type="checkbox"]:checked');
+    const selected = Array.from(checkboxes).map(cb => cb.value);
+    this.saveMetricPreferences(selected);
+    this.closeMetricsModal();
+    this.showToast('Metrics preferences saved', 'success');
   }
 
   /**
@@ -815,6 +894,103 @@ class ReportsManager {
   }
 
   /**
+   * Populate comparison dropdowns with available reports
+   */
+  async populateComparisonDropdowns() {
+    const reports = this.reportsData || [];
+    const optionsHTML = '<option value="">Select report...</option>' +
+      reports.map(r => {
+        const date = new Date(r.generated_at).toLocaleDateString();
+        return `<option value="${r.id}">${date} - ${r.title}</option>`;
+      }).join('');
+
+    document.getElementById('compare-report-a').innerHTML = optionsHTML;
+    document.getElementById('compare-report-b').innerHTML = optionsHTML;
+  }
+
+  /**
+   * Compare two selected reports
+   */
+  async compareReports() {
+    const reportA = document.getElementById('compare-report-a').value;
+    const reportB = document.getElementById('compare-report-b').value;
+
+    if (!reportA || !reportB) return;
+
+    try {
+      const response = await fetch('/api/reports/compare', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({report_id_a: reportA, report_id_b: reportB})
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to compare reports');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        this.renderComparison(data.comparison);
+      }
+    } catch (err) {
+      console.error('Error comparing reports:', err);
+      this.showToast('Failed to compare reports', 'error');
+    }
+  }
+
+  /**
+   * Render comparison results
+   */
+  renderComparison(comparison) {
+    const results = document.getElementById('comparison-results');
+    results.classList.remove('hidden');
+
+    const {report_a, report_b, deltas} = comparison;
+
+    results.innerHTML = `
+      <div class="comparison-card">
+        <div class="comparison-date">${new Date(report_a.generated_at).toLocaleDateString()}</div>
+        <div class="comparison-metric">
+          <div class="comparison-metric-label">Readiness Score</div>
+          <div class="comparison-metric-value">${report_a.readiness_total}</div>
+        </div>
+        <div class="comparison-metric">
+          <div class="comparison-metric-label">Total Findings</div>
+          <div class="comparison-metric-value">${report_a.findings_count}</div>
+        </div>
+      </div>
+
+      <div class="comparison-deltas">
+        <div class="delta-item">
+          <span class="delta-label">Readiness:</span>
+          <span class="delta-value ${deltas.readiness > 0 ? 'positive' : deltas.readiness < 0 ? 'negative' : 'neutral'}">
+            ${deltas.readiness > 0 ? '+' : ''}${deltas.readiness}
+          </span>
+        </div>
+        <div class="delta-item">
+          <span class="delta-label">Findings:</span>
+          <span class="delta-value ${deltas.findings < 0 ? 'positive' : deltas.findings > 0 ? 'negative' : 'neutral'}">
+            ${deltas.findings > 0 ? '+' : ''}${deltas.findings}
+          </span>
+        </div>
+      </div>
+
+      <div class="comparison-card">
+        <div class="comparison-date">${new Date(report_b.generated_at).toLocaleDateString()}</div>
+        <div class="comparison-metric">
+          <div class="comparison-metric-label">Readiness Score</div>
+          <div class="comparison-metric-value">${report_b.readiness_total}</div>
+        </div>
+        <div class="comparison-metric">
+          <div class="comparison-metric-label">Total Findings</div>
+          <div class="comparison-metric-value">${report_b.findings_count}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
    * Attach event listeners
    */
   attachEventListeners() {
@@ -832,6 +1008,22 @@ class ReportsManager {
         this.loadTrend(days);
       });
     });
+
+    // Metrics customization
+    const customizeMetricsBtn = document.getElementById('customize-metrics-btn');
+    if (customizeMetricsBtn) {
+      customizeMetricsBtn.addEventListener('click', () => this.openMetricsModal());
+    }
+
+    const cancelMetricsBtn = document.getElementById('cancel-metrics-btn');
+    if (cancelMetricsBtn) {
+      cancelMetricsBtn.addEventListener('click', () => this.closeMetricsModal());
+    }
+
+    const metricsForm = document.getElementById('metrics-form');
+    if (metricsForm) {
+      metricsForm.addEventListener('submit', (e) => this.handleMetricsSubmit(e));
+    }
 
     // Schedule modal triggers
     const newScheduleBtn = document.getElementById('new-schedule-btn');
@@ -887,6 +1079,27 @@ class ReportsManager {
 
         await this.createSchedule(formData);
       });
+    }
+
+    // Comparison controls
+    const compareReportA = document.getElementById('compare-report-a');
+    const compareReportB = document.getElementById('compare-report-b');
+    const compareBtn = document.getElementById('compare-btn');
+
+    if (compareReportA && compareReportB && compareBtn) {
+      compareReportA.addEventListener('change', () => {
+        const a = compareReportA.value;
+        const b = compareReportB.value;
+        compareBtn.disabled = !a || !b;
+      });
+
+      compareReportB.addEventListener('change', () => {
+        const a = compareReportA.value;
+        const b = compareReportB.value;
+        compareBtn.disabled = !a || !b;
+      });
+
+      compareBtn.addEventListener('click', () => this.compareReports());
     }
   }
 }
