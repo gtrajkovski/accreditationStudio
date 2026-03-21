@@ -300,5 +300,14 @@
     "explain": "Explicar",
     "refresh": "Regenerar Explicación",
     "loading": "Generando explicación..."
+  },
+  "chat": {
+    "new_conversation": "Nueva Conversación",
+    "conversations": "Conversaciones",
+    "no_conversations": "Sin conversaciones",
+    "delete_confirm": "¿Eliminar esta conversación?",
+    "suggestions": "Sugerencias",
+    "typing": "IA escribiendo...",
+    "welcome": "¡Pregúntame sobre cumplimiento!"
   }
 }

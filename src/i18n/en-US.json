@@ -300,5 +300,14 @@
     "explain": "Explain",
     "refresh": "Regenerate Explanation",
     "loading": "Generating explanation..."
+  },
+  "chat": {
+    "new_conversation": "New Chat",
+    "conversations": "Conversations",
+    "no_conversations": "No conversations yet",
+    "delete_confirm": "Delete this conversation?",
+    "suggestions": "Suggested",
+    "typing": "AI is typing...",
+    "welcome": "Ask me anything about compliance!"
   }
 }
