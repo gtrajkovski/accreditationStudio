@@ -8,14 +8,14 @@ AI-powered platform for managing the entire accreditation lifecycle of post-seco
 
 Institutions can achieve and maintain accreditation compliance with minimal manual effort through autonomous AI agents that audit, remediate, and prepare submission materials.
 
-## Current Milestone: v1.4 - Enterprise & Polish
+## Current Version: v1.4.0 - Enterprise & Polish ✅
 
-**Goal:** Improve report customization, API discoverability, and compliance audit trails for enterprise adoption.
+**Released:** 2026-03-21
 
-**Target features:**
-- Report templates and comparison views
-- OpenAPI/Swagger documentation for all 35+ blueprints
-- Audit trail export for compliance evidence
+**Delivered:**
+- Report templates with comparison views and trend charts
+- OpenAPI/Swagger documentation at /api/docs (36 blueprints)
+- Audit trail export (JSON/ZIP) at /audit-trails
 
 ## Requirements
 
@@ -25,10 +25,11 @@ Institutions can achieve and maintain accreditation compliance with minimal manu
 - v1.1: Analytics & visualization (heatmaps, knowledge graph, simulation)
 - v1.2: Productivity (bulk operations, global search, UX polish)
 - v1.3: AI & reporting (explainers, evidence assistant, PDF reports, scheduling)
+- v1.4: Enterprise & polish (report enhancements, API docs, audit trails)
 
 ### Active
 
-See `.planning/REQUIREMENTS.md` for v1.4 requirements.
+No active requirements — awaiting v1.5 planning.
 
 ### Out of Scope
 
@@ -40,8 +41,8 @@ See `.planning/REQUIREMENTS.md` for v1.4 requirements.
 
 - Flask + Jinja2 + vanilla JS + Anthropic SDK
 - 24-agent tiered architecture with registry pattern
-- 35 API blueprints registered
-- SQLite database with 28 migrations
+- 36 API blueprints registered
+- SQLite database with 29 migrations
 - ChromaDB for semantic search
 - Docker deployment with gunicorn
 
@@ -78,4 +79,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-21 after v1.4 milestone start*
+*Last updated: 2026-03-21 after v1.4.0 release*
