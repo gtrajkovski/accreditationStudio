@@ -10,8 +10,25 @@ from src.schemas.common import (
     ValidationErrorSchema,
 )
 
+from src.schemas.institution import (
+    InstitutionSchema,
+    InstitutionCreateSchema,
+    InstitutionUpdateSchema,
+    InstitutionListSchema,
+    ProgramSchema,
+    ProgramCreateSchema,
+)
+
 __all__ = [
+    # Common
     "ErrorSchema",
     "SuccessSchema",
     "ValidationErrorSchema",
+    # Institution
+    "InstitutionSchema",
+    "InstitutionCreateSchema",
+    "InstitutionUpdateSchema",
+    "InstitutionListSchema",
+    "ProgramSchema",
+    "ProgramCreateSchema",
 ]
