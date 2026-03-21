@@ -529,6 +529,14 @@ def compute_readiness(
             cons_score * SCORE_WEIGHTS["consistency"]
         )
 
+        # CRITICAL FINDINGS CAP: If any critical findings exist, cap at 40%
+        # This prevents misleading high scores when serious issues remain
+        critical_open = comp_breakdown.get("critical_open", 0)
+        has_critical_cap = False
+        if critical_open > 0 and total > 40:
+            total = 40
+            has_critical_cap = True
+
         # Combine and sort blockers by severity
         all_blockers = doc_blockers + comp_blockers + evid_blockers + cons_blockers
         severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
@@ -543,6 +551,7 @@ def compute_readiness(
             "evidence": evid_breakdown,
             "consistency": cons_breakdown,
             "weights": SCORE_WEIGHTS,
+            "critical_cap_applied": has_critical_cap,
         }
 
         return ReadinessScore(
