@@ -7,7 +7,8 @@ educational institutions.
 
 import atexit
 import click
-from flask import Flask, render_template, redirect, url_for
+from flask import render_template, redirect, url_for, request
+from apiflask import APIFlask
 
 from src.config import Config
 from src.ai.client import AIClient
@@ -66,10 +67,109 @@ from src.services.readiness_service import compute_readiness
 from src.services.chat_context_service import ChatContextService
 
 
-# Initialize Flask app
-app = Flask(__name__)
+# Initialize APIFlask (OpenAPI-enabled Flask wrapper)
+app = APIFlask(
+    __name__,
+    title="AccreditAI API",
+    version="1.4.0",
+    spec_path="/api/spec.json",
+    docs_path="/api/docs",
+)
 app.secret_key = Config.SECRET_KEY
 app.config["TEMPLATES_AUTO_RELOAD"] = Config.ENVIRONMENT != "production"
+
+# =========================================================================
+# OpenAPI Configuration (per Phase 18 requirements)
+# =========================================================================
+
+app.config["OPENAPI_VERSION"] = "3.0.3"
+app.config["SERVERS"] = [
+    {"name": "Development", "url": "http://localhost:5003"}
+]
+app.config["INFO"] = {
+    "description": """
+AccreditAI API for managing the full accreditation lifecycle.
+
+**No authentication required** - single-user localhost tool (v1.x).
+
+## Overview
+
+This API provides endpoints for:
+- Institution and program management
+- Document upload and compliance auditing
+- Standards library and compliance checks
+- AI agent sessions and tasks
+- Reports and analytics
+""",
+    "contact": {
+        "name": "AccreditAI",
+        "url": "https://github.com/gtrajkovski/accreditationStudio"
+    },
+    "license": {
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT"
+    }
+}
+
+# Security scheme (per D-09: no auth for localhost tool)
+app.config["SECURITY_SCHEMES"] = {}
+
+# Swagger UI customization (per D-07: default theme)
+app.config["SWAGGER_UI_CONFIG"] = {
+    "defaultModelsExpandDepth": 2,
+    "displayRequestDuration": True,
+    "filter": True,
+    "tryItOutEnabled": True,
+    "persistAuthorization": False,
+}
+
+# Runtime spec generation (per D-03)
+app.config["LOCAL_SPEC_PATH"] = None  # Don't write to file, serve dynamically
+app.config["SYNC_LOCAL_SPEC"] = False
+
+# Blueprint tags for grouping (per API-04)
+app.config["TAGS"] = [
+    {"name": "Institutions", "description": "Institution and program management"},
+    {"name": "Documents", "description": "Document upload and processing"},
+    {"name": "Standards", "description": "Standards library and compliance"},
+    {"name": "Agents", "description": "AI agent sessions and tasks"},
+    {"name": "Audits", "description": "Compliance audits and findings"},
+    {"name": "Remediation", "description": "Document remediation workflow"},
+    {"name": "Readiness", "description": "Readiness scoring and analytics"},
+    {"name": "Checklists", "description": "Compliance checklists"},
+    {"name": "Packets", "description": "Submission packet management"},
+    {"name": "Reports", "description": "Compliance report generation"},
+    {"name": "Faculty", "description": "Faculty credential management"},
+    {"name": "Catalog", "description": "Catalog builder"},
+    {"name": "Exhibits", "description": "Exhibit registry"},
+    {"name": "Achievements", "description": "Student achievement tracking"},
+    {"name": "Interview Prep", "description": "Interview preparation"},
+    {"name": "SER", "description": "Self-Evaluation Report drafting"},
+    {"name": "Team Reports", "description": "Team report responses"},
+    {"name": "Calendar", "description": "Compliance calendar"},
+    {"name": "Document Reviews", "description": "Document review scheduling"},
+    {"name": "Impact Analysis", "description": "Fact-to-document dependencies"},
+    {"name": "Knowledge Graph", "description": "Entity relationships"},
+    {"name": "Timeline", "description": "Accreditation timeline planning"},
+    {"name": "Site Visit", "description": "Site visit search mode"},
+    {"name": "Coverage Map", "description": "Evidence coverage mapping"},
+    {"name": "Simulation", "description": "Accreditation simulation"},
+    {"name": "Portfolios", "description": "Multi-institution management"},
+    {"name": "Evidence", "description": "Evidence highlighting"},
+    {"name": "Heatmap", "description": "Compliance heatmap"},
+    {"name": "Batch", "description": "Batch operations"},
+    {"name": "Search", "description": "Global search"},
+    {"name": "Explainer", "description": "Standard explanations"},
+    {"name": "Assistant", "description": "Evidence assistant"},
+    {"name": "Chat", "description": "AI chat interface"},
+    {"name": "Settings", "description": "User settings"},
+    {"name": "Work Queue", "description": "Task queue management"},
+    {"name": "Autopilot", "description": "Autopilot settings"},
+    {"name": "Action Plans", "description": "Action plan tracking"},
+]
+
+# Import schemas before blueprint registration (required for apispec)
+import src.schemas
 
 # Initialize core services
 workspace_manager = WorkspaceManager()
