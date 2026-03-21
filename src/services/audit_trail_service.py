@@ -3,9 +3,10 @@
 Provides methods for querying and exporting agent session logs.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from io import BytesIO
 import json
 import os
 
@@ -144,3 +145,57 @@ class AuditTrailService:
             if session.get("agent_type"):
                 agent_types.add(session["agent_type"])
         return sorted(list(agent_types))
+
+    @staticmethod
+    def create_audit_package(
+        institution_id: str,
+        sessions: List[Dict[str, Any]],
+        include_report: bool = False,
+        report_path: Optional[str] = None,
+        workspace_dir: Optional[Path] = None
+    ) -> BytesIO:
+        """Create ZIP package with audit trails and optional compliance report.
+
+        Args:
+            institution_id: Institution ID
+            sessions: List of session dictionaries to include
+            include_report: Whether to include compliance report PDF
+            report_path: Path to report PDF (relative to workspace)
+            workspace_dir: Workspace root directory
+
+        Returns:
+            BytesIO buffer containing ZIP archive
+        """
+        import zipfile
+
+        if workspace_dir is None:
+            workspace_dir = Path(os.getenv("WORKSPACE_DIR", "./workspace"))
+
+        buffer = BytesIO()
+
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            # Add each session as individual JSON file
+            for session in sessions:
+                session_id = session.get("id", "unknown")
+                session_json = json.dumps(session, indent=2, ensure_ascii=False)
+                zf.writestr(f"audit_logs/{session_id}.json", session_json)
+
+            # Add compliance report if requested
+            if include_report and report_path:
+                report_file = workspace_dir / institution_id / report_path
+                if report_file.exists():
+                    zf.write(report_file, arcname="compliance_report.pdf")
+
+            # Add manifest with export metadata
+            manifest = {
+                "exported_at": datetime.now(timezone.utc).isoformat(),
+                "institution_id": institution_id,
+                "session_count": len(sessions),
+                "includes_report": include_report and report_path is not None,
+                "export_version": "1.0",
+                "session_ids": [s.get("id") for s in sessions],
+            }
+            zf.writestr("manifest.json", json.dumps(manifest, indent=2))
+
+        buffer.seek(0)
+        return buffer

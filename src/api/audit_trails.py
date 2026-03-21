@@ -120,19 +120,23 @@ def get_agent_types(institution_id: str):
 
 @audit_trails_bp.route("/institutions/<institution_id>/export", methods=["POST"])
 def export_audit_trail(institution_id: str):
-    """Export audit trail as JSON file.
+    """Export audit trail as JSON or ZIP file.
 
     Request Body:
+        format: "json" or "zip" (default: "json")
         start_date: ISO8601 start date (optional)
         end_date: ISO8601 end date (optional)
         agent_type: Filter by agent type (optional)
         operation: Filter by operation (optional)
+        include_report: Include compliance report PDF in ZIP (optional)
+        report_path: Path to report file, e.g., "reports/rpt_123.pdf" (optional)
 
     Returns:
-        JSON file download
+        JSON or ZIP file download
     """
     try:
         data = request.get_json() or {}
+        export_format = data.get("format", "json")
 
         # Query sessions with filters
         sessions = AuditTrailService.query_sessions(
@@ -143,36 +147,54 @@ def export_audit_trail(institution_id: str):
             operation=data.get("operation"),
         )
 
-        # Build export payload
-        export_data = {
-            "exported_at": datetime.now(timezone.utc).isoformat(),
-            "institution_id": institution_id,
-            "filters": {
-                "start_date": data.get("start_date"),
-                "end_date": data.get("end_date"),
-                "agent_type": data.get("agent_type"),
-                "operation": data.get("operation"),
-            },
-            "session_count": len(sessions),
-            "sessions": sessions,
-            "export_version": "1.0",
-        }
-
-        # Create JSON file in memory
-        json_bytes = json.dumps(export_data, indent=2, ensure_ascii=False).encode("utf-8")
-        buffer = BytesIO(json_bytes)
-        buffer.seek(0)
-
-        # Generate filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"audit_trail_{institution_id}_{timestamp}.json"
 
-        return send_file(
-            buffer,
-            mimetype="application/json",
-            as_attachment=True,
-            download_name=filename,
-        )
+        if export_format == "zip":
+            # Create ZIP package
+            buffer = AuditTrailService.create_audit_package(
+                institution_id=institution_id,
+                sessions=sessions,
+                include_report=data.get("include_report", False),
+                report_path=data.get("report_path"),
+            )
+
+            filename = f"audit_trail_{institution_id}_{timestamp}.zip"
+
+            return send_file(
+                buffer,
+                mimetype="application/zip",
+                as_attachment=True,
+                download_name=filename,
+            )
+        else:
+            # Build JSON export payload
+            export_data = {
+                "exported_at": datetime.now(timezone.utc).isoformat(),
+                "institution_id": institution_id,
+                "filters": {
+                    "start_date": data.get("start_date"),
+                    "end_date": data.get("end_date"),
+                    "agent_type": data.get("agent_type"),
+                    "operation": data.get("operation"),
+                },
+                "session_count": len(sessions),
+                "sessions": sessions,
+                "export_version": "1.0",
+            }
+
+            # Create JSON file in memory
+            json_bytes = json.dumps(export_data, indent=2, ensure_ascii=False).encode("utf-8")
+            buffer = BytesIO(json_bytes)
+            buffer.seek(0)
+
+            filename = f"audit_trail_{institution_id}_{timestamp}.json"
+
+            return send_file(
+                buffer,
+                mimetype="application/json",
+                as_attachment=True,
+                download_name=filename,
+            )
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
