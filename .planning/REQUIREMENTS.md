@@ -30,6 +30,39 @@ Requirements for v1.4 - Enterprise & Polish milestone.
 - [x] **AUD-04**: Exported logs include tool calls, decisions, and timestamps
 - [x] **AUD-05**: User can filter export by agent type or operation
 
+## v1.5 Requirements
+
+Requirements for v1.5 - Operational Intelligence milestone.
+
+### Autopilot & Operational
+
+- [ ] **AUTO-01**: System runs nightly autopilot for institutions with autopilot enabled
+- [ ] **AUTO-02**: Morning brief generated with readiness delta, blockers, and next actions
+- [ ] **AUTO-03**: User can trigger autopilot run manually via "Run Now"
+
+### Evidence Contract
+
+- [ ] **EVID-01**: Packet export blocked unless all selected standards have evidence
+- [ ] **EVID-02**: Critical findings must be resolved or explicitly waived before export
+- [ ] **EVID-03**: Coverage step in Packet Studio shows gaps visually
+
+### Change Detection
+
+- [ ] **CHG-01**: Document uploads compute sha256 diff against previous version
+- [ ] **CHG-02**: Changed documents trigger targeted re-audit recommendation
+- [ ] **CHG-03**: Targeted re-audit runs only impacted checklist items
+
+### Reproducibility
+
+- [ ] **REPRO-01**: Each audit run stores a reproducibility bundle (standards, docs, model, timestamps)
+- [ ] **REPRO-02**: User can view "How this audit was produced" on audit detail page
+
+### Standards Harvester
+
+- [ ] **HARV-01**: System can fetch and parse ACCSC standards PDF from official URL
+- [ ] **HARV-02**: Fetched standards stored with version date and hash
+- [ ] **HARV-03**: User can trigger fetch and view diff against previous version
+
 ## Future Requirements
 
 Deferred to future milestones.
@@ -73,11 +106,33 @@ Deferred to future milestones.
 | AUD-04 | Phase 19 | Complete (19-01) |
 | AUD-05 | Phase 19 | Complete (19-01) |
 
-**Coverage:**
+**v1.4 Coverage:**
 - v1.4 requirements: 14 total
 - Mapped to phases: 14
-- Unmapped: 0 ✓
+- Unmapped: 0
+
+**v1.5 Coverage:**
+- v1.5 requirements: 14 total
+- Mapped to phases: 14
+- Unmapped: 0
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| AUTO-01 | Phase 20 | Pending |
+| AUTO-02 | Phase 20 | Pending |
+| AUTO-03 | Phase 20 | Pending |
+| EVID-01 | Phase 21 | Pending |
+| EVID-02 | Phase 21 | Pending |
+| EVID-03 | Phase 21 | Pending |
+| CHG-01 | Phase 22 | Pending |
+| CHG-02 | Phase 22 | Pending |
+| CHG-03 | Phase 22 | Pending |
+| REPRO-01 | Phase 23 | Pending |
+| REPRO-02 | Phase 23 | Pending |
+| HARV-01 | Phase 24 | Pending |
+| HARV-02 | Phase 24 | Pending |
+| HARV-03 | Phase 24 | Pending |
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-21 after v1.4 milestone start*
+*Last updated: 2026-03-21 after v1.5 milestone definition*

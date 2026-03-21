@@ -529,15 +529,16 @@ def execute_autopilot_run(
         if config.run_audit:
             if on_progress:
                 on_progress("Running compliance audit...", 60)
-            # TODO: Implement agent-based audit
-            # For now, just count existing findings
-            cursor = conn.execute("""
-                SELECT COUNT(*) as count
-                FROM audit_findings af
-                JOIN audit_runs ar ON af.audit_run_id = ar.id
-                WHERE ar.institution_id = ?
-            """, (institution_id,))
-            run.audit_findings_count = cursor.fetchone()["count"]
+            # Guard: Audit execution not yet implemented
+            # Raising NotImplementedError prevents silent no-op
+            logger.warning(
+                f"Autopilot run_audit=True for {institution_id} but audit execution not implemented. "
+                "Use manual audit via ComplianceAuditAgent."
+            )
+            raise NotImplementedError(
+                "Autopilot audit execution not yet implemented. "
+                "Use manual audit via ComplianceAuditAgent or disable run_audit in config."
+            )
 
         # 4. Compute readiness
         if config.run_readiness:

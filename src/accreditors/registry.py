@@ -1,9 +1,12 @@
 """Accreditor Registry for dynamic accreditor package loading."""
 
 import json
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 ACCREDITORS_DIR = Path(__file__).parent
 
@@ -70,8 +73,8 @@ class AccreditorRegistry:
                             data = json.load(f)
                         manifest = AccreditorManifest.from_dict(data)
                         cls._packages[manifest.code.upper()] = manifest
-                    except Exception:
-                        pass  # Skip invalid packages
+                    except Exception as e:
+                        logger.warning(f"Failed to load accreditor manifest {manifest_path}: {e}")
 
         cls._initialized = True
 
@@ -94,6 +97,7 @@ class AccreditorRegistry:
         try:
             return importlib.import_module(f"src.accreditors.{code.lower()}.sources")
         except ImportError:
+            logger.debug(f"No sources module found for accreditor {code}")
             return None
 
     @classmethod
@@ -103,6 +107,7 @@ class AccreditorRegistry:
         try:
             return importlib.import_module(f"src.accreditors.{code.lower()}.parser")
         except ImportError:
+            logger.debug(f"No parser module found for accreditor {code}")
             return None
 
 

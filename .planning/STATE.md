@@ -1,72 +1,92 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Enterprise & Polish
-status: in_progress
-last_updated: "2026-03-21T22:30:30Z"
+milestone: v1.5
+milestone_name: Operational Intelligence
+status: planning
+last_updated: "2026-03-21T23:00:00Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 12
+  completed_plans: 0
 ---
 
 # AccreditAI State
 
 ## Current Position
 
-Phase: Phase 19 - Audit Trail Export (COMPLETE)
-Plan: 19-02 complete (Audit Trail UI & ZIP Export)
-Status: Phase 19 Complete (2/2 plans complete)
-Last activity: 2026-03-21 — Completed Plan 19-02 (Audit Trail UI & ZIP Export)
+Phase: Phase 20 - Autopilot & Morning Brief (PLANNING)
+Plan: 20-01 ready (AutopilotService Enhancement)
+Status: v1.5 milestone defined, foundation fixes complete
+Last activity: 2026-03-21 — Created v1.5 milestone and Phase 20/21 plans
 
 ## Next Session: Start Here
 
-**v1.4 - Enterprise & Polish** ✅ COMPLETE
+**v1.4 - Enterprise & Polish** ✅ RELEASED
 
-All 3 phases complete (8/8 plans). Milestone v1.4 ready for release.
+All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 
-### Phase 17: Report Enhancements
-**Goal:** Users can customize and compare compliance reports over time
-**Requirements:** RPT-01, RPT-02, RPT-03, RPT-04, RPT-05
+**v1.5 - Operational Intelligence** ⏳ ACTIVE
+
+### Foundation Fixes Completed
+- ✅ Migration numbering fixed (0026/0027 → 0030/0031)
+- ✅ Autopilot stub guard added (NotImplementedError for run_audit=True)
+- ✅ Session round-trip tests created (7 tests pass)
+- ⚠️ Silent exception handlers: sample fix applied (290 remain for future sweep)
+
+### Phase 20: Autopilot & Morning Brief
+**Goal:** Nightly autopilot runs with morning brief generation
+**Requirements:** AUTO-01, AUTO-02, AUTO-03
 **Success Criteria:**
-  1. User can create custom report template by selecting sections
-  2. User can save and reuse template configurations
-  3. User can compare reports between two dates side-by-side
-  4. User can view readiness trend chart (30/60/90 days)
-  5. User can customize executive summary metrics
+  1. Autopilot runs nightly for enabled institutions
+  2. Morning brief generated with readiness delta
+  3. User can trigger "Run Now" manually
+  4. Document changes detected via SHA256
 
-**Next:** Run `/gsd:plan-phase 17` to create implementation plans
+**Next:** Run `/gsd:plan-phase 20` to begin implementation
 
-### Phase 18: API Documentation
-**Goal:** Developers can explore and integrate via interactive documentation
-**Requirements:** API-01, API-02, API-03, API-04
+### Phase 21: Evidence Coverage Contract
+**Goal:** Packet export gating based on evidence coverage
+**Requirements:** EVID-01, EVID-02, EVID-03
 **Success Criteria:**
-  1. System generates OpenAPI 3.0 spec from all 35+ blueprints
-  2. Swagger UI accessible at /api/docs
-  3. Request/response examples for every endpoint
-  4. Endpoints grouped by blueprint
-  5. Interactive testing from Swagger UI
+  1. Packet export blocked without evidence coverage
+  2. Critical findings must be resolved or waived
+  3. Coverage step in Packet Studio shows gaps
 
-### Phase 19: Audit Trail Export
-**Goal:** Users can export compliance audit trails for regulatory evidence
-**Requirements:** AUD-01, AUD-02, AUD-03, AUD-04, AUD-05
+### Phase 22: Change Detection + Targeted Re-Audit
+**Goal:** Incremental re-audits for changed documents only
+**Requirements:** CHG-01, CHG-02, CHG-03
 **Success Criteria:**
-  1. Export agent session logs as JSON
-  2. Export activity history for date range
-  3. Package audit trail with compliance report (ZIP)
-  4. Logs include tool calls, decisions, confidence, timestamps
-  5. Filter export by agent type or operation
+  1. SHA256 diff on document upload
+  2. Changed documents trigger re-audit recommendation
+  3. Targeted re-audit runs only impacted items
+
+### Phase 23: Audit Reproducibility
+**Goal:** Every audit can be explained and reproduced
+**Requirements:** REPRO-01, REPRO-02
+**Success Criteria:**
+  1. Audit runs store reproducibility bundle
+  2. User can view "How this audit was produced"
+
+### Phase 24: Standards Harvester MVP
+**Goal:** Fetch standards from accreditor websites
+**Requirements:** HARV-01, HARV-02, HARV-03
+**Success Criteria:**
+  1. Fetch ACCSC standards from official URL
+  2. Store with version date and hash
+  3. User can view diff against previous version
 
 ---
 
 ## Progress Bar
 
 ```
-v1.4: [████████████████████] 8/8 plans (100%) ✅ COMPLETE
-  Phase 17: [████████████████████] 4/4 plans (COMPLETE)
-  Phase 18: [████████████████████] 2/2 plans (COMPLETE)
-  Phase 19: [████████████████████] 2/2 plans (COMPLETE)
+v1.5: [░░░░░░░░░░░░░░░░░░░░] 0/12 plans (0%)
+  Phase 20: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (READY)
+  Phase 21: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
+  Phase 22: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (PLANNED)
+  Phase 23: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
+  Phase 24: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
 ```
 
 ---

@@ -1,67 +1,109 @@
-# AccreditAI Replan — 2026-03-21
+# AccreditAI Replan — 2026-03-21 (Session 2)
 
-## Completed This Session
+## Session 2: Foundation Verification + v1.5 Planning
 
-| Tier | Item | Status | Notes |
-|------|------|--------|-------|
-| 0A | Orchestrator phantom delegations | ✅ | Replaced 5 stubs with real agent delegation via AgentRegistry |
-| 0B | Evidence Guardian core tools | ✅ | Implemented validate_audit_findings() and get_evidence_score() with DB queries |
-| 0C | Readiness Score critical cap | ✅ | Added 40% cap when critical findings exist |
-| 1A | Silent exceptions (partial) | ✅ | Fixed compliance_audit.py (3 handlers) |
+### Key Finding: Foundation Is Stronger Than Expected
 
-**Commits:**
-- `482c0a0` fix(tier-0A): replace phantom delegations with real agent routing
-- `3564106` fix(tier-0B): implement Evidence Guardian core tools
-- `0ba9807` fix(tier-0C): add critical findings cap to readiness score
-- `9fa9aa6` fix(tier-1A): add logging to compliance_audit silent exceptions
+The "hollow middle" analysis from earlier was **outdated**. Re-verification shows:
+- **Orchestrator:** Already properly wired to registered agents (INGESTION, GAP_FINDER, EVIDENCE_MAPPER, COMPLIANCE_AUDIT, SER_DRAFTING)
+- **Evidence Guardian:** Already implemented with real DB queries
+- **Readiness Service:** Already uses real audit findings with critical cap
 
-## State After Changes
+The earlier replan commits (482c0a0, 3564106, etc.) had already fixed these issues.
 
-- **Orchestrator:** CAN execute end-to-end (delegates to INGESTION, GAP_FINDER, EVIDENCE_MAPPER, COMPLIANCE_AUDIT, SER_DRAFTING)
-- **Evidence Guardian:** Functional (queries audit_findings, finding_standard_refs, evidence_refs)
-- **Readiness scores:** Real data + critical cap (40% max with critical findings)
-- **Silent failures:** Not addressed this session (Tier 1)
-- **Test count:** 228 tests collected, 1 pre-existing failure (batch_service DB issue unrelated to changes)
+## Foundation Audit (Stage 1 Baseline)
 
-## Discovered Issues (found during this session)
+| Metric | Before | After |
+|--------|--------|-------|
+| Stub/placeholder returns in agents | 57 | 57 (many are legitimate placeholders in SER drafts) |
+| Silent exception handlers | 290 | 289 (sample fix applied) |
+| Orchestrator phantom delegations | 0 | 0 (verified working) |
+| Evidence guardian stub tools | 0 | 0 (verified working) |
+| Duplicate migration numbers | 2 pairs (0026, 0027) | 0 |
+| Tests passing | 224 | 232 |
+| Tests failing | 7 | 6 |
 
-- **Pre-existing test failure:** `test_batch_service.py::TestBatchService::test_create_batch_persists_to_database` - DB schema mismatch, unrelated to Tier 0 fixes
-- **Phase 18 planning interrupted:** Was mid-research for API Documentation when user pivoted to this replan prompt
+## Stage 1 Results
+
+| Item | Status | Notes |
+|------|--------|-------|
+| 1A: Stub audit | ✅ | Baseline recorded. Most "stubs" are legitimate (SER placeholders, graceful degradation) |
+| 1B: Orchestrator fix | ⏭️ SKIP | Already correct - delegates to real registered agents |
+| 1C: Evidence guardian | ⏭️ SKIP | Already implemented with real DB queries |
+| 1D: Readiness wiring | ⏭️ SKIP | Already implemented with critical findings cap |
+| 1E: Silent failure sweep | ⚠️ | Sample fix in accreditors/registry.py. 290 handlers total - most graceful degradation |
+| 1F: Autopilot guard | ✅ | NotImplementedError raised when run_audit=True |
+| 1G: Session round-trip test | ✅ | 7 comprehensive tests created and passing |
+
+## Stage 2 Results
+
+| Item | Status | Notes |
+|------|--------|-------|
+| 2A: v1.5 milestone files | ✅ | MILESTONE_V1.5.md created with 5 phases |
+| 2B: Phase 20 plans | ✅ | 3 plans: 20-01 (service), 20-02 (API), 20-03 (UI) |
+| 2C: Phase 21 plans | ✅ | 2 plans: 21-01 (validation), 21-02 (UI) |
+| STATE.md update | ✅ | Updated for v1.5 milestone |
+| REQUIREMENTS.md update | ✅ | 14 v1.5 requirements added with traceability |
+
+## Files Created/Modified This Session
+
+```
+MODIFIED:
+  src/services/autopilot_service.py  — NotImplementedError guard for run_audit=True
+  src/accreditors/registry.py        — Logging added to exception handlers
+  src/db/migrations/0030_reports.sql — Renamed from 0026
+  src/db/migrations/0031_scheduled_reports.sql — Renamed from 0027
+  .planning/STATE.md — Updated for v1.5 milestone
+  .planning/REQUIREMENTS.md — Added v1.5 requirements
+
+CREATED:
+  tests/test_session_persistence.py  — 7 tests for AgentSession serialization
+  .planning/phases/MILESTONE_V1.5.md
+  .planning/phases/20-autopilot/20-01-PLAN.md
+  .planning/phases/20-autopilot/20-02-PLAN.md
+  .planning/phases/20-autopilot/20-03-PLAN.md
+  .planning/phases/21-evidence-contract/21-01-PLAN.md
+  .planning/phases/21-evidence-contract/21-02-PLAN.md
+```
+
+## v1.5 Status After This Session
+
+```
+v1.5: [░░░░░░░░░░░░░░░░░░░░] 0/12 plans
+  Phase 20: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (READY - plans written)
+  Phase 21: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
+  Phase 22: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (needs plan files)
+  Phase 23: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (needs plan files)
+  Phase 24: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (needs plan files)
+```
 
 ## Next Session Priorities
 
-1. **Tier 1A (remaining):** Fix silent exceptions in these files:
-   - `src/agents/evidence_mapper.py` (line 924)
-   - `src/agents/faculty_agent.py` (line 534)
-   - `src/agents/ingestion_agent.py` (line 561)
-   - `src/agents/interview_prep_agent.py` (lines 708, 759)
-   - `src/agents/remediation_agent.py` (line 302)
-2. **Tier 1B:** Autopilot stub guard or implementation
-3. **Tier 2A:** Agent session round-trip tests
-4. **Tier 2B:** Truth index integrity (timestamps, backups)
-5. **Tier 3A:** AgentType enum cleanup (30+ entries)
-6. **Tier 3B:** Models.py modularization plan (document only)
-7. **Tier 3C:** Workspace file I/O caching (LRU)
+1. **Execute Phase 20-01**: Wire autopilot audit, add change detection, generate morning brief
+2. **Create Phase 22-24 plan files**: Detailed implementation plans
+3. **Fix batch service tests**: Add proper FK setup in test fixtures
+4. **Consider WeasyPrint alternative**: Skip PDF export on Windows or use wkhtmltopdf
 
-## Deferred Backlog (Tier 4 - unchanged)
+## Deferred Backlog
 
-| Item | Reason |
-|------|--------|
-| Multi-tenancy / data isolation | Requires auth + schema changes |
-| Audit reproducibility | Requires snapshot + seed control |
-| PostgreSQL migration | Not needed until 50+ institutions |
-| Offline mode / local LLM fallback | Feature request, not a bug |
-| ChromaDB version migration tooling | Needed before any chromadb upgrade |
-| CI pipeline setup | GitHub Actions for pytest + coverage |
-| Concurrent audit race condition testing | Medium priority for future multi-user |
+### v1.6: Regulatory Intelligence
+- Standards Web Harvester for SACSCOC, HLC, ABHES, COE
+- Multi-state regulatory stack builder
+- Federal regs library
+- Standards change detector + diff
 
-## Phase 18 Status (Interrupted)
+### v1.7: Scale & Experience
+- Multi-tenancy / data isolation / auth
+- PostgreSQL + pgvector migration
+- CI pipeline (GitHub Actions)
+- Offline mode / local LLM fallback
 
-Research completed for API Documentation phase. Ready to continue planning:
-- Research file: `.planning/phases/18-api-documentation/18-RESEARCH.md`
-- Context file: `.planning/phases/18-api-documentation/18-CONTEXT.md`
-- Key finding: Use APIFlask (modern) instead of flask-apispec (abandoned 2021)
-- Next: `/gsd:plan-phase 18` to create implementation plans
+### Tech Debt
+- `models.py` split into domain modules (2,584 lines)
+- Silent exception handler sweep (289 remaining)
+- AgentType enum cleanup
+- Workspace file I/O caching
 
 ---
-*Generated: 2026-03-21*
+*Replan generated: 2026-03-21 Session 2*
+*Test suite: 232 passed, 6 failed, 8 errors (pre-existing issues)*
