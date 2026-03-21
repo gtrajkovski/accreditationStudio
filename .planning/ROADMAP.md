@@ -132,12 +132,13 @@ Plans:
 
 ### Phase 15: AI Explainers
 **Goal:** Make standards accessible with plain-English explanations, evidence suggestions, and an enhanced AI assistant that maintains conversation context
-**Plans:** 3 planned
+**Requirements:** [64, 65, 66]
+**Plans:** 3 plans
 
 Plans:
-- [ ] 15-01-PLAN.md — Explain Standard feature (plain English + required evidence list)
-- [ ] 15-02-PLAN.md — Evidence Assistant (dedicated "show evidence for X" interface)
-- [ ] 15-03-PLAN.md — AI Chat improvements (persistent context, suggested prompts)
+- [ ] 15-01-PLAN.md — StandardExplainerService + API + UI (plain English + evidence checklist)
+- [ ] 15-02-PLAN.md — EvidenceAssistantService + dedicated UI (context-aware evidence finder)
+- [ ] 15-03-PLAN.md — ChatContextService + persistent history + suggested prompts
 
 64. Explain Standard (plain-English interpretation with evidence checklist)
 65. Evidence Assistant (context-aware evidence finder with citations)
