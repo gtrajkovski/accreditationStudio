@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance Report - {{ data.institution.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pdf.css') }}">
+</head>
+<body>
+    {% include 'reports/partials/report_header.html' %}
+
+    <!-- Executive Summary -->
+    <div class="section">
+        <h2 class="section-title">Executive Summary</h2>
+        <p>
+            This report provides a comprehensive assessment of {{ data.institution.name }}'s
+            readiness for {{ data.institution.accreditor_code }} accreditation. The overall
+            readiness score is <strong>{{ data.readiness.total }}/100</strong>, calculated
+            from four key metrics: compliance, evidence coverage, document completeness,
+            and consistency.
+        </p>
+
+        <div class="chart-container">
+            <img src="{{ data.charts.readiness }}" alt="Readiness Score Ring Chart" />
+        </div>
+    </div>
+
+    <!-- Readiness Metrics -->
+    <div class="section">
+        <h2 class="section-title">Readiness Metrics</h2>
+        {% include 'reports/partials/metrics_table.html' %}
+    </div>
+
+    <!-- Compliance Findings -->
+    <div class="section page-break">
+        <h2 class="section-title">Compliance Findings Summary</h2>
+        <p>
+            The following chart shows the distribution of compliance findings by severity.
+            A total of <strong>{{ data.findings_summary.critical.count + data.findings_summary.high.count + data.findings_summary.medium.count + data.findings_summary.low.count }}</strong>
+            findings have been identified.
+        </p>
+
+        <div class="chart-container">
+            <img src="{{ data.charts.findings }}" alt="Findings by Severity" />
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Total</th>
+                    <th>Open</th>
+                    <th>In Progress</th>
+                    <th>Resolved</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Critical</strong></td>
+                    <td>{{ data.findings_summary.critical.count }}</td>
+                    <td>{{ data.findings_summary.critical.open }}</td>
+                    <td>{{ data.findings_summary.critical.in_progress }}</td>
+                    <td>{{ data.findings_summary.critical.resolved }}</td>
+                </tr>
+                <tr>
+                    <td><strong>High</strong></td>
+                    <td>{{ data.findings_summary.high.count }}</td>
+                    <td>{{ data.findings_summary.high.open }}</td>
+                    <td>{{ data.findings_summary.high.in_progress }}</td>
+                    <td>{{ data.findings_summary.high.resolved }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Medium</strong></td>
+                    <td>{{ data.findings_summary.medium.count }}</td>
+                    <td>{{ data.findings_summary.medium.open }}</td>
+                    <td>{{ data.findings_summary.medium.in_progress }}</td>
+                    <td>{{ data.findings_summary.medium.resolved }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Low</strong></td>
+                    <td>{{ data.findings_summary.low.count }}</td>
+                    <td>{{ data.findings_summary.low.open }}</td>
+                    <td>{{ data.findings_summary.low.in_progress }}</td>
+                    <td>{{ data.findings_summary.low.resolved }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Document Status -->
+    <div class="section">
+        <h2 class="section-title">Document Status</h2>
+        <div class="metrics-grid">
+            <div class="metric-row">
+                <div class="metric-label">Total Documents</div>
+                <div class="metric-value">{{ data.documents.total }}</div>
+            </div>
+            <div class="metric-row">
+                <div class="metric-label">Indexed & Searchable</div>
+                <div class="metric-value">{{ data.documents.indexed }}</div>
+            </div>
+            <div class="metric-row">
+                <div class="metric-label">Uploaded (Processing)</div>
+                <div class="metric-value">{{ data.documents.uploaded }}</div>
+            </div>
+            <div class="metric-row">
+                <div class="metric-label">Pending</div>
+                <div class="metric-value">{{ data.documents.pending }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Standards with Findings -->
+    {% if data.top_standards %}
+    <div class="section">
+        <h2 class="section-title">Standards Requiring Attention</h2>
+        <p>The following standards have the highest number of compliance findings:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Standard Code</th>
+                    <th>Title</th>
+                    <th>Findings</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for standard in data.top_standards[:10] %}
+                <tr>
+                    <td>{{ standard.code }}</td>
+                    <td>{{ standard.title }}</td>
+                    <td>{{ standard.finding_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="report-footer">
+        <p>
+            This report was generated by AccreditAI on {{ data.generated_at[:10] }}.
+            For questions or support, please contact your institution's compliance team.
+        </p>
+    </div>
+</body>
+</html>

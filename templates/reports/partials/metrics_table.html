@@ -1,0 +1,63 @@
+<table>
+    <thead>
+        <tr>
+            <th>Metric</th>
+            <th>Score</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Compliance</strong></td>
+            <td>{{ data.readiness.compliance }}/100</td>
+            <td>
+                {% if data.readiness.compliance >= 80 %}
+                    <span class="score-badge score-high">Excellent</span>
+                {% elif data.readiness.compliance >= 60 %}
+                    <span class="score-badge score-medium">Good</span>
+                {% else %}
+                    <span class="score-badge score-low">Needs Work</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Evidence Coverage</strong></td>
+            <td>{{ data.readiness.evidence }}/100</td>
+            <td>
+                {% if data.readiness.evidence >= 80 %}
+                    <span class="score-badge score-high">Excellent</span>
+                {% elif data.readiness.evidence >= 60 %}
+                    <span class="score-badge score-medium">Good</span>
+                {% else %}
+                    <span class="score-badge score-low">Needs Work</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Document Completeness</strong></td>
+            <td>{{ data.readiness.documents }}/100</td>
+            <td>
+                {% if data.readiness.documents >= 80 %}
+                    <span class="score-badge score-high">Excellent</span>
+                {% elif data.readiness.documents >= 60 %}
+                    <span class="score-badge score-medium">Good</span>
+                {% else %}
+                    <span class="score-badge score-low">Needs Work</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Consistency</strong></td>
+            <td>{{ data.readiness.consistency }}/100</td>
+            <td>
+                {% if data.readiness.consistency >= 80 %}
+                    <span class="score-badge score-high">Excellent</span>
+                {% elif data.readiness.consistency >= 60 %}
+                    <span class="score-badge score-medium">Good</span>
+                {% else %}
+                    <span class="score-badge score-low">Needs Work</span>
+                {% endif %}
+            </td>
+        </tr>
+    </tbody>
+</table>
