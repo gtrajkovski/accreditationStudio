@@ -26,6 +26,21 @@ from src.schemas.documents import (
     DocumentListSchema,
 )
 
+from src.schemas.agents import (
+    AgentSessionSchema,
+    AgentSessionListSchema,
+    TaskSchema,
+    TaskCreateSchema,
+)
+
+from src.schemas.standards import (
+    StandardsLibrarySchema,
+    StandardsListSchema,
+    StandardSectionSchema,
+    ChecklistItemSchema,
+    StandardsQuerySchema,
+)
+
 __all__ = [
     # Common
     "ErrorSchema",
@@ -43,4 +58,15 @@ __all__ = [
     "DocumentCreateSchema",
     "DocumentUploadResponseSchema",
     "DocumentListSchema",
+    # Agents
+    "AgentSessionSchema",
+    "AgentSessionListSchema",
+    "TaskSchema",
+    "TaskCreateSchema",
+    # Standards
+    "StandardsLibrarySchema",
+    "StandardsListSchema",
+    "StandardSectionSchema",
+    "ChecklistItemSchema",
+    "StandardsQuerySchema",
 ]
