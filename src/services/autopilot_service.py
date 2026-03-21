@@ -7,7 +7,9 @@ Runs:
 4. Readiness score computation
 """
 
+import hashlib
 import logging
+import os
 import sqlite3
 import threading
 from dataclasses import dataclass, field
@@ -455,6 +457,298 @@ def _compute_readiness(
     }
 
 
+def _compute_file_hash(file_path: str) -> Optional[str]:
+    """Compute SHA256 hash of a file.
+
+    Args:
+        file_path: Path to the file
+
+    Returns:
+        SHA256 hex digest, or None if file doesn't exist
+    """
+    try:
+        path = Path(file_path)
+        if not path.exists():
+            return None
+        sha256 = hashlib.sha256()
+        with open(path, 'rb') as f:
+            for chunk in iter(lambda: f.read(8192), b''):
+                sha256.update(chunk)
+        return sha256.hexdigest()
+    except Exception as e:
+        logger.warning(f"Failed to compute hash for {file_path}: {e}")
+        return None
+
+
+def _detect_changed_documents(
+    institution_id: str,
+    conn: sqlite3.Connection
+) -> List[Dict[str, Any]]:
+    """Detect documents that have changed since last indexing via SHA256.
+
+    Args:
+        institution_id: Institution ID
+        conn: Database connection
+
+    Returns:
+        List of changed document dicts with id, file_path, old_hash, new_hash
+    """
+    changed = []
+
+    # Get documents with file paths
+    cursor = conn.execute("""
+        SELECT id, file_path, content_hash
+        FROM documents
+        WHERE institution_id = ?
+          AND file_path IS NOT NULL
+    """, (institution_id,))
+
+    for row in cursor.fetchall():
+        file_path = row["file_path"]
+        old_hash = row["content_hash"]
+
+        new_hash = _compute_file_hash(file_path)
+        if new_hash is None:
+            continue
+
+        if old_hash != new_hash:
+            changed.append({
+                "id": row["id"],
+                "file_path": file_path,
+                "old_hash": old_hash,
+                "new_hash": new_hash,
+            })
+
+    return changed
+
+
+def _update_document_hash(
+    doc_id: str,
+    content_hash: str,
+    conn: sqlite3.Connection
+) -> None:
+    """Update document content hash after indexing."""
+    conn.execute("""
+        UPDATE documents
+        SET content_hash = ?, updated_at = datetime('now')
+        WHERE id = ?
+    """, (content_hash, doc_id))
+
+
+def _run_compliance_audit(
+    institution_id: str,
+    workspace_manager,
+    conn: sqlite3.Connection
+) -> Dict[str, int]:
+    """Run compliance audit using ComplianceAuditAgent.
+
+    Args:
+        institution_id: Institution ID
+        workspace_manager: Workspace manager instance
+        conn: Database connection
+
+    Returns:
+        Dict with findings_count
+    """
+    from src.agents.registry import AgentRegistry
+    from src.agents.base_agent import AgentType
+    from src.core.models import AgentSession, SessionStatus
+
+    findings_count = 0
+
+    # Get documents to audit
+    cursor = conn.execute("""
+        SELECT d.id as doc_id, d.doc_type
+        FROM documents d
+        WHERE d.institution_id = ?
+          AND d.status = 'indexed'
+        LIMIT 10
+    """, (institution_id,))
+
+    docs = cursor.fetchall()
+    if not docs:
+        logger.info(f"No indexed documents to audit for {institution_id}")
+        return {"findings_count": 0}
+
+    # Get standards library
+    cursor = conn.execute("""
+        SELECT id FROM standards_libraries
+        WHERE institution_id = ? OR institution_id IS NULL
+        ORDER BY institution_id DESC NULLS LAST
+        LIMIT 1
+    """, (institution_id,))
+    lib_row = cursor.fetchone()
+    standards_library_id = lib_row["id"] if lib_row else "std_accsc"
+
+    # Create session for the audit agent
+    session = AgentSession(
+        institution_id=institution_id,
+        agent_type=AgentType.COMPLIANCE_AUDIT.value,
+        status=SessionStatus.RUNNING,
+        orchestrator_request="Autopilot compliance audit",
+    )
+
+    # Create agent
+    agent = AgentRegistry.create(
+        AgentType.COMPLIANCE_AUDIT, session, workspace_manager
+    )
+
+    if agent is None:
+        logger.error("Failed to create ComplianceAuditAgent")
+        return {"findings_count": 0}
+
+    # Run audit for each document
+    for doc in docs:
+        try:
+            # Initialize audit
+            init_result = agent._execute_tool("initialize_audit", {
+                "institution_id": institution_id,
+                "document_id": doc["doc_id"],
+                "standards_library_id": standards_library_id,
+            })
+
+            if "error" in init_result:
+                logger.warning(f"Audit init failed for {doc['doc_id']}: {init_result['error']}")
+                continue
+
+            audit_id = init_result.get("audit_id")
+            if not audit_id:
+                continue
+
+            # Run completeness pass
+            agent._execute_tool("run_completeness_pass", {"audit_id": audit_id})
+
+            # Get findings count
+            cursor = conn.execute("""
+                SELECT COUNT(*) as count
+                FROM audit_findings
+                WHERE audit_run_id = ?
+            """, (audit_id,))
+            count_row = cursor.fetchone()
+            if count_row:
+                findings_count += count_row["count"]
+
+        except Exception as e:
+            logger.error(f"Audit failed for {doc['doc_id']}: {e}")
+            continue
+
+    return {"findings_count": findings_count}
+
+
+def _generate_morning_brief(
+    institution_id: str,
+    run: "AutopilotRun",
+    workspace_manager,
+    conn: sqlite3.Connection
+) -> Optional[str]:
+    """Generate morning brief markdown file.
+
+    Args:
+        institution_id: Institution ID
+        run: Completed autopilot run
+        workspace_manager: Workspace manager instance
+        conn: Database connection
+
+    Returns:
+        Path to generated brief file, or None on error
+    """
+    from src.services.readiness_service import get_next_actions, compute_readiness
+
+    # Get institution info
+    cursor = conn.execute(
+        "SELECT name, accreditor_primary FROM institutions WHERE id = ?",
+        (institution_id,)
+    )
+    row = cursor.fetchone()
+    inst_name = row["name"] if row else "Institution"
+    accreditor = row["accreditor_primary"] if row else "ACCSC"
+
+    # Get readiness
+    readiness = compute_readiness(institution_id, accreditor, conn)
+
+    # Calculate delta from yesterday
+    cursor = conn.execute("""
+        SELECT score_total
+        FROM institution_readiness_snapshots
+        WHERE institution_id = ?
+          AND DATE(created_at) < DATE('now')
+        ORDER BY created_at DESC
+        LIMIT 1
+    """, (institution_id,))
+    yesterday = cursor.fetchone()
+    yesterday_score = yesterday["score_total"] if yesterday else readiness.total
+    delta = readiness.total - yesterday_score
+
+    # Get next actions
+    actions = get_next_actions(institution_id, readiness, accreditor, limit=5)
+
+    # Format date
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    # Build brief content
+    brief_lines = [
+        f"# Morning Brief - {today}",
+        "",
+        f"**Institution:** {inst_name}",
+        "",
+        "## Readiness Score",
+        "",
+        f"**{readiness.total}%** ({delta:+d} from yesterday)",
+        "",
+        "## Top Blockers",
+        "",
+    ]
+
+    if readiness.blockers:
+        for i, blocker in enumerate(readiness.blockers[:5], 1):
+            brief_lines.append(f"{i}. {blocker.message}")
+    else:
+        brief_lines.append("*No critical blockers*")
+
+    brief_lines.extend([
+        "",
+        "## Next Best Actions",
+        "",
+    ])
+
+    if actions:
+        for i, action in enumerate(actions[:5], 1):
+            brief_lines.append(f"{i}. **{action.title}** - {action.reason}")
+    else:
+        brief_lines.append("*No pending actions*")
+
+    brief_lines.extend([
+        "",
+        "## Autopilot Run Summary",
+        "",
+        f"- Documents indexed: {run.docs_indexed}",
+        f"- Consistency issues found: {run.consistency_issues_found}",
+        f"- Audit findings: {run.audit_findings_count}",
+        f"- Duration: {run.duration_seconds or 0} seconds",
+        "",
+        "---",
+        f"*Generated by AccreditAI Autopilot at {datetime.now(timezone.utc).isoformat()}*",
+    ])
+
+    brief_content = "\n".join(brief_lines)
+
+    # Write to workspace
+    try:
+        workspace_dir = Config.WORKSPACE_DIR
+        briefs_dir = Path(workspace_dir) / institution_id / "briefs"
+        briefs_dir.mkdir(parents=True, exist_ok=True)
+
+        brief_path = briefs_dir / f"{today}.md"
+        brief_path.write_text(brief_content, encoding="utf-8")
+
+        logger.info(f"Generated morning brief: {brief_path}")
+        return str(brief_path)
+
+    except Exception as e:
+        logger.error(f"Failed to write morning brief: {e}")
+        return None
+
+
 def execute_autopilot_run(
     institution_id: str,
     trigger_type: TriggerType = TriggerType.MANUAL,
@@ -529,16 +823,9 @@ def execute_autopilot_run(
         if config.run_audit:
             if on_progress:
                 on_progress("Running compliance audit...", 60)
-            # Guard: Audit execution not yet implemented
-            # Raising NotImplementedError prevents silent no-op
-            logger.warning(
-                f"Autopilot run_audit=True for {institution_id} but audit execution not implemented. "
-                "Use manual audit via ComplianceAuditAgent."
-            )
-            raise NotImplementedError(
-                "Autopilot audit execution not yet implemented. "
-                "Use manual audit via ComplianceAuditAgent or disable run_audit in config."
-            )
+            result = _run_compliance_audit(institution_id, workspace_manager, conn)
+            run.audit_findings_count = result["findings_count"]
+            logger.info(f"Audit: {result['findings_count']} findings")
 
         # 4. Compute readiness
         if config.run_readiness:
@@ -556,6 +843,13 @@ def execute_autopilot_run(
             start = datetime.fromisoformat(run.started_at.replace("Z", "+00:00"))
             end = datetime.fromisoformat(run.completed_at.replace("Z", "+00:00"))
             run.duration_seconds = int((end - start).total_seconds())
+
+        # 5. Generate morning brief
+        if on_progress:
+            on_progress("Generating morning brief...", 95)
+        brief_path = _generate_morning_brief(institution_id, run, workspace_manager, conn)
+        if brief_path:
+            logger.info(f"Morning brief generated: {brief_path}")
 
         if on_progress:
             on_progress("Complete!", 100)
