@@ -791,6 +791,13 @@ def glossary_page():
     return render_template('settings/glossary.html')
 
 
+@app.route('/reports')
+def reports_page():
+    """Executive dashboard and reports page."""
+    institution_id = request.args.get("institution_id", "")
+    return render_template('pages/reports.html', institution_id=institution_id)
+
+
 # =============================================================================
 # Error Handlers
 # =============================================================================

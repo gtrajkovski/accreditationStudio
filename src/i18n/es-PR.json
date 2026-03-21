@@ -328,5 +328,40 @@
     "required": "Requerido",
     "relevant": "Relevante",
     "related": "Relacionado"
+  },
+  "reports": {
+    "title": "Informes",
+    "intro": "Panel ejecutivo con métricas de cumplimiento y generación de informes",
+    "overall_readiness": "Preparación General",
+    "readiness_breakdown": "Desglose de Preparación",
+    "findings_by_severity": "Hallazgos por Severidad",
+    "recent_reports": "Informes Recientes",
+    "generate_report": "Generar Informe",
+    "export_pdf": "Exportar PDF",
+    "generating": "Generando informe...",
+    "report_generated": "Informe generado exitosamente",
+    "download": "Descargar",
+    "compliance_report": "Informe de Cumplimiento",
+    "executive_summary": "Resumen Ejecutivo",
+    "no_reports": "No hay informes generados",
+    "no_reports_hint": "Haga clic en 'Generar Informe' para crear su primer informe de cumplimiento",
+    "trend_up": "Aumento desde el mes pasado",
+    "trend_down": "Disminución desde el mes pasado",
+    "date": "Fecha",
+    "type": "Tipo",
+    "status": "Estado",
+    "sub_scores": {
+      "compliance": "Cumplimiento",
+      "evidence": "Evidencia",
+      "documents": "Documentos",
+      "consistency": "Consistencia"
+    },
+    "table": {
+      "type": "Tipo",
+      "title": "Título",
+      "date": "Generado",
+      "size": "Tamaño",
+      "actions": "Acciones"
+    }
   }
 }

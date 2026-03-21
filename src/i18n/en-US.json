@@ -328,5 +328,40 @@
     "required": "Required",
     "relevant": "Relevant",
     "related": "Related"
+  },
+  "reports": {
+    "title": "Reports",
+    "intro": "Executive dashboard with compliance metrics and report generation",
+    "overall_readiness": "Overall Readiness",
+    "readiness_breakdown": "Readiness Breakdown",
+    "findings_by_severity": "Findings by Severity",
+    "recent_reports": "Recent Reports",
+    "generate_report": "Generate Report",
+    "export_pdf": "Export PDF",
+    "generating": "Generating report...",
+    "report_generated": "Report generated successfully",
+    "download": "Download",
+    "compliance_report": "Compliance Report",
+    "executive_summary": "Executive Summary",
+    "no_reports": "No reports generated yet",
+    "no_reports_hint": "Click 'Generate Report' to create your first compliance report",
+    "trend_up": "Up from last month",
+    "trend_down": "Down from last month",
+    "date": "Date",
+    "type": "Type",
+    "status": "Status",
+    "sub_scores": {
+      "compliance": "Compliance",
+      "evidence": "Evidence",
+      "documents": "Documents",
+      "consistency": "Consistency"
+    },
+    "table": {
+      "type": "Type",
+      "title": "Title",
+      "date": "Generated",
+      "size": "Size",
+      "actions": "Actions"
+    }
   }
 }
