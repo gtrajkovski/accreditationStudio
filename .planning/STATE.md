@@ -2,23 +2,23 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Enterprise & Polish
-status: roadmap_created
-last_updated: "2026-03-21T16:30:00.000Z"
+status: in_progress
+last_updated: "2026-03-21T17:36:01Z"
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 8
-  completed_plans: 0
+  completed_plans: 1
 ---
 
 # AccreditAI State
 
 ## Current Position
 
-Phase: Phase 17 - Report Enhancements (Ready to plan)
-Plan: —
-Status: Roadmap created, ready for phase planning
-Last activity: 2026-03-21 — v1.4 roadmap created
+Phase: Phase 17 - Report Enhancements
+Plan: 17-01 (Complete)
+Status: In progress
+Last activity: 2026-03-21 — Completed 17-01: Report Templates CRUD
 
 ## Next Session: Start Here
 
@@ -63,11 +63,36 @@ Ready to plan Phase 17.
 ## Progress Bar
 
 ```
-v1.4: [░░░░░░░░░░░░░░░░░░░░] 0/3 phases (0%)
-  Phase 17: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans
+v1.4: [██░░░░░░░░░░░░░░░░░░] 1/8 plans (12.5%)
+  Phase 17: [██████░░░░░░░░░░░░░░] 1/3 plans
   Phase 18: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans
   Phase 19: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans
 ```
+
+---
+
+## Current Phase: Phase 17 - Report Enhancements
+
+**Goal:** Users can customize and compare compliance reports over time
+
+### Plans (1/3 complete)
+
+1. **17-01: Report Templates CRUD** ✅ Complete (11.3 minutes)
+   - Database migration 0029_report_templates.sql
+   - 5 template CRUD methods in ReportService
+   - 5 REST endpoints in reports API
+   - JSON section storage with is_default enforcement
+   - Commits: c49b529, 9e70cd2
+
+2. **17-02: Report Customization UI** (Pending)
+   - Template manager modal
+   - Section selection UI
+   - Template dropdown on report page
+
+3. **17-03: Report Comparison & Trends** (Pending)
+   - Side-by-side comparison view
+   - Trend charts (30/60/90 days)
+   - Executive summary customization
 
 ---
 
