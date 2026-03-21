@@ -209,7 +209,11 @@ Plans:
   4. Exported logs include all tool calls, agent decisions, confidence scores, and timestamps
   5. User can filter export by agent type (e.g., only Compliance Audit sessions) or operation type
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 19-01-PLAN.md — AuditTrailService + API endpoints (query, filter, export JSON)
+- [ ] 19-02-PLAN.md — ZIP packaging + UI page (export with report, session browser)
 
 ---
 
@@ -234,8 +238,8 @@ Plans:
 | 15. AI Explainers | 3/3 | Complete | 2026-Q3 |
 | 16. Reporting | 3/3 | Complete | 2026-Q3 |
 | 17. Report Enhancements | 4/4 | Complete | 2026-Q3 |
-| 18. API Documentation | 1/2 | In Progress | - |
-| 19. Audit Trail Export | 0/3 | Not started | - |
+| 18. API Documentation | 2/2 | Complete | 2026-Q3 |
+| 19. Audit Trail Export | 0/2 | Not started | - |
 
 ---
 
