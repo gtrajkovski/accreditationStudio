@@ -5,9 +5,12 @@ regulatory requirements. The core audit engine of AccreditAI.
 """
 
 import json
+import logging
 from typing import Dict, Any, List, Optional, Callable, Generator
 
 from src.agents.base_agent import BaseAgent, AgentType
+
+logger = logging.getLogger(__name__)
 from src.agents.registry import register_agent
 from src.core.models import (
     AgentResult,
@@ -260,8 +263,8 @@ class ComplianceAuditAgent(BaseAgent):
                     chunks = json.loads(chunks_data.decode("utf-8"))
                     texts = [c.get("text_anonymized", "") for c in chunks.get("chunks", [])]
                     return "\n\n".join(texts)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to load document chunks: {e}")
         return None
 
     def _get_applicable_standards(
@@ -403,8 +406,8 @@ Respond ONLY with valid JSON in this exact format:
                     audit = Audit.from_dict(json.loads(data.decode("utf-8")))
                     self._audit_cache[audit_id] = audit
                     return audit
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to load audit {audit_id}: {e}")
         return None
 
     def _save_audit(self, audit: Audit) -> None:
@@ -420,8 +423,8 @@ Respond ONLY with valid JSON in this exact format:
                     json.dumps(audit.to_dict(), indent=2).encode("utf-8"),
                     create_version=True
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"Failed to save audit {audit.id}: {e}")
 
     def _update_audit_summary(self, audit: Audit) -> None:
         """Recompute audit summary from findings."""
