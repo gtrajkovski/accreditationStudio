@@ -136,6 +136,39 @@
 }
 
 /* ============================================
+   Trend Section
+   ============================================ */
+.trend-section {
+  margin-top: 2rem;
+  margin-bottom: var(--spacing-xl);
+}
+
+.trend-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.trend-btn {
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.trend-btn:hover {
+  background: var(--bg-card);
+}
+
+.trend-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* ============================================
    Report History Section
    ============================================ */
 .report-history {

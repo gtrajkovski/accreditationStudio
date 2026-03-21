@@ -75,6 +75,23 @@
     </div>
   </section>
 
+  <!-- Readiness Trend -->
+  <section class="trend-section">
+    <div class="section-header">
+      <h3>{{ t('reports.readiness_trend') }}</h3>
+      <div class="trend-controls">
+        <button class="btn btn-sm trend-btn active" data-days="30">30 {{ t('reports.days') }}</button>
+        <button class="btn btn-sm trend-btn" data-days="60">60 {{ t('reports.days') }}</button>
+        <button class="btn btn-sm trend-btn" data-days="90">90 {{ t('reports.days') }}</button>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-container">
+        <canvas id="trend-chart"></canvas>
+      </div>
+    </div>
+  </section>
+
   <!-- Report History -->
   <section class="report-history">
     <div class="section-header">

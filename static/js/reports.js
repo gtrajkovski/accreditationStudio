@@ -12,6 +12,8 @@ class ReportsManager {
     };
     this.readinessData = null;
     this.findingsData = null;
+    this.trendChart = null;
+    this.trendData = [];
   }
 
   /**
@@ -26,6 +28,7 @@ class ReportsManager {
     await this.loadReadiness();
     await this.loadFindings();
     await this.loadReportHistory();
+    await this.loadTrend(30);
     this.initCharts();
     this.attachEventListeners();
   }
@@ -322,6 +325,105 @@ class ReportsManager {
             },
             grid: {
               display: false
+            }
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Load readiness trend data
+   */
+  async loadTrend(days = 30) {
+    try {
+      const response = await fetch(`/api/reports/institutions/${this.institutionId}/trend?days=${days}`);
+      const data = await response.json();
+
+      if (data.success) {
+        this.trendData = data.trend;
+        this.renderTrendChart();
+      }
+    } catch (err) {
+      console.error('Failed to load trend:', err);
+    }
+  }
+
+  /**
+   * Render trend chart with Chart.js
+   */
+  renderTrendChart() {
+    const ctx = document.getElementById('trend-chart');
+    if (!ctx) return;
+
+    // Destroy previous chart if exists
+    if (this.trendChart) {
+      this.trendChart.destroy();
+    }
+
+    const labels = this.trendData.map(d => new Date(d.date).toLocaleDateString());
+    const values = this.trendData.map(d => d.readiness);
+
+    this.trendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Readiness Score',
+          data: values,
+          borderColor: 'rgb(233, 69, 96)',  // var(--accent)
+          backgroundColor: 'rgba(233, 69, 96, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            callbacks: {
+              title: (items) => {
+                return new Date(this.trendData[items[0].dataIndex].date).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                });
+              },
+              label: (context) => {
+                return `Readiness: ${context.parsed.y}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              color: '#9ca3af'
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            }
+          },
+          x: {
+            ticks: {
+              color: '#9ca3af',
+              maxRotation: 45,
+              minRotation: 45
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
             }
           }
         }
@@ -720,6 +822,16 @@ class ReportsManager {
     if (generateBtn) {
       generateBtn.addEventListener('click', () => this.generateReport());
     }
+
+    // Trend button listeners
+    document.querySelectorAll('.trend-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.trend-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        const days = parseInt(e.target.dataset.days);
+        this.loadTrend(days);
+      });
+    });
 
     // Schedule modal triggers
     const newScheduleBtn = document.getElementById('new-schedule-btn');
