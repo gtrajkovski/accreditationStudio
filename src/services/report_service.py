@@ -315,3 +315,141 @@ class ReportService:
         conn.commit()
 
         return True
+
+    @staticmethod
+    def compare_reports(report_id_a: str, report_id_b: str) -> Dict[str, Any]:
+        """Compare two reports and return delta metrics.
+
+        Args:
+            report_id_a: First report ID (older)
+            report_id_b: Second report ID (newer)
+
+        Returns:
+            Dict with report_a, report_b, deltas structure
+        """
+        conn = get_conn()
+
+        # Fetch both reports
+        rows = conn.execute(
+            "SELECT * FROM reports WHERE id IN (?, ?)",
+            (report_id_a, report_id_b)
+        ).fetchall()
+
+        if len(rows) != 2:
+            raise ValueError("One or both reports not found")
+
+        # Parse reports
+        reports = {}
+        for row in rows:
+            report = dict(row)
+            if report.get("metadata"):
+                try:
+                    report["metadata"] = json.loads(report["metadata"])
+                except (json.JSONDecodeError, TypeError):
+                    report["metadata"] = {}
+            else:
+                report["metadata"] = {}
+            reports[report["id"]] = report
+
+        report_a = reports[report_id_a]
+        report_b = reports[report_id_b]
+
+        # Get readiness and findings from metadata (stored during generation)
+        readiness_a = report_a["metadata"].get("readiness_total", 0)
+        readiness_b = report_b["metadata"].get("readiness_total", 0)
+        findings_a = report_a["metadata"].get("findings_count", 0)
+        findings_b = report_b["metadata"].get("findings_count", 0)
+
+        # Regenerate full report data to get findings_summary breakdown
+        data_a = ReportService.generate_compliance_report_data(report_a["institution_id"])
+        data_b = ReportService.generate_compliance_report_data(report_b["institution_id"])
+
+        findings_summary_a = data_a["findings_summary"]
+        findings_summary_b = data_b["findings_summary"]
+
+        # Calculate deltas
+        readiness_delta = readiness_b - readiness_a
+        findings_delta = findings_b - findings_a
+
+        # Calculate severity-level deltas
+        by_severity = {
+            "critical": findings_summary_b["critical"]["count"] - findings_summary_a["critical"]["count"],
+            "high": findings_summary_b["high"]["count"] - findings_summary_a["high"]["count"],
+            "medium": findings_summary_b["medium"]["count"] - findings_summary_a["medium"]["count"],
+            "low": findings_summary_b["low"]["count"] - findings_summary_a["low"]["count"],
+        }
+
+        # Determine direction
+        if readiness_delta > 1:
+            direction = "improved"
+        elif readiness_delta < -1:
+            direction = "declined"
+        else:
+            direction = "unchanged"
+
+        return {
+            "report_a": {
+                "id": report_a["id"],
+                "generated_at": report_a["generated_at"],
+                "readiness_total": readiness_a,
+                "findings_count": findings_a,
+                "findings_summary": findings_summary_a,
+            },
+            "report_b": {
+                "id": report_b["id"],
+                "generated_at": report_b["generated_at"],
+                "readiness_total": readiness_b,
+                "findings_count": findings_b,
+                "findings_summary": findings_summary_b,
+            },
+            "deltas": {
+                "readiness": readiness_delta,
+                "findings": findings_delta,
+                "by_severity": by_severity,
+            },
+            "direction": direction,
+        }
+
+    @staticmethod
+    def get_readiness_trend(institution_id: str, days: int = 30) -> List[Dict[str, Any]]:
+        """Get readiness score trend over time.
+
+        Args:
+            institution_id: Institution ID
+            days: Number of days to look back (default 30)
+
+        Returns:
+            List of {date, readiness} dicts sorted by date ascending
+        """
+        from datetime import timedelta
+
+        conn = get_conn()
+
+        # Calculate cutoff date
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+        # Query reports in date range
+        query = """
+            SELECT generated_at, metadata FROM reports
+            WHERE institution_id = ? AND generated_at >= ?
+            ORDER BY generated_at ASC
+        """
+        rows = conn.execute(query, (institution_id, cutoff)).fetchall()
+
+        # Extract readiness scores from metadata
+        trend_data = []
+        for row in rows:
+            try:
+                metadata = json.loads(row["metadata"]) if row["metadata"] else {}
+                readiness_total = metadata.get("readiness_total")
+
+                if readiness_total is not None:
+                    trend_data.append({
+                        "date": row["generated_at"],
+                        "readiness": readiness_total
+                    })
+            except (json.JSONDecodeError, TypeError, KeyError):
+                # Skip malformed records
+                continue
+
+        return trend_data

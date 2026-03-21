@@ -122,6 +122,40 @@ def list_institution_reports(institution_id: str):
         return jsonify({"success": False, "error": "Failed to list reports"}), 500
 
 
+@reports_bp.route("/institutions/<institution_id>/trend", methods=["GET"])
+def get_institution_trend(institution_id: str):
+    """Get readiness trend for institution.
+
+    Query params:
+        days: Number of days to look back (default 30, max 365)
+
+    Returns:
+        JSON with trend data points
+    """
+    try:
+        # Parse days parameter with validation
+        days = int(request.args.get("days", 30))
+        if days < 1:
+            return jsonify({"success": False, "error": "days must be at least 1"}), 400
+        if days > 365:
+            return jsonify({"success": False, "error": "days cannot exceed 365"}), 400
+
+        # Get trend data
+        trend = ReportService.get_readiness_trend(institution_id, days)
+
+        return jsonify({
+            "success": True,
+            "trend": trend,
+            "count": len(trend),
+        })
+
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error getting trend: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Failed to get trend"}), 500
+
+
 @reports_bp.route("/<report_id>", methods=["GET"])
 def get_report(report_id: str):
     """Get single report metadata.
