@@ -461,5 +461,22 @@
     "tokens_used": "Tokens Usados",
     "confidence": "Confianza",
     "view_details": "Ver Detalles"
+  },
+  "autopilot": {
+    "brief": {
+      "title": "Informe Matutino",
+      "score": "Puntuacion de Preparacion",
+      "blockers": "Bloqueos Principales",
+      "actions": "Proximas Acciones",
+      "summary": "Resumen de Autopiloto",
+      "docs_indexed": "Documentos indexados",
+      "consistency_issues": "Problemas de consistencia encontrados",
+      "audit_findings": "Hallazgos de auditoria",
+      "duration": "Duracion",
+      "seconds": "segundos",
+      "no_blockers": "Sin bloqueos criticos",
+      "no_actions": "Sin acciones pendientes",
+      "from_yesterday": "desde ayer"
+    }
   }
 }

@@ -461,5 +461,22 @@
     "tokens_used": "Tokens Used",
     "confidence": "Confidence",
     "view_details": "View Details"
+  },
+  "autopilot": {
+    "brief": {
+      "title": "Morning Brief",
+      "score": "Readiness Score",
+      "blockers": "Top Blockers",
+      "actions": "Next Best Actions",
+      "summary": "Autopilot Run Summary",
+      "docs_indexed": "Documents indexed",
+      "consistency_issues": "Consistency issues found",
+      "audit_findings": "Audit findings",
+      "duration": "Duration",
+      "seconds": "seconds",
+      "no_blockers": "No critical blockers",
+      "no_actions": "No pending actions",
+      "from_yesterday": "from yesterday"
+    }
   }
 }
