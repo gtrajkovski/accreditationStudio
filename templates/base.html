@@ -186,6 +186,9 @@
                             </svg>
                             Reports
                         </a>
+                        <a href="{{ url_for('audit_trails_page') }}{% if current_institution %}?institution_id={{ current_institution.id }}{% endif %}" class="nav-item nav-item-nested {% if request.endpoint == 'audit_trails_page' %}active{% endif %}">
+                            {{ t('nav.audit_trails') }}
+                        </a>
                     </div>
                 </div>
 

@@ -14,7 +14,8 @@
     "work_queue": "Cola de Trabajo",
     "settings": "Configuración",
     "help": "Ayuda",
-    "logout": "Cerrar Sesión"
+    "logout": "Cerrar Sesión",
+    "audit_trails": "Exportar Rastro de Auditoría"
   },
   "work_queue": {
     "title": "Cola de Trabajo",

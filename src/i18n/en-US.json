@@ -14,7 +14,8 @@
     "work_queue": "Work Queue",
     "settings": "Settings",
     "help": "Help",
-    "logout": "Logout"
+    "logout": "Logout",
+    "audit_trails": "Audit Trail Export"
   },
   "work_queue": {
     "title": "Work Queue",

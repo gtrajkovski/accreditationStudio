@@ -909,6 +909,23 @@ def reports_page():
     return render_template('pages/reports.html', institution_id=institution_id)
 
 
+@app.route("/audit-trails")
+def audit_trails_page():
+    """Render audit trails export page."""
+    institution_id = request.args.get("institution_id")
+
+    # Get first institution if none specified
+    if not institution_id:
+        institutions = workspace_manager.list_institutions()
+        if institutions:
+            institution_id = institutions[0]["id"]
+
+    return render_template(
+        "pages/audit_trails.html",
+        institution_id=institution_id or ""
+    )
+
+
 # =============================================================================
 # Error Handlers
 # =============================================================================
