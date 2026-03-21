@@ -395,6 +395,15 @@
     "success": "Éxito",
     "failed": "Fallido",
     "confirm_delete_schedule": "¿Está seguro de que desea eliminar este horario?",
-    "no_schedules": "No hay informes programados aún"
+    "no_schedules": "No hay informes programados aún",
+    "readiness_trend": "Tendencia de Preparación",
+    "days": "días",
+    "key_metrics": "Métricas Clave",
+    "customize": "Personalizar",
+    "customize_metrics": "Personalizar Métricas",
+    "customize_metrics_help": "Seleccione qué métricas mostrar en el resumen ejecutivo. La puntuación general de preparación siempre es visible.",
+    "compare_reports": "Comparar Informes",
+    "select_report": "Seleccionar informe...",
+    "compare": "Comparar"
   }
 }

@@ -395,6 +395,15 @@
     "success": "Success",
     "failed": "Failed",
     "confirm_delete_schedule": "Are you sure you want to delete this schedule?",
-    "no_schedules": "No scheduled reports yet"
+    "no_schedules": "No scheduled reports yet",
+    "readiness_trend": "Readiness Trend",
+    "days": "days",
+    "key_metrics": "Key Metrics",
+    "customize": "Customize",
+    "customize_metrics": "Customize Metrics",
+    "customize_metrics_help": "Select which metrics to display in the executive summary. The overall readiness score is always visible.",
+    "compare_reports": "Compare Reports",
+    "select_report": "Select report...",
+    "compare": "Compare"
   }
 }
