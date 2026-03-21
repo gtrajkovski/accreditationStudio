@@ -291,5 +291,14 @@
     "command_palette_intro": "Presione Ctrl+K para buscar y navegar rápidamente.",
     "dismiss": "Descartar",
     "skip_tour": "Omitir recorrido"
+  },
+  "standard_explainer": {
+    "title": "Explicación en Lenguaje Sencillo",
+    "required_evidence": "Evidencia Requerida",
+    "common_mistakes": "Errores Comunes a Evitar",
+    "why_matters": "Por Qué Importa",
+    "explain": "Explicar",
+    "refresh": "Regenerar Explicación",
+    "loading": "Generando explicación..."
   }
 }

@@ -291,5 +291,14 @@
     "command_palette_intro": "Press Ctrl+K to quickly search and navigate anywhere.",
     "dismiss": "Dismiss",
     "skip_tour": "Skip tour"
+  },
+  "standard_explainer": {
+    "title": "Plain English Explanation",
+    "required_evidence": "Required Evidence",
+    "common_mistakes": "Common Mistakes to Avoid",
+    "why_matters": "Why This Matters",
+    "explain": "Explain",
+    "refresh": "Regenerate Explanation",
+    "loading": "Generating explanation..."
   }
 }

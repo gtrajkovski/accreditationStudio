@@ -1,0 +1,254 @@
+<!--
+Standard Explainer Partial
+Displays plain-English explanation of a standard with evidence checklist.
+Usage: Include this partial in standards display pages.
+-->
+
+<div class="standard-explainer-wrapper">
+    <!-- Explain Button -->
+    <button class="btn btn-secondary btn-sm btn-explain"
+            data-standard-id="{{ standard.id }}"
+            onclick="standardExplainer.toggleExplanation(this.closest('.standard-item'), '{{ standard.id }}')">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="mr-1">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+            <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+        </svg>
+        <span data-i18n="standard_explainer.explain">Explain</span>
+    </button>
+
+    <!-- Explanation Container (dynamically populated) -->
+    <div class="standard-explanation-container" style="display: none;"></div>
+</div>
+
+<style>
+/* Standard Explainer Styles */
+.standard-explainer-wrapper {
+    margin-top: 1rem;
+}
+
+.standard-explanation-container {
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background: var(--bg-card, #0f3460);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Explanation Header */
+.explanation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.explanation-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+
+/* Explanation Content */
+.explanation-content {
+    margin-bottom: 1.5rem;
+}
+
+.plain-english {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-primary, #e0e0e0);
+    margin: 0;
+}
+
+/* Explanation Sections */
+.explanation-section {
+    margin-bottom: 1.5rem;
+}
+
+.explanation-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent, #e94560);
+    margin-bottom: 0.75rem;
+}
+
+/* Evidence List */
+.evidence-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.evidence-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: var(--bg-secondary, #16213e);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.evidence-item:hover {
+    background: var(--bg-primary, #1a1a2e);
+}
+
+.evidence-checkbox {
+    margin-right: 0.75rem;
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+}
+
+.evidence-item span {
+    flex: 1;
+    color: var(--text-primary, #e0e0e0);
+}
+
+/* Mistakes List */
+.mistakes-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mistakes-list li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--warning, #fbbf24);
+}
+
+.mistakes-list li::before {
+    content: "⚠";
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1rem;
+}
+
+/* Regulatory Context (Collapsible) */
+.explanation-context {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-secondary, #16213e);
+    border-left: 3px solid var(--accent, #e94560);
+    border-radius: 4px;
+}
+
+.explanation-context summary {
+    font-weight: 600;
+    color: var(--accent, #e94560);
+    cursor: pointer;
+    user-select: none;
+}
+
+.explanation-context summary:hover {
+    color: var(--text-primary, #e0e0e0);
+}
+
+.explanation-context p {
+    margin-top: 0.75rem;
+    margin-bottom: 0;
+    color: var(--text-secondary, #b0b0b0);
+    line-height: 1.6;
+}
+
+/* Warning for Low Confidence */
+.explanation-warning {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid var(--warning, #fbbf24);
+    border-radius: 4px;
+    color: var(--warning, #fbbf24);
+    font-size: 0.875rem;
+}
+
+.explanation-warning strong {
+    font-weight: 600;
+}
+
+/* Loading State */
+.explanation-loading {
+    padding: 1rem 0;
+}
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.05) 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.05) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+}
+
+.skeleton-title {
+    height: 1.5rem;
+    width: 60%;
+}
+
+.skeleton-text {
+    height: 1rem;
+    width: 100%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Error State */
+.explanation-error {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.error-message {
+    color: var(--danger, #ef4444);
+    margin-bottom: 1rem;
+}
+
+/* Button Styles */
+.btn-explain {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    padding: 0.25rem 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary, #b0b0b0);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-icon:hover {
+    color: var(--text-primary, #e0e0e0);
+}
+</style>
