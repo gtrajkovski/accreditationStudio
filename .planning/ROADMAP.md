@@ -181,7 +181,7 @@ Plans:
 - [x] 17-03-PLAN.md — Trend Charts + Metric Customization (Chart.js trend, localStorage preferences) ✅
 - [x] 17-04-PLAN.md — Gap Closure: Template Management UI ✅
 
-### Phase 18: API Documentation (In Progress)
+### Phase 18: API Documentation ✅ COMPLETE
 **Goal:** Developers can explore and integrate with the API via interactive documentation
 **Depends on:** Nothing (independent infrastructure)
 **Requirements:** API-01, API-02, API-03, API-04
@@ -192,11 +192,11 @@ Plans:
   4. Endpoints are grouped by blueprint (institutions, documents, agents, etc.) in the UI
   5. User can test API endpoints directly from the Swagger UI interface
 
-**Plans:** 1/2 plans complete
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 18-01-PLAN.md — APIFlask setup + OpenAPI config + Swagger UI at /api/docs **COMPLETE** (262b068, fa6c257, ccf8eb8)
-- [ ] 18-02-PLAN.md — Marshmallow schemas with request/response examples
+- [x] 18-02-PLAN.md — Marshmallow schemas with request/response examples **COMPLETE** (b95f91b, fda7bd7, 655e8c9)
 
 ### Phase 19: Audit Trail Export
 **Goal:** Users can export complete compliance audit trails for regulatory evidence

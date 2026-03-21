@@ -19,7 +19,7 @@ Requirements for v1.4 - Enterprise & Polish milestone.
 
 - [x] **API-01**: System generates OpenAPI 3.0 spec from Flask blueprints
 - [x] **API-02**: User can access Swagger UI at /api/docs endpoint
-- [ ] **API-03**: API documentation includes request/response examples
+- [x] **API-03**: API documentation includes request/response examples
 - [x] **API-04**: API documentation groups endpoints by blueprint
 
 ### Audit Trail Export
@@ -65,7 +65,7 @@ Deferred to future milestones.
 | RPT-05 | Phase 17 | Pending |
 | API-01 | Phase 18 | Complete |
 | API-02 | Phase 18 | Complete |
-| API-03 | Phase 18 | Pending |
+| API-03 | Phase 18 | Complete |
 | API-04 | Phase 18 | Complete |
 | AUD-01 | Phase 19 | Pending |
 | AUD-02 | Phase 19 | Pending |
