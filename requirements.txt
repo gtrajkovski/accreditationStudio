@@ -29,6 +29,10 @@ icalendar>=5.0.0
 
 # Scheduling
 APScheduler>=3.10.0
+Flask-APScheduler>=1.13.0
+
+# Email
+Flask-Mail>=0.10.0
 
 # PDF generation
 weasyprint>=68.0.0
