@@ -15,6 +15,7 @@ class ReportsManager {
     this.trendChart = null;
     this.trendData = [];
     this.visibleMetrics = [];
+    this.templatesData = [];
   }
 
   /**
@@ -31,6 +32,7 @@ class ReportsManager {
     await this.loadFindings();
     await this.loadReportHistory();
     await this.loadTrend(30);
+    await this.loadTemplates();
     this.initCharts();
     this.attachEventListeners();
   }
@@ -991,6 +993,163 @@ class ReportsManager {
   }
 
   /**
+   * Load report templates
+   */
+  async loadTemplates() {
+    try {
+      const response = await fetch(`/api/reports/templates?institution_id=${this.institutionId}`);
+      if (!response.ok) throw new Error('Failed to load templates');
+
+      const data = await response.json();
+      this.templatesData = data.templates || [];
+      this.renderTemplateList();
+    } catch (error) {
+      console.error('Error loading templates:', error);
+      this.showToast('Failed to load templates', 'error');
+    }
+  }
+
+  /**
+   * Render template list
+   */
+  renderTemplateList() {
+    const tbody = document.getElementById('templates-tbody');
+    const emptyState = document.getElementById('templates-empty');
+
+    if (this.templatesData.length === 0) {
+      tbody.innerHTML = '';
+      tbody.appendChild(emptyState);
+      return;
+    }
+
+    tbody.innerHTML = '';
+    this.templatesData.forEach(template => {
+      const row = document.createElement('tr');
+      const sectionsCount = template.sections.length;
+      const defaultBadge = template.is_default ? '<span class="badge badge-accent">Default</span>' : '';
+
+      row.innerHTML = `
+        <td>${this.escapeHtml(template.name)}</td>
+        <td>${sectionsCount} sections</td>
+        <td>${defaultBadge}</td>
+        <td>
+          <button class="btn btn-sm btn-secondary edit-template-btn" data-id="${template.id}">Edit</button>
+          <button class="btn btn-sm btn-danger delete-template-btn" data-id="${template.id}">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    // Attach event listeners
+    document.querySelectorAll('.edit-template-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.openEditTemplate(btn.dataset.id));
+    });
+    document.querySelectorAll('.delete-template-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.deleteTemplate(btn.dataset.id));
+    });
+  }
+
+  /**
+   * Open edit template modal
+   */
+  async openEditTemplate(templateId) {
+    const template = this.templatesData.find(t => t.id === templateId);
+    if (!template) return;
+
+    // Populate form
+    document.getElementById('template-name').value = template.name;
+    document.getElementById('template-description').value = template.description || '';
+    document.getElementById('template-is-default').checked = template.is_default;
+    document.getElementById('template-id').value = template.id;
+    document.getElementById('template-modal-title').textContent = 'Edit Template';
+
+    // Reset all checkboxes except readiness (always checked/disabled)
+    document.querySelectorAll('#template-form input[type="checkbox"]:not([name="readiness"])').forEach(cb => {
+      cb.checked = false;
+    });
+
+    // Check section checkboxes
+    template.sections.forEach(section => {
+      const checkbox = document.querySelector(`#template-form input[name="${section}"]`);
+      if (checkbox) checkbox.checked = true;
+    });
+
+    // Show modal
+    document.getElementById('template-modal').classList.remove('hidden');
+  }
+
+  /**
+   * Create or update template
+   */
+  async createOrUpdateTemplate(formData) {
+    const templateId = formData.get('template_id');
+    const isEdit = !!templateId;
+
+    const sections = [];
+    ['readiness', 'findings_summary', 'documents', 'top_standards', 'charts'].forEach(section => {
+      if (formData.get(section) === 'on') sections.push(section);
+    });
+
+    const body = {
+      institution_id: this.institutionId,
+      name: formData.get('name'),
+      description: formData.get('description'),
+      sections: sections,
+      is_default: formData.get('is_default') === 'on'
+    };
+
+    try {
+      const url = isEdit ? `/api/reports/templates/${templateId}` : '/api/reports/templates';
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) throw new Error('Failed to save template');
+
+      this.showToast(isEdit ? 'Template updated' : 'Template created', 'success');
+      document.getElementById('template-modal').classList.add('hidden');
+      await this.loadTemplates();
+    } catch (error) {
+      console.error('Error saving template:', error);
+      this.showToast('Failed to save template', 'error');
+    }
+  }
+
+  /**
+   * Delete template with confirmation
+   */
+  async deleteTemplate(templateId) {
+    if (!confirm('Are you sure you want to delete this template?')) return;
+
+    try {
+      const response = await fetch(`/api/reports/templates/${templateId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('Failed to delete template');
+
+      this.showToast('Template deleted', 'success');
+      await this.loadTemplates();
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      this.showToast('Failed to delete template', 'error');
+    }
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
    * Attach event listeners
    */
   attachEventListeners() {
@@ -1023,6 +1182,40 @@ class ReportsManager {
     const metricsForm = document.getElementById('metrics-form');
     if (metricsForm) {
       metricsForm.addEventListener('submit', (e) => this.handleMetricsSubmit(e));
+    }
+
+    // Template management
+    const newTemplateBtn = document.getElementById('new-template-btn');
+    if (newTemplateBtn) {
+      newTemplateBtn.addEventListener('click', () => {
+        document.getElementById('template-form').reset();
+        document.getElementById('template-id').value = '';
+        document.getElementById('template-modal-title').textContent = 'Create Template';
+        document.getElementById('template-modal').classList.remove('hidden');
+      });
+    }
+
+    const cancelTemplateBtn = document.getElementById('cancel-template-btn');
+    if (cancelTemplateBtn) {
+      cancelTemplateBtn.addEventListener('click', () => {
+        document.getElementById('template-modal').classList.add('hidden');
+      });
+    }
+
+    const templateForm = document.getElementById('template-form');
+    if (templateForm) {
+      templateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.createOrUpdateTemplate(new FormData(templateForm));
+      });
+    }
+
+    // Template modal backdrop close
+    const templateModal = document.getElementById('template-modal');
+    if (templateModal) {
+      templateModal.querySelector('.modal-backdrop')?.addEventListener('click', () => {
+        document.getElementById('template-modal').classList.add('hidden');
+      });
     }
 
     // Schedule modal triggers
