@@ -9,9 +9,14 @@ Blocks compliance determinations without strong evidence.
 
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+import logging
 
 from src.agents.base_agent import BaseAgent, AgentType
 from src.agents.registry import register_agent
+from src.db.connection import get_conn
+from src.config import Config
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -220,42 +225,186 @@ NEVER approve claims without proper evidence grounding."""
         }
 
     def _tool_validate_audit(self, tool_input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate all findings from an audit."""
+        """Validate all findings from an audit have proper evidence."""
         institution_id = tool_input.get("institution_id")
         audit_id = tool_input.get("audit_id")
 
-        # TODO: Load audit findings from workspace and validate each
-        return {
-            "success": True,
-            "institution_id": institution_id,
-            "audit_id": audit_id,
-            "total_findings": 0,
-            "valid_findings": 0,
-            "blocked_findings": 0,
-            "flagged_findings": 0,
-            "evidence_completeness_score": 0.0,
-            "message": "Audit validation requires findings data",
-            "status": "stub"
-        }
+        if not institution_id or not audit_id:
+            return {"error": "institution_id and audit_id are required", "success": False}
+
+        try:
+            conn = get_conn()
+            cursor = conn.cursor()
+
+            # Load audit findings
+            cursor.execute("""
+                SELECT f.id, f.summary, f.confidence, f.document_id, f.checklist_item_id
+                FROM audit_findings f
+                JOIN audit_runs r ON f.audit_run_id = r.id
+                WHERE r.id = ? AND r.institution_id = ?
+            """, (audit_id, institution_id))
+            findings = cursor.fetchall()
+
+            if not findings:
+                return {
+                    "success": True,
+                    "institution_id": institution_id,
+                    "audit_id": audit_id,
+                    "total_findings": 0,
+                    "validated": 0,
+                    "failed": 0,
+                    "failures": [],
+                    "message": "No findings found for this audit"
+                }
+
+            validated = 0
+            failed = 0
+            failures = []
+            confidence_threshold = Config.AGENT_CONFIDENCE_THRESHOLD
+
+            for finding in findings:
+                finding_id = finding["id"]
+                confidence = finding["confidence"] or 0.0
+                document_id = finding["document_id"]
+                issues = []
+
+                # Check for standard citation
+                cursor.execute("""
+                    SELECT COUNT(*) as count FROM finding_standard_refs
+                    WHERE finding_id = ?
+                """, (finding_id,))
+                std_count = cursor.fetchone()["count"]
+                has_standard = std_count > 0
+
+                # Check for document evidence reference
+                cursor.execute("""
+                    SELECT COUNT(*) as count FROM evidence_refs
+                    WHERE finding_id = ?
+                """, (finding_id,))
+                ev_count = cursor.fetchone()["count"]
+                has_evidence = ev_count > 0 or document_id is not None
+
+                # Validate
+                if not has_standard:
+                    issues.append("Missing standard citation")
+                if not has_evidence:
+                    issues.append("Missing document evidence reference")
+                if confidence < confidence_threshold:
+                    issues.append(f"Low confidence ({confidence:.2f} < {confidence_threshold})")
+
+                if has_standard and has_evidence and confidence >= confidence_threshold:
+                    validated += 1
+                else:
+                    failed += 1
+                    failures.append({
+                        "finding_id": finding_id,
+                        "reason": "; ".join(issues) if issues else "Unknown validation failure"
+                    })
+
+            total = validated + failed
+            score = (validated / total) if total > 0 else 0.0
+
+            return {
+                "success": True,
+                "institution_id": institution_id,
+                "audit_id": audit_id,
+                "validated": validated,
+                "failed": failed,
+                "failures": failures,
+                "evidence_completeness_score": round(score, 2),
+                "message": f"Validated {validated}/{total} findings"
+            }
+
+        except Exception as e:
+            logger.error(f"Error validating audit findings: {e}", exc_info=True)
+            return {"error": str(e), "success": False}
 
     def _tool_evidence_score(self, tool_input: Dict[str, Any]) -> Dict[str, Any]:
-        """Calculate evidence completeness score."""
+        """Calculate evidence completeness score for an institution."""
         institution_id = tool_input.get("institution_id")
         scope = tool_input.get("scope", "all")
 
-        # TODO: Calculate actual evidence coverage from indexed documents
-        return {
-            "success": True,
-            "institution_id": institution_id,
-            "scope": scope,
-            "evidence_completeness_score": 0.0,
-            "standards_covered": 0,
-            "standards_total": 0,
-            "documents_indexed": 0,
-            "evidence_gaps": [],
-            "message": "Evidence scoring requires indexed documents",
-            "status": "stub"
-        }
+        if not institution_id:
+            return {"error": "institution_id is required", "success": False}
+
+        try:
+            conn = get_conn()
+            cursor = conn.cursor()
+
+            # Count indexed documents for the institution
+            cursor.execute("""
+                SELECT COUNT(*) as count FROM documents
+                WHERE institution_id = ?
+            """, (institution_id,))
+            documents_indexed = cursor.fetchone()["count"]
+
+            # Get total standards from the institution's libraries
+            cursor.execute("""
+                SELECT COUNT(DISTINCT s.id) as count
+                FROM standards s
+                JOIN standards_libraries sl ON s.library_id = sl.id
+                JOIN institution_standards_assignments isa ON sl.id = isa.library_id
+                WHERE isa.institution_id = ?
+            """, (institution_id,))
+            result = cursor.fetchone()
+            standards_total = result["count"] if result else 0
+
+            # If no assignment table exists, fall back to counting all standards
+            if standards_total == 0:
+                cursor.execute("SELECT COUNT(*) as count FROM standards")
+                result = cursor.fetchone()
+                standards_total = result["count"] if result else 0
+
+            # Count standards that have at least one evidence reference
+            cursor.execute("""
+                SELECT COUNT(DISTINCT fsr.standard_id) as count
+                FROM finding_standard_refs fsr
+                JOIN audit_findings f ON fsr.finding_id = f.id
+                JOIN audit_runs ar ON f.audit_run_id = ar.id
+                WHERE ar.institution_id = ?
+            """, (institution_id,))
+            result = cursor.fetchone()
+            standards_covered = result["count"] if result else 0
+
+            # Find gaps - standards without evidence
+            evidence_gaps = []
+            if standards_total > 0:
+                cursor.execute("""
+                    SELECT s.id, s.code, s.title
+                    FROM standards s
+                    WHERE s.id NOT IN (
+                        SELECT DISTINCT fsr.standard_id
+                        FROM finding_standard_refs fsr
+                        JOIN audit_findings f ON fsr.finding_id = f.id
+                        JOIN audit_runs ar ON f.audit_run_id = ar.id
+                        WHERE ar.institution_id = ?
+                    )
+                    LIMIT 20
+                """, (institution_id,))
+                gaps = cursor.fetchall()
+                evidence_gaps = [
+                    f"{g['code']}: {g['title']}" if g['code'] else g['title']
+                    for g in gaps
+                ]
+
+            # Calculate coverage score
+            coverage = (standards_covered / standards_total) if standards_total > 0 else 0.0
+
+            return {
+                "success": True,
+                "institution_id": institution_id,
+                "scope": scope,
+                "coverage": round(coverage, 2),
+                "covered_standards": standards_covered,
+                "total_standards": standards_total,
+                "documents_indexed": documents_indexed,
+                "gaps": evidence_gaps,
+                "message": f"Coverage: {standards_covered}/{standards_total} standards ({coverage*100:.0f}%)"
+            }
+
+        except Exception as e:
+            logger.error(f"Error calculating evidence score: {e}", exc_info=True)
+            return {"error": str(e), "success": False}
 
     def _tool_block_ungrounded(self, tool_input: Dict[str, Any]) -> Dict[str, Any]:
         """Identify and block ungrounded claims."""
