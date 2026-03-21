@@ -113,18 +113,48 @@ Plans:
 59. Search Autocomplete (recent searches, suggested queries)
 60. Search Filters (date range, document type, compliance status)
 
-### Phase 14: Polish & UX
+### Phase 14: Polish & UX ✅ COMPLETE
 **Goal:** Improve perceived performance, discoverability, and first-time user experience with skeleton loaders, keyboard shortcuts modal, and onboarding tooltips
 **Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 14-01-PLAN.md — Synchronized skeleton loaders replacing spinners
-- [ ] 14-02-PLAN.md — Accessible keyboard shortcuts modal (? key trigger)
-- [ ] 14-03-PLAN.md — Lightweight onboarding tooltips (per-institution state)
+- [x] 14-01-PLAN.md — Synchronized skeleton loaders replacing spinners ✅
+- [x] 14-02-PLAN.md — Accessible keyboard shortcuts modal (? key trigger) ✅
+- [x] 14-03-PLAN.md — Lightweight onboarding tooltips (per-institution state) ✅
 
-61. Loading Skeletons (replace spinners with skeleton loaders)
-62. Keyboard Shortcuts Modal (help overlay showing all shortcuts)
-63. Onboarding Flow (first-run tutorial, setup wizard)
+61. ✅ Loading Skeletons (replace spinners with skeleton loaders)
+62. ✅ Keyboard Shortcuts Modal (help overlay showing all shortcuts)
+63. ✅ Onboarding Flow (first-run tutorial, setup wizard)
+
+---
+
+## Milestone: v1.3 - AI & Reporting
+
+### Phase 15: AI Explainers
+**Goal:** Make standards accessible with plain-English explanations, evidence suggestions, and an enhanced AI assistant that maintains conversation context
+**Plans:** 3 planned
+
+Plans:
+- [ ] 15-01-PLAN.md — Explain Standard feature (plain English + required evidence list)
+- [ ] 15-02-PLAN.md — Evidence Assistant (dedicated "show evidence for X" interface)
+- [ ] 15-03-PLAN.md — AI Chat improvements (persistent context, suggested prompts)
+
+64. Explain Standard (plain-English interpretation with evidence checklist)
+65. Evidence Assistant (context-aware evidence finder with citations)
+66. Enhanced AI Chat (conversation memory, suggested actions, quick commands)
+
+### Phase 16: Reporting
+**Goal:** Generate professional compliance reports with executive summaries, scheduled exports, and customizable templates
+**Plans:** 3 planned
+
+Plans:
+- [ ] 16-01-PLAN.md — PDF compliance report generation (WeasyPrint/ReportLab)
+- [ ] 16-02-PLAN.md — Executive summary dashboard with export
+- [ ] 16-03-PLAN.md — Scheduled report generation and email delivery
+
+67. PDF Compliance Reports (multi-format export with charts)
+68. Executive Summary (board-ready overview with key metrics)
+69. Scheduled Reports (automated generation, email delivery)
 
 ---
 
