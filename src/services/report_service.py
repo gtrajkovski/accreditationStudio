@@ -453,3 +453,225 @@ class ReportService:
                 continue
 
         return trend_data
+
+    # =========================================================================
+    # Report Template CRUD Methods
+    # =========================================================================
+
+    @staticmethod
+    def create_template(
+        institution_id: str,
+        name: str,
+        sections: List[str],
+        description: Optional[str] = None,
+        is_default: bool = False
+    ) -> str:
+        """Create a new report template.
+
+        Args:
+            institution_id: Institution ID
+            name: Template name
+            sections: List of section IDs
+            description: Optional template description
+            is_default: Whether this is the default template
+
+        Returns:
+            Template ID
+
+        Raises:
+            ValueError: If sections list is empty
+        """
+        if not sections or len(sections) == 0:
+            raise ValueError("sections must contain at least one section ID")
+
+        conn = get_conn()
+        template_id = f"tmpl_{uuid4().hex[:12]}"
+
+        # If setting as default, clear other defaults for this institution
+        if is_default:
+            conn.execute(
+                "UPDATE report_templates SET is_default = 0 WHERE institution_id = ?",
+                (institution_id,)
+            )
+
+        conn.execute(
+            """
+            INSERT INTO report_templates (
+                id, institution_id, name, sections, description, is_default
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                template_id,
+                institution_id,
+                name,
+                json.dumps(sections),
+                description,
+                1 if is_default else 0
+            )
+        )
+        conn.commit()
+
+        return template_id
+
+    @staticmethod
+    def list_templates(institution_id: str) -> List[Dict[str, Any]]:
+        """List all templates for an institution.
+
+        Args:
+            institution_id: Institution ID
+
+        Returns:
+            List of template dicts, ordered by is_default DESC, name ASC
+        """
+        conn = get_conn()
+
+        rows = conn.execute(
+            """
+            SELECT * FROM report_templates
+            WHERE institution_id = ?
+            ORDER BY is_default DESC, name ASC
+            """,
+            (institution_id,)
+        ).fetchall()
+
+        templates = []
+        for row in rows:
+            template = dict(row)
+            # Parse sections JSON
+            if template.get("sections"):
+                try:
+                    template["sections"] = json.loads(template["sections"])
+                except (json.JSONDecodeError, TypeError):
+                    template["sections"] = []
+            else:
+                template["sections"] = []
+
+            # Convert is_default to boolean
+            template["is_default"] = bool(template.get("is_default"))
+
+            templates.append(template)
+
+        return templates
+
+    @staticmethod
+    def get_template(template_id: str) -> Optional[Dict[str, Any]]:
+        """Get a single template by ID.
+
+        Args:
+            template_id: Template ID
+
+        Returns:
+            Template dict or None if not found
+        """
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT * FROM report_templates WHERE id = ?",
+            (template_id,)
+        ).fetchone()
+
+        if not row:
+            return None
+
+        template = dict(row)
+
+        # Parse sections JSON
+        if template.get("sections"):
+            try:
+                template["sections"] = json.loads(template["sections"])
+            except (json.JSONDecodeError, TypeError):
+                template["sections"] = []
+        else:
+            template["sections"] = []
+
+        # Convert is_default to boolean
+        template["is_default"] = bool(template.get("is_default"))
+
+        return template
+
+    @staticmethod
+    def update_template(
+        template_id: str,
+        name: Optional[str] = None,
+        sections: Optional[List[str]] = None,
+        description: Optional[str] = None,
+        is_default: Optional[bool] = None
+    ) -> bool:
+        """Update a report template.
+
+        Args:
+            template_id: Template ID
+            name: New template name (optional)
+            sections: New sections list (optional)
+            description: New description (optional)
+            is_default: New is_default flag (optional)
+
+        Returns:
+            True if updated, False if template not found
+        """
+        conn = get_conn()
+
+        # Check if template exists and get institution_id
+        existing = conn.execute(
+            "SELECT institution_id FROM report_templates WHERE id = ?",
+            (template_id,)
+        ).fetchone()
+
+        if not existing:
+            return False
+
+        # If setting as default, clear other defaults for this institution
+        if is_default is True:
+            conn.execute(
+                "UPDATE report_templates SET is_default = 0 WHERE institution_id = ? AND id != ?",
+                (existing["institution_id"], template_id)
+            )
+
+        # Build dynamic UPDATE query
+        updates = []
+        params = []
+
+        if name is not None:
+            updates.append("name = ?")
+            params.append(name)
+
+        if sections is not None:
+            updates.append("sections = ?")
+            params.append(json.dumps(sections))
+
+        if description is not None:
+            updates.append("description = ?")
+            params.append(description)
+
+        if is_default is not None:
+            updates.append("is_default = ?")
+            params.append(1 if is_default else 0)
+
+        if updates:
+            updates.append("updated_at = datetime('now')")
+            params.append(template_id)
+
+            query = f"UPDATE report_templates SET {', '.join(updates)} WHERE id = ?"
+            conn.execute(query, params)
+            conn.commit()
+
+        return True
+
+    @staticmethod
+    def delete_template(template_id: str) -> bool:
+        """Delete a report template.
+
+        Args:
+            template_id: Template ID
+
+        Returns:
+            True if deleted, False if not found
+        """
+        conn = get_conn()
+
+        result = conn.execute(
+            "DELETE FROM report_templates WHERE id = ?",
+            (template_id,)
+        )
+        conn.commit()
+
+        return result.rowcount > 0
