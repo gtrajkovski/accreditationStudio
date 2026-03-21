@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('audit_trails.title') }} - AccreditAI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ t('audit_trails.title') }}</h1>
+    <p class="page-description">{{ t('audit_trails.description') }}</p>
+</div>
+
+<div class="audit-trails-container">
+    <!-- Filters Section -->
+    <div class="filters-card card">
+        <h2 class="card-title">{{ t('audit_trails.filters') }}</h2>
+
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="start-date">{{ t('audit_trails.start_date') }}</label>
+                <input type="date" id="start-date" class="form-input">
+            </div>
+
+            <div class="filter-group">
+                <label for="end-date">{{ t('audit_trails.end_date') }}</label>
+                <input type="date" id="end-date" class="form-input">
+            </div>
+
+            <div class="filter-group">
+                <label for="agent-type">{{ t('audit_trails.agent_type') }}</label>
+                <select id="agent-type" class="form-select">
+                    <option value="">{{ t('audit_trails.all_agents') }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-actions">
+            <button id="apply-filters" class="btn btn-primary">
+                {{ t('audit_trails.apply_filters') }}
+            </button>
+            <button id="clear-filters" class="btn btn-secondary">
+                {{ t('audit_trails.clear_filters') }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="export-card card">
+        <h2 class="card-title">{{ t('audit_trails.export') }}</h2>
+
+        <div class="export-options">
+            <div class="format-group">
+                <label>{{ t('audit_trails.export_format') }}</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="export-format" value="json" checked>
+                        <span>JSON</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="export-format" value="zip">
+                        <span>ZIP {{ t('audit_trails.with_manifest') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="include-report-group" id="include-report-group" style="display: none;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="include-report">
+                    <span>{{ t('audit_trails.include_report') }}</span>
+                </label>
+                <select id="report-select" class="form-select" disabled>
+                    <option value="">{{ t('audit_trails.select_report') }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="export-actions">
+            <button id="export-btn" class="btn btn-accent">
+                <span class="icon">&#8595;</span>
+                {{ t('audit_trails.export_now') }}
+            </button>
+            <span id="session-count" class="session-count"></span>
+        </div>
+    </div>
+
+    <!-- Sessions List -->
+    <div class="sessions-card card">
+        <h2 class="card-title">{{ t('audit_trails.sessions') }}</h2>
+
+        <div id="sessions-list" class="sessions-list">
+            <!-- Sessions will be loaded here -->
+        </div>
+
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <p>{{ t('audit_trails.no_sessions') }}</p>
+        </div>
+
+        <div id="loading-state" class="loading-state">
+            <div class="spinner"></div>
+            <p>{{ t('common.loading') }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Session Detail Modal -->
+<div id="session-modal" class="modal" style="display: none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>{{ t('audit_trails.session_details') }}</h2>
+            <button class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="session-detail-content"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/audit_trails.css') }}">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.institutionId = "{{ institution_id }}";
+</script>
+<script src="{{ url_for('static', filename='js/audit_trails.js') }}"></script>
+{% endblock %}

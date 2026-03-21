@@ -432,5 +432,33 @@
       "default_badge": "Default",
       "default_help": "Only one template can be set as default"
     }
+  },
+  "audit_trails": {
+    "title": "Audit Trail Export",
+    "description": "Export agent session logs for compliance documentation and regulatory evidence.",
+    "filters": "Filters",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "agent_type": "Agent Type",
+    "all_agents": "All Agents",
+    "apply_filters": "Apply Filters",
+    "clear_filters": "Clear",
+    "export": "Export Options",
+    "export_format": "Export Format",
+    "with_manifest": "(with manifest)",
+    "include_report": "Include Compliance Report",
+    "select_report": "Select a report...",
+    "export_now": "Export",
+    "sessions": "Agent Sessions",
+    "no_sessions": "No sessions found matching your criteria.",
+    "session_details": "Session Details",
+    "session_id": "Session ID",
+    "status": "Status",
+    "created_at": "Created",
+    "completed_at": "Completed",
+    "tool_calls": "Tool Calls",
+    "tokens_used": "Tokens Used",
+    "confidence": "Confidence",
+    "view_details": "View Details"
   }
 }

@@ -432,5 +432,33 @@
       "default_badge": "Predeterminado",
       "default_help": "Solo una plantilla puede establecerse como predeterminada"
     }
+  },
+  "audit_trails": {
+    "title": "Exportar Rastro de Auditoría",
+    "description": "Exporte registros de sesiones de agentes para documentación de cumplimiento y evidencia regulatoria.",
+    "filters": "Filtros",
+    "start_date": "Fecha de Inicio",
+    "end_date": "Fecha de Fin",
+    "agent_type": "Tipo de Agente",
+    "all_agents": "Todos los Agentes",
+    "apply_filters": "Aplicar Filtros",
+    "clear_filters": "Limpiar",
+    "export": "Opciones de Exportación",
+    "export_format": "Formato de Exportación",
+    "with_manifest": "(con manifiesto)",
+    "include_report": "Incluir Informe de Cumplimiento",
+    "select_report": "Seleccionar informe...",
+    "export_now": "Exportar",
+    "sessions": "Sesiones de Agentes",
+    "no_sessions": "No se encontraron sesiones que coincidan con sus criterios.",
+    "session_details": "Detalles de la Sesión",
+    "session_id": "ID de Sesión",
+    "status": "Estado",
+    "created_at": "Creado",
+    "completed_at": "Completado",
+    "tool_calls": "Llamadas de Herramientas",
+    "tokens_used": "Tokens Usados",
+    "confidence": "Confianza",
+    "view_details": "Ver Detalles"
   }
 }
