@@ -19,6 +19,13 @@ from src.schemas.institution import (
     ProgramCreateSchema,
 )
 
+from src.schemas.documents import (
+    DocumentSchema,
+    DocumentCreateSchema,
+    DocumentUploadResponseSchema,
+    DocumentListSchema,
+)
+
 __all__ = [
     # Common
     "ErrorSchema",
@@ -31,4 +38,9 @@ __all__ = [
     "InstitutionListSchema",
     "ProgramSchema",
     "ProgramCreateSchema",
+    # Documents
+    "DocumentSchema",
+    "DocumentCreateSchema",
+    "DocumentUploadResponseSchema",
+    "DocumentListSchema",
 ]
