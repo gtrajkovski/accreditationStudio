@@ -411,6 +411,26 @@
     "newer_report": "Newer Report",
     "no_change": "No Change",
     "older_report": "Older Report",
-    "select_report": "Select report..."
+    "select_report": "Select report...",
+    "templates": {
+      "title": "Report Templates",
+      "new_template": "New Template",
+      "name": "Template Name",
+      "description": "Description",
+      "sections": "Select Sections",
+      "is_default": "Set as Default Template",
+      "no_templates": "No templates yet. Create one to customize your reports.",
+      "section_readiness": "Overall Readiness (required)",
+      "section_findings": "Findings Summary",
+      "section_documents": "Documents Overview",
+      "section_standards": "Top Standards",
+      "section_charts": "Charts & Visualizations",
+      "create_template": "Create Template",
+      "edit_template": "Edit Template",
+      "delete_template": "Delete Template",
+      "sections_count": "sections",
+      "default_badge": "Default",
+      "default_help": "Only one template can be set as default"
+    }
   }
 }

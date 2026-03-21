@@ -411,6 +411,26 @@
     "newer_report": "Informe Reciente",
     "no_change": "Sin Cambio",
     "older_report": "Informe Anterior",
-    "select_report": "Seleccionar informe..."
+    "select_report": "Seleccionar informe...",
+    "templates": {
+      "title": "Plantillas de Informes",
+      "new_template": "Nueva Plantilla",
+      "name": "Nombre de Plantilla",
+      "description": "Descripción",
+      "sections": "Seleccionar Secciones",
+      "is_default": "Establecer como Plantilla Predeterminada",
+      "no_templates": "Aún no hay plantillas. Crea una para personalizar tus informes.",
+      "section_readiness": "Preparación General (requerido)",
+      "section_findings": "Resumen de Hallazgos",
+      "section_documents": "Vista General de Documentos",
+      "section_standards": "Estándares Principales",
+      "section_charts": "Gráficos y Visualizaciones",
+      "create_template": "Crear Plantilla",
+      "edit_template": "Editar Plantilla",
+      "delete_template": "Eliminar Plantilla",
+      "sections_count": "secciones",
+      "default_badge": "Predeterminado",
+      "default_help": "Solo una plantilla puede establecerse como predeterminada"
+    }
   }
 }
