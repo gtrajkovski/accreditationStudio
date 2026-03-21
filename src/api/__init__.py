@@ -10,6 +10,7 @@ from src.api.standards import standards_bp, init_standards_bp
 from src.api.settings import settings_bp, init_settings_bp
 from src.api.work_queue import work_queue_bp, init_work_queue_bp
 from src.api.autopilot import autopilot_bp, init_autopilot_bp
+from src.api.reports import reports_bp, init_reports_bp
 
 __all__ = [
     "chat_bp",
@@ -26,4 +27,6 @@ __all__ = [
     "init_work_queue_bp",
     "autopilot_bp",
     "init_autopilot_bp",
+    "reports_bp",
+    "init_reports_bp",
 ]
