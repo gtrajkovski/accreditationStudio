@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: - MVP
 status: unknown
-last_updated: "2026-03-21T03:44:29.212Z"
+last_updated: "2026-03-21T04:01:25Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 16
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # AccreditAI State
@@ -24,12 +24,12 @@ Two phases planned:
 - **15-02**: Evidence Assistant (dedicated evidence finder) ✅
 - **15-03**: AI Chat improvements (persistent context, suggestions) ✅
 
-### Phase 16: Reporting
-- **16-01**: PDF compliance reports (WeasyPrint/ReportLab)
+### Phase 16: Reporting (1/3 complete)
+- **16-01**: PDF compliance reports (WeasyPrint/matplotlib) ✅
 - **16-02**: Executive summary dashboard with export
 - **16-03**: Scheduled reports with email delivery
 
-**Next action:** `/gsd:execute-phase 16` (start Phase 16: Reporting)
+**Next action:** `/gsd:execute-phase 16 --continue` (continue Phase 16: Plan 02)
 
 ---
 
@@ -120,22 +120,21 @@ All 3 plans complete:
 ---
 
 ## Current Phase
-**Phase 15: AI Explainers** 🔄 In Progress (2/3 plans)
+**Phase 16: Reporting** 🔄 In Progress (1/3 plans)
 
 ## Session Date
 2026-03-21
 
 ## Just Completed (This Session)
-1. **Phase 15-02** - Evidence Assistant ✅
-   - EvidenceAssistantService with context-aware search
-   - 1.5x weighting for required evidence types
-   - AI-generated follow-up suggestions
-   - REST API endpoints (/search, /suggestions)
-   - Dedicated UI with relevance badges (Required/Relevant/Related)
-   - Full i18n support (en-US, es-PR)
-   - 7 tests (100% pass rate)
-   - Duration: 11.5 minutes
-   - Commits: d41fe8c, 6d26e4c
+1. **Phase 16-01** - PDF Compliance Reports ✅
+   - ReportService with data aggregation (readiness, findings, documents, top standards)
+   - ChartGenerator with matplotlib (ring chart, bar chart)
+   - PDFExporter with WeasyPrint (HTML → PDF)
+   - Reports API blueprint (5 endpoints: generate, list, get, download, delete)
+   - Database migration 0026_reports.sql
+   - HTML templates with PDF CSS (@page rules, print-optimized)
+   - Duration: 11.3 minutes
+   - Commits: c2cce69, 3303ed7, e6f9d8e
 
 ## Previously Completed (This Session)
 1. **Phase 15-01** - Explain Standard ✅
@@ -150,7 +149,19 @@ All 3 plans complete:
    - Duration: 8 minutes
    - Commits: 65118d4, 6ff46f3
 
-2. **Phase 15-03** - Persistent Chat ✅
+2. **Phase 15-02** - Evidence Assistant ✅
+   - EvidenceAssistantService with context-aware search
+   - 1.5x weighting for required evidence types
+   - AI-generated follow-up suggestions
+   - REST API endpoints (/search, /suggestions)
+   - Dedicated UI with relevance badges (Required/Relevant/Related)
+   - Full i18n support (en-US, es-PR)
+   - 7 tests (100% pass rate)
+   - Duration: 11.5 minutes
+   - Commits: d41fe8c, 6d26e4c
+
+## Previously Completed (This Session)
+1. **Phase 15-03** - Persistent Chat ✅
    - Database migration 0028_chat_persistence.sql (conversations + messages tables)
    - ChatContextService for conversation management
    - Auto-title generation from first user message
@@ -233,7 +244,7 @@ All 3 plans complete:
    - Auto-dismiss + interaction tracking
    - Duration: 10.5 minutes
 
-## Current Blueprints (34 total)
+## Current Blueprints (35 total)
 ```
 chat_bp, agents_bp, institutions_bp, standards_bp, settings_bp
 readiness_bp, work_queue_bp, autopilot_bp, audits_bp, remediation_bp
@@ -242,7 +253,7 @@ exhibits_bp, achievements_bp, interview_prep_bp, ser_bp, team_reports_bp
 compliance_calendar_bp, document_reviews_bp, documents_bp
 impact_analysis_bp, knowledge_graph_bp, timeline_planner_bp, site_visit_bp
 coverage_map_bp, simulation_bp, portfolios_bp, evidence_highlighting_bp
-compliance_heatmap_bp, standard_explainer_bp, evidence_assistant_bp
+compliance_heatmap_bp, standard_explainer_bp, evidence_assistant_bp, reports_bp
 ```
 
 ## v1.2 Roadmap (Next Milestone)

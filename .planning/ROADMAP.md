@@ -130,31 +130,31 @@ Plans:
 
 ## Milestone: v1.3 - AI & Reporting
 
-### Phase 15: AI Explainers
+### Phase 15: AI Explainers ✅ COMPLETE
 **Goal:** Make standards accessible with plain-English explanations, evidence suggestions, and an enhanced AI assistant that maintains conversation context
 **Requirements:** [64, 65, 66]
 **Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 15-01-PLAN.md — StandardExplainerService + API + UI (plain English + evidence checklist)
-- [ ] 15-02-PLAN.md — EvidenceAssistantService + dedicated UI (context-aware evidence finder)
-- [ ] 15-03-PLAN.md — ChatContextService + persistent history + suggested prompts
+- [x] 15-01-PLAN.md — StandardExplainerService + API + UI (plain English + evidence checklist) ✅
+- [x] 15-02-PLAN.md — EvidenceAssistantService + dedicated UI (context-aware evidence finder) ✅
+- [x] 15-03-PLAN.md — ChatContextService + persistent history + suggested prompts ✅
 
-64. Explain Standard (plain-English interpretation with evidence checklist)
-65. Evidence Assistant (context-aware evidence finder with citations)
-66. Enhanced AI Chat (conversation memory, suggested actions, quick commands)
+64. ✅ Explain Standard (plain-English interpretation with evidence checklist)
+65. ✅ Evidence Assistant (context-aware evidence finder with citations)
+66. ✅ Enhanced AI Chat (conversation memory, suggested actions, quick commands)
 
 ### Phase 16: Reporting
 **Goal:** Generate professional compliance reports with executive summaries, scheduled exports, and customizable templates
 **Requirements:** [67, 68, 69]
-**Plans:** 3 plans
+**Plans:** 3 plans (1/3 complete)
 
 Plans:
-- [ ] 16-01-PLAN.md — ReportService + PDFExporter + ChartGenerator + API (WeasyPrint PDF generation with matplotlib charts)
+- [x] 16-01-PLAN.md — ReportService + PDFExporter + ChartGenerator + API (WeasyPrint PDF generation with matplotlib charts) ✅ **COMPLETE** (c2cce69, 3303ed7, e6f9d8e)
 - [ ] 16-02-PLAN.md — Executive summary dashboard UI with Chart.js visualizations and export
 - [ ] 16-03-PLAN.md — SchedulerService + EmailService + scheduling UI (APScheduler + Flask-Mail)
 
-67. PDF Compliance Reports (multi-format export with charts)
+67. ✅ PDF Compliance Reports (multi-format export with charts)
 68. Executive Summary (board-ready overview with key metrics)
 69. Scheduled Reports (automated generation, email delivery)
 
