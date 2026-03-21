@@ -58,6 +58,7 @@ from src.api.compliance_heatmap import compliance_heatmap_bp, init_compliance_he
 from src.api.batch_history import batch_history_bp, init_batch_history_bp
 from src.api.global_search import global_search_bp, init_global_search_bp
 from src.api.standard_explainer import standard_explainer_bp, init_standard_explainer_bp
+from src.api.evidence_assistant import evidence_assistant_bp, init_evidence_assistant_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 from src.services.chat_context_service import ChatContextService
@@ -118,6 +119,7 @@ init_compliance_heatmap_bp(workspace_manager)
 init_batch_history_bp(workspace_manager)
 init_global_search_bp(workspace_manager)
 init_standard_explainer_bp(ai_client, standards_store)
+init_evidence_assistant_bp(ai_client, standards_store)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -154,6 +156,7 @@ app.register_blueprint(compliance_heatmap_bp)
 app.register_blueprint(batch_history_bp)
 app.register_blueprint(global_search_bp)
 app.register_blueprint(standard_explainer_bp)
+app.register_blueprint(evidence_assistant_bp)
 
 
 # =============================================================================
@@ -708,6 +711,12 @@ def institution_document_reviews(id):
 def chat():
     """AI chat interface page."""
     return render_template('chat.html')
+
+
+@app.route('/evidence-assistant')
+def evidence_assistant():
+    """Evidence Assistant page."""
+    return render_template('evidence_assistant.html')
 
 
 @app.route('/agent-sessions')

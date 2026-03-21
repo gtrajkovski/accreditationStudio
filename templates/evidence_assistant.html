@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('evidence_assistant.title') }} - AccreditAI{% endblock %}
+
+{% block content %}
+<div class="evidence-assistant-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h1>{{ t('evidence_assistant.title') }}</h1>
+        <p class="subtitle">{{ t('evidence_assistant.subtitle') }}</p>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="evidence-layout">
+        <!-- Left Panel: Search Controls -->
+        <div class="search-panel">
+            <div class="panel-card">
+                <h2>{{ t('evidence_assistant.search_controls') }}</h2>
+
+                <!-- Standard Selector -->
+                <div class="form-group">
+                    <label for="standard-selector">{{ t('evidence_assistant.select_standard') }}</label>
+                    <select id="standard-selector" class="form-control">
+                        <option value="">{{ t('evidence_assistant.select_standard_placeholder') }}</option>
+                        <!-- Standards loaded dynamically -->
+                    </select>
+                </div>
+
+                <!-- Search Query -->
+                <div class="form-group">
+                    <label for="search-query">{{ t('evidence_assistant.search_query') }}</label>
+                    <input
+                        type="text"
+                        id="search-query"
+                        class="form-control"
+                        placeholder="{{ t('evidence_assistant.search_placeholder') }}"
+                    />
+                    <small class="form-text">{{ t('evidence_assistant.search_hint') }}</small>
+                </div>
+
+                <!-- Search Button -->
+                <button id="find-evidence-btn" class="btn btn-primary btn-block" disabled>
+                    <span class="btn-icon">🔍</span>
+                    {{ t('evidence_assistant.find_button') }}
+                </button>
+
+                <!-- Loading State -->
+                <div id="search-loading" class="loading-state" style="display: none;">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+            </div>
+
+            <!-- Suggested Prompts -->
+            <div class="panel-card suggestions-panel" id="suggestions-panel" style="display: none;">
+                <h3>{{ t('evidence_assistant.suggestions') }}</h3>
+                <div id="suggestions-list" class="suggestions-list">
+                    <!-- Suggestions loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Results -->
+        <div class="results-panel">
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-state">
+                <div class="empty-icon">📂</div>
+                <p>{{ t('evidence_assistant.empty_state') }}</p>
+            </div>
+
+            <!-- Results Header -->
+            <div id="results-header" class="results-header" style="display: none;">
+                <h2>{{ t('evidence_assistant.results_title') }}</h2>
+                <div id="standard-info" class="standard-info">
+                    <!-- Standard info loaded dynamically -->
+                </div>
+                <div id="results-count" class="results-count">
+                    <!-- Count loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- Results List -->
+            <div id="results-list" class="results-list">
+                <!-- Evidence cards loaded dynamically -->
+            </div>
+
+            <!-- No Results State -->
+            <div id="no-results" class="no-results" style="display: none;">
+                <div class="no-results-icon">🔍</div>
+                <p>{{ t('evidence_assistant.no_results') }}</p>
+                <small>{{ t('evidence_assistant.try_different_query') }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/evidence_assistant.css') }}">
+<script src="{{ url_for('static', filename='js/evidence_assistant.js') }}"></script>
+{% endblock %}

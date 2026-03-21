@@ -309,5 +309,24 @@
     "suggestions": "Sugerencias",
     "typing": "IA escribiendo...",
     "welcome": "¡Pregúntame sobre cumplimiento!"
+  },
+  "evidence_assistant": {
+    "title": "Asistente de Evidencia",
+    "subtitle": "Encuentre evidencia para satisfacer estándares de acreditación específicos",
+    "search_controls": "Controles de Búsqueda",
+    "select_standard": "Seleccionar Estándar",
+    "select_standard_placeholder": "Elegir un estándar...",
+    "search_query": "Consulta de Búsqueda Personalizada (Opcional)",
+    "search_placeholder": "Buscar evidencia...",
+    "search_hint": "Dejar en blanco para usar consulta generada automáticamente del estándar",
+    "find_button": "Buscar Evidencia",
+    "suggestions": "Preguntas Sugeridas",
+    "results_title": "Resultados de Evidencia",
+    "empty_state": "Seleccione un estándar y busque para encontrar evidencia relevante",
+    "no_results": "No se encontró evidencia",
+    "try_different_query": "Intente con una consulta o estándar diferente",
+    "required": "Requerido",
+    "relevant": "Relevante",
+    "related": "Relacionado"
   }
 }

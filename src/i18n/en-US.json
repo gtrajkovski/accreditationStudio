@@ -309,5 +309,24 @@
     "suggestions": "Suggested",
     "typing": "AI is typing...",
     "welcome": "Ask me anything about compliance!"
+  },
+  "evidence_assistant": {
+    "title": "Evidence Assistant",
+    "subtitle": "Find evidence to satisfy specific accreditation standards",
+    "search_controls": "Search Controls",
+    "select_standard": "Select Standard",
+    "select_standard_placeholder": "Choose a standard...",
+    "search_query": "Custom Search Query (Optional)",
+    "search_placeholder": "Search for evidence...",
+    "search_hint": "Leave blank to use auto-generated query from standard",
+    "find_button": "Find Evidence",
+    "suggestions": "Suggested Questions",
+    "results_title": "Evidence Results",
+    "empty_state": "Select a standard and search to find relevant evidence",
+    "no_results": "No evidence found",
+    "try_different_query": "Try a different query or standard",
+    "required": "Required",
+    "relevant": "Relevant",
+    "related": "Related"
   }
 }
