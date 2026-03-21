@@ -177,7 +177,7 @@ Plans:
 
 Plans:
 - [x] 17-01-PLAN.md — Report Templates (database schema + service + API for template CRUD)
-- [ ] 17-02-PLAN.md — Report Customization UI (template manager modal + section selection)
+- [x] 17-02-PLAN.md — Report Comparison (side-by-side comparison with delta highlighting)
 - [x] 17-03-PLAN.md — Trend Charts + Metric Customization (Chart.js trend, localStorage preferences)
 
 ### Phase 18: API Documentation

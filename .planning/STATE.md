@@ -63,19 +63,19 @@ Ready to plan Phase 17.
 ## Progress Bar
 
 ```
-v1.4: [█████░░░░░░░░░░░░░░░] 2/8 plans (25%)
-  Phase 17: [█████████████░░░░░░░] 2/3 plans
+v1.4: [████████░░░░░░░░░░░░] 3/8 plans (38%)
+  Phase 17: [████████████████████] 3/3 plans (COMPLETE ✅)
   Phase 18: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans
   Phase 19: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans
 ```
 
 ---
 
-## Current Phase: Phase 17 - Report Enhancements
+## Current Phase: Phase 17 - Report Enhancements (COMPLETE ✅)
 
 **Goal:** Users can customize and compare compliance reports over time
 
-### Plans (2/3 complete)
+### Plans (3/3 complete) ✅
 
 1. **17-01: Report Templates CRUD** ✅ Complete (11.3 minutes)
    - Database migration 0029_report_templates.sql
@@ -84,10 +84,14 @@ v1.4: [█████░░░░░░░░░░░░░░░] 2/8 plans (
    - JSON section storage with is_default enforcement
    - Commits: c49b529, 9e70cd2
 
-2. **17-02: Report Customization UI** (Pending)
-   - Template manager modal
-   - Section selection UI
-   - Template dropdown on report page
+2. **17-02: Report Comparison** ✅ Complete (16.5 minutes)
+   - ReportService.compare_reports method with delta calculation
+   - POST /api/reports/compare endpoint
+   - Side-by-side comparison UI with dropdowns
+   - Color-coded deltas (green/red/neutral)
+   - Severity-level breakdown deltas
+   - 8 new i18n keys (en-US, es-PR)
+   - Commits: ec42d7a, 3bd992a, ce99063
 
 3. **17-03: Trend Charts & Metric Customization** ✅ Complete (14.4 minutes)
    - ReportService.get_readiness_trend method with date range filtering
