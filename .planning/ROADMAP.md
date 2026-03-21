@@ -146,12 +146,13 @@ Plans:
 
 ### Phase 16: Reporting
 **Goal:** Generate professional compliance reports with executive summaries, scheduled exports, and customizable templates
-**Plans:** 3 planned
+**Requirements:** [67, 68, 69]
+**Plans:** 3 plans
 
 Plans:
-- [ ] 16-01-PLAN.md — PDF compliance report generation (WeasyPrint/ReportLab)
-- [ ] 16-02-PLAN.md — Executive summary dashboard with export
-- [ ] 16-03-PLAN.md — Scheduled report generation and email delivery
+- [ ] 16-01-PLAN.md — ReportService + PDFExporter + ChartGenerator + API (WeasyPrint PDF generation with matplotlib charts)
+- [ ] 16-02-PLAN.md — Executive summary dashboard UI with Chart.js visualizations and export
+- [ ] 16-03-PLAN.md — SchedulerService + EmailService + scheduling UI (APScheduler + Flask-Mail)
 
 67. PDF Compliance Reports (multi-format export with charts)
 68. Executive Summary (board-ready overview with key metrics)
