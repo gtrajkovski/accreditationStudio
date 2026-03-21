@@ -75,6 +75,13 @@ app.config["TEMPLATES_AUTO_RELOAD"] = Config.ENVIRONMENT != "production"
 workspace_manager = WorkspaceManager()
 standards_store = StandardsStore()
 
+# Initialize email and scheduler services
+from src.services.email_service import init_mail
+from src.services.scheduler_service import init_scheduler
+
+init_mail(app)
+init_scheduler(app)
+
 # Initialize AI client (may fail if no API key)
 try:
     ai_client = AIClient()
