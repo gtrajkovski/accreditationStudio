@@ -26,7 +26,7 @@ Requirements for v1.4 - Enterprise & Polish milestone.
 
 - [x] **AUD-01**: User can export agent session logs as JSON
 - [x] **AUD-02**: User can export activity history for date range
-- [ ] **AUD-03**: User can package audit trail with compliance report
+- [x] **AUD-03**: User can package audit trail with compliance report
 - [x] **AUD-04**: Exported logs include tool calls, decisions, and timestamps
 - [x] **AUD-05**: User can filter export by agent type or operation
 
@@ -69,7 +69,7 @@ Deferred to future milestones.
 | API-04 | Phase 18 | Complete |
 | AUD-01 | Phase 19 | Complete (19-01) |
 | AUD-02 | Phase 19 | Complete (19-01) |
-| AUD-03 | Phase 19 | Pending |
+| AUD-03 | Phase 19 | Complete (19-02) |
 | AUD-04 | Phase 19 | Complete (19-01) |
 | AUD-05 | Phase 19 | Complete (19-01) |
 
