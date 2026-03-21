@@ -30,6 +30,11 @@ icalendar>=5.0.0
 # Scheduling
 APScheduler>=3.10.0
 
+# PDF generation
+weasyprint>=68.0.0
+Flask-WeasyPrint>=1.0.0
+matplotlib>=3.9.0
+
 # Production WSGI server
 gunicorn>=21.0.0
 
