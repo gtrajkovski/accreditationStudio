@@ -229,10 +229,10 @@ Plans:
   3. User can trigger "Run Now" manually
   4. Document changes detected via SHA256
 
-**Plans:** 0/3 plans complete
+**Plans:** 1/3 plans complete
 
 Plans:
-- [ ] 20-01-PLAN.md — AutopilotService enhancement (wire audit, change detection, morning brief)
+- [x] 20-01-PLAN.md — AutopilotService enhancement (wire audit, change detection, morning brief) ✅ **COMPLETE** (930f104, 14499aa, fdee113)
 - [ ] 20-02-PLAN.md — Autopilot API + Run Now endpoint with SSE progress
 - [ ] 20-03-PLAN.md — Autopilot UI (dashboard controls, morning brief panel)
 

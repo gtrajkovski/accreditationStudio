@@ -2,23 +2,23 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Operational Intelligence
-status: planning
-last_updated: "2026-03-21T23:00:00Z"
+status: executing
+last_updated: "2026-03-21T23:47:45Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 12
-  completed_plans: 0
+  completed_plans: 1
 ---
 
 # AccreditAI State
 
 ## Current Position
 
-Phase: Phase 20 - Autopilot & Morning Brief (PLANNING)
-Plan: 20-01 ready (AutopilotService Enhancement)
-Status: v1.5 milestone defined, foundation fixes complete
-Last activity: 2026-03-21 — Created v1.5 milestone and Phase 20/21 plans
+Phase: Phase 20 - Autopilot & Morning Brief (IN PROGRESS)
+Plan: 20-02 ready (Autopilot UI & Run Now)
+Status: Plan 20-01 complete, 1/3 plans done
+Last activity: 2026-03-21 — Completed AutopilotService Enhancement
 
 ## Next Session: Start Here
 
@@ -34,16 +34,19 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 - ✅ Session round-trip tests created (7 tests pass)
 - ⚠️ Silent exception handlers: sample fix applied (290 remain for future sweep)
 
-### Phase 20: Autopilot & Morning Brief
+### Phase 20: Autopilot & Morning Brief (1/3 complete)
 **Goal:** Nightly autopilot runs with morning brief generation
 **Requirements:** AUTO-01, AUTO-02, AUTO-03
 **Success Criteria:**
-  1. Autopilot runs nightly for enabled institutions
-  2. Morning brief generated with readiness delta
+  1. ✅ Autopilot runs for enabled institutions (wired to ComplianceAuditAgent)
+  2. ✅ Morning brief generated with readiness delta
   3. User can trigger "Run Now" manually
-  4. Document changes detected via SHA256
+  4. ✅ Document changes detected via SHA256
 
-**Next:** Run `/gsd:plan-phase 20` to begin implementation
+**Completed:**
+- 20-01: AutopilotService Enhancement (4.5 min, 13 tests)
+
+**Next:** Execute 20-02 (Autopilot UI & Run Now)
 
 ### Phase 21: Evidence Coverage Contract
 **Goal:** Packet export gating based on evidence coverage
@@ -81,8 +84,8 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 ## Progress Bar
 
 ```
-v1.5: [░░░░░░░░░░░░░░░░░░░░] 0/12 plans (0%)
-  Phase 20: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (READY)
+v1.5: [██░░░░░░░░░░░░░░░░░░] 1/12 plans (8%)
+  Phase 20: [██████░░░░░░░░░░░░░░] 1/3 plans (IN PROGRESS)
   Phase 21: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
   Phase 22: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (PLANNED)
   Phase 23: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
