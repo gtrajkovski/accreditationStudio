@@ -15,11 +15,12 @@ from typing import Dict, Any, List, Optional, Callable, Generator
 from datetime import datetime
 
 from src.agents.base_agent import BaseAgent, AgentType
-from src.agents.registry import register_agent
+from src.agents.registry import register_agent, AgentRegistry
 from src.core.models import (
     AgentSession,
     SessionStatus,
     HumanCheckpoint,
+    generate_id,
 )
 
 
@@ -272,6 +273,60 @@ Respect confidence thresholds and request human approval when uncertain."""
         if session.metadata.get("current_stage"):
             self._current_stage = session.metadata["current_stage"]
 
+    def _delegate_to_agent(
+        self,
+        agent_type: AgentType,
+        prompt: str,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Delegate a task to a specialist agent.
+
+        Creates a child session, runs the agent, and returns the result.
+
+        Args:
+            agent_type: Type of agent to delegate to.
+            prompt: Task prompt for the agent.
+            context: Optional context data to include.
+
+        Returns:
+            Result from the delegated agent or error dict.
+        """
+        # Create child session for the delegated agent
+        child_session = AgentSession(
+            id=generate_id("ses"),
+            agent_type=agent_type,
+            institution_id=self.session.institution_id,
+            status=SessionStatus.RUNNING,
+            metadata={"parent_session": self.session.id, **(context or {})},
+        )
+
+        # Get the agent class from registry
+        agent = AgentRegistry.create(
+            agent_type=agent_type,
+            session=child_session,
+            workspace_manager=self._workspace_manager,
+        )
+
+        if agent is None:
+            return {
+                "error": f"Agent type {agent_type.value} not registered",
+                "success": False,
+            }
+
+        # Run a single turn with the delegated agent
+        result = None
+        try:
+            for update in agent.run_turn(prompt):
+                if update.get("type") == "turn_complete":
+                    result = update.get("result", {})
+                    break
+                elif update.get("type") == "error":
+                    return {"error": update.get("message"), "success": False}
+        except Exception as e:
+            return {"error": str(e), "success": False}
+
+        return result if result else {"success": True, "message": "Agent completed"}
+
     def _execute_tool(self, tool_name: str, tool_input: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a tool and return the result."""
         if tool_name == "get_institution_status":
@@ -318,32 +373,81 @@ Respect confidence thresholds and request human approval when uncertain."""
         }
 
     def _analyze_documents(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze uploaded documents."""
+        """Analyze uploaded documents using the Ingestion agent."""
         self._current_stage = "DOCUMENT_ANALYSIS"
         self.session.metadata["current_stage"] = self._current_stage
         self._notify_update()
 
-        # TODO: Delegate to DocumentAnalyzer agent
-        # For now, return placeholder indicating the tool exists
+        institution = self.get_institution()
+        if not institution:
+            return {"error": "No institution loaded", "success": False}
+
+        document_ids = params.get("document_ids", [])
+        if not document_ids:
+            # Analyze all documents if none specified
+            document_ids = [doc.id for doc in institution.documents]
+
+        if not document_ids:
+            return {
+                "success": True,
+                "message": "No documents to analyze",
+                "documents_analyzed": 0,
+                "stage": self._current_stage,
+            }
+
+        # Delegate to Ingestion agent for document processing
+        result = self._delegate_to_agent(
+            agent_type=AgentType.INGESTION,
+            prompt=f"Analyze and index the following documents for institution {institution.id}: {document_ids}. Extract key information, classify document types, and prepare for compliance auditing.",
+            context={"document_ids": document_ids},
+        )
+
+        if result.get("error"):
+            return result
+
+        self._analysis_results = result
         return {
             "success": True,
-            "message": "Document analysis initiated",
+            "message": f"Document analysis complete for {len(document_ids)} document(s)",
+            "documents_analyzed": len(document_ids),
             "stage": self._current_stage,
-            "note": "DocumentAnalyzer agent implementation pending",
+            "analysis_summary": result.get("summary", "Analysis completed"),
         }
 
     def _run_gap_analysis(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Run gap analysis against standards."""
+        """Run gap analysis against standards using the Gap Finder agent."""
         self._current_stage = "GAP_ANALYSIS"
         self.session.metadata["current_stage"] = self._current_stage
         self._notify_update()
 
-        # TODO: Delegate to GapAnalyzer agent
+        institution = self.get_institution()
+        if not institution:
+            return {"error": "No institution loaded", "success": False}
+
+        standard_ids = params.get("standard_ids", [])
+        standards_filter = f" for standards {standard_ids}" if standard_ids else ""
+
+        # Delegate to Gap Finder agent
+        result = self._delegate_to_agent(
+            agent_type=AgentType.GAP_FINDER,
+            prompt=f"Analyze compliance gaps for institution {institution.id}{standards_filter}. Identify missing evidence, incomplete documentation, and areas of non-compliance. Prioritize findings by severity.",
+            context={"standard_ids": standard_ids, "institution_id": institution.id},
+        )
+
+        if result.get("error"):
+            return result
+
+        self._gap_results = result
+        gaps = result.get("gaps", [])
+        critical_count = len([g for g in gaps if g.get("severity") == "critical"])
+
         return {
             "success": True,
-            "message": "Gap analysis initiated",
+            "message": f"Gap analysis complete. Found {len(gaps)} gap(s), {critical_count} critical.",
+            "gap_count": len(gaps),
+            "critical_gaps": critical_count,
             "stage": self._current_stage,
-            "note": "GapAnalyzer agent implementation pending",
+            "gaps": gaps,
         }
 
     def _request_gap_review(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -369,33 +473,73 @@ Respect confidence thresholds and request human approval when uncertain."""
         }
 
     def _map_evidence(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Map evidence to standards."""
+        """Map evidence to standards using the Evidence Mapper agent."""
         self._current_stage = "EVIDENCE_MAPPING"
         self.session.metadata["current_stage"] = self._current_stage
         self._notify_update()
 
-        # TODO: Delegate to EvidenceMapper agent
+        institution = self.get_institution()
+        if not institution:
+            return {"error": "No institution loaded", "success": False}
+
+        auto_assign = params.get("auto_assign", False)
+        auto_mode = "Auto-assign high-confidence mappings." if auto_assign else "Flag all mappings for review."
+
+        # Delegate to Evidence Mapper agent
+        result = self._delegate_to_agent(
+            agent_type=AgentType.EVIDENCE_MAPPER,
+            prompt=f"Map evidence documents to accreditation standards for institution {institution.id}. {auto_mode} Create crosswalk between documents and requirements.",
+            context={"auto_assign": auto_assign, "institution_id": institution.id},
+        )
+
+        if result.get("error"):
+            return result
+
+        mappings = result.get("mappings", [])
         return {
             "success": True,
-            "message": "Evidence mapping initiated",
-            "auto_assign": params.get("auto_assign", False),
+            "message": f"Evidence mapping complete. Created {len(mappings)} mapping(s).",
+            "mappings_created": len(mappings),
+            "auto_assign": auto_assign,
             "stage": self._current_stage,
-            "note": "EvidenceMapper agent implementation pending",
+            "mappings": mappings,
         }
 
     def _check_compliance(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Check compliance status."""
+        """Check compliance status using the Compliance Audit agent."""
         self._current_stage = "COMPLIANCE_CHECK"
         self.session.metadata["current_stage"] = self._current_stage
         self._notify_update()
 
-        # TODO: Delegate to ComplianceChecker agent
+        institution = self.get_institution()
+        if not institution:
+            return {"error": "No institution loaded", "success": False}
+
+        include_recommendations = params.get("include_recommendations", True)
+        rec_mode = "Include remediation recommendations." if include_recommendations else ""
+
+        # Delegate to Compliance Audit agent
+        result = self._delegate_to_agent(
+            agent_type=AgentType.COMPLIANCE_AUDIT,
+            prompt=f"Run full compliance audit for institution {institution.id}. Evaluate all documents against applicable standards. {rec_mode} Generate findings with severity ratings and confidence scores.",
+            context={"include_recommendations": include_recommendations, "institution_id": institution.id},
+        )
+
+        if result.get("error"):
+            return result
+
+        self._compliance_results = result
+        findings = result.get("findings", [])
+        compliance_score = result.get("compliance_score", 0)
+
         return {
             "success": True,
-            "message": "Compliance check initiated",
-            "include_recommendations": params.get("include_recommendations", True),
+            "message": f"Compliance check complete. Score: {compliance_score}%. {len(findings)} finding(s).",
+            "compliance_score": compliance_score,
+            "finding_count": len(findings),
+            "include_recommendations": include_recommendations,
             "stage": self._current_stage,
-            "note": "ComplianceChecker agent implementation pending",
+            "findings": findings,
         }
 
     def _request_compliance_review(self, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -421,18 +565,36 @@ Respect confidence thresholds and request human approval when uncertain."""
         }
 
     def _draft_self_study(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Draft self-study sections."""
+        """Draft self-study sections using the SER Drafting agent."""
         self._current_stage = "SELF_STUDY_DRAFT"
         self.session.metadata["current_stage"] = self._current_stage
         self._notify_update()
 
-        # TODO: Delegate to SelfStudyWriter agent
+        institution = self.get_institution()
+        if not institution:
+            return {"error": "No institution loaded", "success": False}
+
+        sections = params.get("sections", [])
+        section_filter = f"sections: {sections}" if sections else "all applicable sections"
+
+        # Delegate to SER Drafting agent
+        result = self._delegate_to_agent(
+            agent_type=AgentType.SER_DRAFTING,
+            prompt=f"Draft self-evaluation report (SER) for institution {institution.id}. Cover {section_filter}. Use compliance findings and evidence mappings to support narrative claims. Follow accreditor guidelines for structure and content.",
+            context={"sections": sections, "institution_id": institution.id},
+        )
+
+        if result.get("error"):
+            return result
+
+        sections_drafted = result.get("sections_drafted", 0)
         return {
             "success": True,
-            "message": "Self-study drafting initiated",
-            "sections": params.get("sections", "all"),
+            "message": f"Self-study drafting complete. {sections_drafted} section(s) drafted.",
+            "sections_drafted": sections_drafted,
+            "sections": sections if sections else "all",
             "stage": self._current_stage,
-            "note": "SelfStudyWriter agent implementation pending",
+            "drafts": result.get("drafts", []),
         }
 
     def _request_draft_review(self, params: Dict[str, Any]) -> Dict[str, Any]:
