@@ -11,8 +11,8 @@ Requirements for v1.4 - Enterprise & Polish milestone.
 
 - [ ] **RPT-01**: User can create custom report templates with selected sections
 - [ ] **RPT-02**: User can compare reports between two dates
-- [ ] **RPT-03**: User can view readiness trend chart over time
-- [ ] **RPT-04**: User can select which metrics appear in executive summary
+- [x] **RPT-03**: User can view readiness trend chart over time
+- [x] **RPT-04**: User can select which metrics appear in executive summary
 - [ ] **RPT-05**: User can save template configurations for reuse
 
 ### API Documentation
@@ -60,8 +60,8 @@ Deferred to future milestones.
 |-------------|-------|--------|
 | RPT-01 | Phase 17 | Pending |
 | RPT-02 | Phase 17 | Pending |
-| RPT-03 | Phase 17 | Pending |
-| RPT-04 | Phase 17 | Pending |
+| RPT-03 | Phase 17 | Complete |
+| RPT-04 | Phase 17 | Complete |
 | RPT-05 | Phase 17 | Pending |
 | API-01 | Phase 18 | Pending |
 | API-02 | Phase 18 | Pending |

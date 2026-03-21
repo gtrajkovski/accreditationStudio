@@ -3,22 +3,22 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Enterprise & Polish
 status: in_progress
-last_updated: "2026-03-21T17:36:01Z"
+last_updated: "2026-03-21T17:44:11Z"
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 8
-  completed_plans: 1
+  completed_plans: 3
 ---
 
 # AccreditAI State
 
 ## Current Position
 
-Phase: Phase 17 - Report Enhancements
-Plan: 17-01 (Complete)
-Status: In progress
-Last activity: 2026-03-21 — Completed 17-01: Report Templates CRUD
+Phase: Phase 17 - Report Enhancements (Complete)
+Plan: All 3 plans complete (17-01, 17-02, 17-03)
+Status: Phase complete
+Last activity: 2026-03-21 — Completed Phase 17 Report Enhancements
 
 ## Next Session: Start Here
 
@@ -63,8 +63,8 @@ Ready to plan Phase 17.
 ## Progress Bar
 
 ```
-v1.4: [██░░░░░░░░░░░░░░░░░░] 1/8 plans (12.5%)
-  Phase 17: [██████░░░░░░░░░░░░░░] 1/3 plans
+v1.4: [█████░░░░░░░░░░░░░░░] 2/8 plans (25%)
+  Phase 17: [█████████████░░░░░░░] 2/3 plans
   Phase 18: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans
   Phase 19: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans
 ```
@@ -75,7 +75,7 @@ v1.4: [██░░░░░░░░░░░░░░░░░░] 1/8 plans (
 
 **Goal:** Users can customize and compare compliance reports over time
 
-### Plans (1/3 complete)
+### Plans (2/3 complete)
 
 1. **17-01: Report Templates CRUD** ✅ Complete (11.3 minutes)
    - Database migration 0029_report_templates.sql
@@ -89,10 +89,14 @@ v1.4: [██░░░░░░░░░░░░░░░░░░] 1/8 plans (
    - Section selection UI
    - Template dropdown on report page
 
-3. **17-03: Report Comparison & Trends** (Pending)
-   - Side-by-side comparison view
-   - Trend charts (30/60/90 days)
-   - Executive summary customization
+3. **17-03: Trend Charts & Metric Customization** ✅ Complete (14.4 minutes)
+   - ReportService.get_readiness_trend method with date range filtering
+   - GET /api/reports/institutions/:id/trend endpoint (days parameter, max 365)
+   - Chart.js line chart with 30/60/90 day time range buttons
+   - Metric customization modal with localStorage persistence
+   - Per-institution preferences (metric-prefs-{institution_id})
+   - 9 new i18n keys (en-US, es-PR)
+   - Commits: 94612eb, a38067a, 40e3779
 
 ---
 

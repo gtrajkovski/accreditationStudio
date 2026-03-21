@@ -176,9 +176,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 17-01-PLAN.md — Report Templates (database schema + service + API for template CRUD)
-- [ ] 17-02-PLAN.md — Report Comparison (service + API + UI for side-by-side comparison with deltas)
-- [ ] 17-03-PLAN.md — Trend Charts + Metric Customization (Chart.js trend, localStorage preferences)
+- [x] 17-01-PLAN.md — Report Templates (database schema + service + API for template CRUD)
+- [ ] 17-02-PLAN.md — Report Customization UI (template manager modal + section selection)
+- [x] 17-03-PLAN.md — Trend Charts + Metric Customization (Chart.js trend, localStorage preferences)
 
 ### Phase 18: API Documentation
 **Goal:** Developers can explore and integrate with the API via interactive documentation
