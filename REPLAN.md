@@ -7,11 +7,13 @@
 | 0A | Orchestrator phantom delegations | ✅ | Replaced 5 stubs with real agent delegation via AgentRegistry |
 | 0B | Evidence Guardian core tools | ✅ | Implemented validate_audit_findings() and get_evidence_score() with DB queries |
 | 0C | Readiness Score critical cap | ✅ | Added 40% cap when critical findings exist |
+| 1A | Silent exceptions (partial) | ✅ | Fixed compliance_audit.py (3 handlers) |
 
 **Commits:**
 - `482c0a0` fix(tier-0A): replace phantom delegations with real agent routing
 - `3564106` fix(tier-0B): implement Evidence Guardian core tools
 - `0ba9807` fix(tier-0C): add critical findings cap to readiness score
+- `9fa9aa6` fix(tier-1A): add logging to compliance_audit silent exceptions
 
 ## State After Changes
 
@@ -28,7 +30,12 @@
 
 ## Next Session Priorities
 
-1. **Tier 1A:** Replace bare `except: pass` with logging (6+ files)
+1. **Tier 1A (remaining):** Fix silent exceptions in these files:
+   - `src/agents/evidence_mapper.py` (line 924)
+   - `src/agents/faculty_agent.py` (line 534)
+   - `src/agents/ingestion_agent.py` (line 561)
+   - `src/agents/interview_prep_agent.py` (lines 708, 759)
+   - `src/agents/remediation_agent.py` (line 302)
 2. **Tier 1B:** Autopilot stub guard or implementation
 3. **Tier 2A:** Agent session round-trip tests
 4. **Tier 2B:** Truth index integrity (timestamps, backups)
