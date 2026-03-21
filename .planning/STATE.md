@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: AI & Reporting
 status: executing
-last_updated: "2026-03-21T02:58:00.000Z"
+last_updated: "2026-03-21T03:10:00.000Z"
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # AccreditAI State
@@ -19,10 +19,10 @@ progress:
 
 Two phases planned:
 
-### Phase 15: AI Explainers (1/3 complete)
+### Phase 15: AI Explainers (2/3 complete)
 - **15-01**: Explain Standard (plain English + required evidence) ✅
 - **15-02**: Evidence Assistant (dedicated evidence finder)
-- **15-03**: AI Chat improvements (persistent context, suggestions)
+- **15-03**: AI Chat improvements (persistent context, suggestions) ✅
 
 ### Phase 16: Reporting
 - **16-01**: PDF compliance reports (WeasyPrint/ReportLab)
@@ -120,7 +120,7 @@ All 3 plans complete:
 ---
 
 ## Current Phase
-**Phase 15: AI Explainers** 🔄 In Progress (1/3 plans)
+**Phase 15: AI Explainers** 🔄 In Progress (2/3 plans)
 
 ## Session Date
 2026-03-21
@@ -137,6 +137,19 @@ All 3 plans complete:
    - 11 tests (100% pass rate)
    - Duration: 8 minutes
    - Commits: 65118d4, 6ff46f3
+
+2. **Phase 15-03** - Persistent Chat ✅
+   - Database migration 0028_chat_persistence.sql (conversations + messages tables)
+   - ChatContextService for conversation management
+   - Auto-title generation from first user message
+   - 5 new API endpoints (create/list/get/delete conversations, suggestions)
+   - Enhanced chat UI with conversation sidebar
+   - Suggested follow-up prompts after AI responses
+   - SSE streaming with conversation context
+   - Full i18n support (en-US, es-PR)
+   - 8 tests (100% pass rate)
+   - Duration: 11 minutes
+   - Commits: 778ffa8, 84b2715, 0657c3f
 
 ## Previously Completed
 1. **Phase 12-01** - Batch Operations Foundation
