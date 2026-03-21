@@ -32,6 +32,8 @@ from src.api import (
     init_autopilot_bp,
     reports_bp,
     init_reports_bp,
+    audit_trails_bp,
+    init_audit_trails_bp,
 )
 from src.api.readiness import readiness_bp, init_readiness_bp
 from src.api.audits import audits_bp, init_audits_bp
@@ -230,6 +232,7 @@ init_global_search_bp(workspace_manager)
 init_standard_explainer_bp(ai_client, standards_store)
 init_evidence_assistant_bp(ai_client, standards_store)
 init_reports_bp(workspace_manager)
+init_audit_trails_bp(workspace_manager)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -268,6 +271,7 @@ app.register_blueprint(global_search_bp)
 app.register_blueprint(standard_explainer_bp)
 app.register_blueprint(evidence_assistant_bp)
 app.register_blueprint(reports_bp)
+app.register_blueprint(audit_trails_bp)
 
 
 # =============================================================================
