@@ -467,6 +467,252 @@ class ReportsManager {
   }
 
   /**
+   * Load schedules
+   */
+  async loadSchedules() {
+    try {
+      const response = await fetch(`/api/reports/schedules?institution_id=${this.institutionId}`);
+      if (!response.ok) throw new Error('Failed to load schedules');
+
+      const data = await response.json();
+      this.populateSchedulesTable(data.schedules || []);
+    } catch (error) {
+      console.error('Error loading schedules:', error);
+    }
+  }
+
+  /**
+   * Populate schedules table
+   */
+  populateSchedulesTable(schedules) {
+    const tbody = document.getElementById('schedules-tbody');
+    const emptyState = document.getElementById('schedules-empty');
+
+    if (!schedules || schedules.length === 0) {
+      emptyState.style.display = '';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    // Clear existing rows (except empty state)
+    const existingRows = tbody.querySelectorAll('tr:not(.empty-state)');
+    existingRows.forEach(row => row.remove());
+
+    schedules.forEach(schedule => {
+      const row = document.createElement('tr');
+
+      // Format schedule description
+      const scheduleDesc = this.formatScheduleDescription(schedule);
+
+      // Format recipients
+      const recipientsList = Array.isArray(schedule.recipients) ? schedule.recipients : JSON.parse(schedule.recipients || '[]');
+      const recipientsDisplay = recipientsList.length > 0 ? recipientsList[0] + (recipientsList.length > 1 ? ` +${recipientsList.length - 1}` : '') : 'None';
+
+      // Format last run
+      const lastRun = schedule.last_run_at ? new Date(schedule.last_run_at).toLocaleString() : 'Never';
+
+      // Status badge
+      let statusBadge = '<span class="chip chip-success">Active</span>';
+      if (!schedule.enabled) {
+        statusBadge = '<span class="chip chip-secondary">Paused</span>';
+      } else if (schedule.last_status === 'failed') {
+        statusBadge = '<span class="chip chip-error">Failed</span>';
+      }
+
+      row.innerHTML = `
+        <td>${scheduleDesc}</td>
+        <td>${schedule.schedule_hour}:00</td>
+        <td title="${recipientsList.join(', ')}">${recipientsDisplay}</td>
+        <td>${lastRun}</td>
+        <td>${statusBadge}</td>
+        <td>
+          <div class="action-buttons">
+            ${schedule.enabled
+              ? `<button class="btn-icon btn-pause" data-schedule-id="${schedule.id}" title="Pause">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="6" y="4" width="4" height="16"/>
+                    <rect x="14" y="4" width="4" height="16"/>
+                  </svg>
+                 </button>`
+              : `<button class="btn-icon btn-resume" data-schedule-id="${schedule.id}" title="Resume">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                 </button>`
+            }
+            <button class="btn-icon btn-delete" data-schedule-id="${schedule.id}" title="Delete">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+              </svg>
+            </button>
+          </div>
+        </td>
+      `;
+
+      tbody.appendChild(row);
+    });
+
+    // Attach action listeners
+    this.attachScheduleActionListeners();
+  }
+
+  /**
+   * Format schedule description
+   */
+  formatScheduleDescription(schedule) {
+    if (schedule.schedule_type === 'daily') {
+      return 'Daily';
+    } else if (schedule.schedule_type === 'weekly') {
+      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      return `Weekly on ${days[schedule.schedule_day_of_week || 0]}`;
+    } else if (schedule.schedule_type === 'monthly') {
+      return `Monthly on day ${schedule.schedule_day_of_month || 1}`;
+    }
+    return 'Unknown';
+  }
+
+  /**
+   * Attach schedule action listeners
+   */
+  attachScheduleActionListeners() {
+    // Pause buttons
+    document.querySelectorAll('.btn-pause').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const scheduleId = e.currentTarget.dataset.scheduleId;
+        await this.pauseSchedule(scheduleId);
+      });
+    });
+
+    // Resume buttons
+    document.querySelectorAll('.btn-resume').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const scheduleId = e.currentTarget.dataset.scheduleId;
+        await this.resumeSchedule(scheduleId);
+      });
+    });
+
+    // Delete buttons
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const scheduleId = e.currentTarget.dataset.scheduleId;
+        if (confirm('Are you sure you want to delete this schedule?')) {
+          await this.deleteSchedule(scheduleId);
+        }
+      });
+    });
+  }
+
+  /**
+   * Create new schedule
+   */
+  async createSchedule(formData) {
+    try {
+      const response = await fetch('/api/reports/schedules', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create schedule');
+      }
+
+      this.showToast('Schedule created successfully', 'success');
+      await this.loadSchedules();
+      this.closeScheduleModal();
+    } catch (error) {
+      console.error('Error creating schedule:', error);
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  /**
+   * Pause schedule
+   */
+  async pauseSchedule(scheduleId) {
+    try {
+      const response = await fetch(`/api/reports/schedules/${scheduleId}/pause`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) throw new Error('Failed to pause schedule');
+
+      this.showToast('Schedule paused', 'success');
+      await this.loadSchedules();
+    } catch (error) {
+      console.error('Error pausing schedule:', error);
+      this.showToast('Failed to pause schedule', 'error');
+    }
+  }
+
+  /**
+   * Resume schedule
+   */
+  async resumeSchedule(scheduleId) {
+    try {
+      const response = await fetch(`/api/reports/schedules/${scheduleId}/resume`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) throw new Error('Failed to resume schedule');
+
+      this.showToast('Schedule resumed', 'success');
+      await this.loadSchedules();
+    } catch (error) {
+      console.error('Error resuming schedule:', error);
+      this.showToast('Failed to resume schedule', 'error');
+    }
+  }
+
+  /**
+   * Delete schedule
+   */
+  async deleteSchedule(scheduleId) {
+    try {
+      const response = await fetch(`/api/reports/schedules/${scheduleId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('Failed to delete schedule');
+
+      this.showToast('Schedule deleted', 'success');
+      await this.loadSchedules();
+    } catch (error) {
+      console.error('Error deleting schedule:', error);
+      this.showToast('Failed to delete schedule', 'error');
+    }
+  }
+
+  /**
+   * Show schedule modal
+   */
+  showScheduleModal() {
+    const modal = document.getElementById('schedule-modal');
+    modal.classList.remove('hidden');
+
+    // Reset form
+    document.getElementById('schedule-form').reset();
+    document.getElementById('schedule-hour').value = 8;
+
+    // Hide conditional fields
+    document.getElementById('day-of-week-group').style.display = 'none';
+    document.getElementById('day-of-month-group').style.display = 'none';
+  }
+
+  /**
+   * Close schedule modal
+   */
+  closeScheduleModal() {
+    const modal = document.getElementById('schedule-modal');
+    modal.classList.add('hidden');
+  }
+
+  /**
    * Attach event listeners
    */
   attachEventListeners() {
@@ -474,11 +720,70 @@ class ReportsManager {
     if (generateBtn) {
       generateBtn.addEventListener('click', () => this.generateReport());
     }
+
+    // Schedule modal triggers
+    const newScheduleBtn = document.getElementById('new-schedule-btn');
+    if (newScheduleBtn) {
+      newScheduleBtn.addEventListener('click', () => this.showScheduleModal());
+    }
+
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    if (closeModalBtn) {
+      closeModalBtn.addEventListener('click', () => this.closeScheduleModal());
+    }
+
+    // Modal backdrop close
+    const modal = document.getElementById('schedule-modal');
+    if (modal) {
+      modal.querySelector('.modal-backdrop')?.addEventListener('click', () => this.closeScheduleModal());
+    }
+
+    // Schedule type change handler
+    const scheduleTypeSelect = document.getElementById('schedule-type');
+    if (scheduleTypeSelect) {
+      scheduleTypeSelect.addEventListener('change', (e) => {
+        const type = e.target.value;
+        const weekGroup = document.getElementById('day-of-week-group');
+        const monthGroup = document.getElementById('day-of-month-group');
+
+        weekGroup.style.display = type === 'weekly' ? 'block' : 'none';
+        monthGroup.style.display = type === 'monthly' ? 'block' : 'none';
+      });
+    }
+
+    // Schedule form submission
+    const scheduleForm = document.getElementById('schedule-form');
+    if (scheduleForm) {
+      scheduleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = {
+          institution_id: this.institutionId,
+          report_type: 'compliance',
+          schedule_type: document.getElementById('schedule-type').value,
+          hour: parseInt(document.getElementById('schedule-hour').value),
+          recipients: document.getElementById('schedule-recipients').value.split(',').map(e => e.trim())
+        };
+
+        if (formData.schedule_type === 'weekly') {
+          formData.day_of_week = parseInt(document.getElementById('schedule-day-of-week').value);
+        }
+
+        if (formData.schedule_type === 'monthly') {
+          formData.day_of_month = parseInt(document.getElementById('schedule-day-of-month').value);
+        }
+
+        await this.createSchedule(formData);
+      });
+    }
   }
 }
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
   const manager = new ReportsManager();
-  manager.init();
+  manager.init().then(() => {
+    // Load schedules after dashboard initializes
+    manager.loadSchedules();
+  });
 });

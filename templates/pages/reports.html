@@ -116,6 +116,102 @@
       </table>
     </div>
   </section>
+
+  <!-- Scheduled Reports Section -->
+  <section class="scheduled-reports">
+    <div class="section-header">
+      <h3>{{ t('reports.scheduled_reports') }}</h3>
+      <button id="new-schedule-btn" class="btn btn-secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        {{ t('reports.new_schedule') }}
+      </button>
+    </div>
+
+    <div class="table-container">
+      <table id="schedules-table" class="data-table">
+        <thead>
+          <tr>
+            <th>{{ t('reports.schedule_type') }}</th>
+            <th>{{ t('reports.time') }}</th>
+            <th>{{ t('reports.recipients') }}</th>
+            <th>{{ t('reports.last_run') }}</th>
+            <th>{{ t('reports.status') }}</th>
+            <th>{{ t('reports.actions') }}</th>
+          </tr>
+        </thead>
+        <tbody id="schedules-tbody">
+          <tr class="empty-state" id="schedules-empty">
+            <td colspan="6">
+              <div class="empty-state-content">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <p>{{ t('reports.no_schedules') }}</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<!-- Schedule Modal -->
+<div id="schedule-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <h3>{{ t('reports.create_schedule') }}</h3>
+    <form id="schedule-form">
+      <div class="form-group">
+        <label for="schedule-type">{{ t('reports.schedule_type') }}</label>
+        <select id="schedule-type" required>
+          <option value="daily">{{ t('reports.daily') }}</option>
+          <option value="weekly">{{ t('reports.weekly') }}</option>
+          <option value="monthly">{{ t('reports.monthly') }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="schedule-hour">{{ t('reports.time') }} ({{ t('reports.hour') }})</label>
+        <input type="number" id="schedule-hour" min="0" max="23" value="8" required>
+        <small class="form-help">{{ t('reports.hour_help') }}</small>
+      </div>
+
+      <div class="form-group" id="day-of-week-group" style="display:none">
+        <label for="schedule-day-of-week">{{ t('reports.day_of_week') }}</label>
+        <select id="schedule-day-of-week">
+          <option value="0">{{ t('reports.monday') }}</option>
+          <option value="1">{{ t('reports.tuesday') }}</option>
+          <option value="2">{{ t('reports.wednesday') }}</option>
+          <option value="3">{{ t('reports.thursday') }}</option>
+          <option value="4">{{ t('reports.friday') }}</option>
+          <option value="5">{{ t('reports.saturday') }}</option>
+          <option value="6">{{ t('reports.sunday') }}</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="day-of-month-group" style="display:none">
+        <label for="schedule-day-of-month">{{ t('reports.day_of_month') }}</label>
+        <input type="number" id="schedule-day-of-month" min="1" max="28" value="1">
+        <small class="form-help">{{ t('reports.day_of_month_help') }}</small>
+      </div>
+
+      <div class="form-group">
+        <label for="schedule-recipients">{{ t('reports.recipients') }}</label>
+        <input type="text" id="schedule-recipients" placeholder="email1@example.com, email2@example.com" required>
+        <small class="form-help">{{ t('reports.recipients_help') }}</small>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="close-modal-btn">{{ t('common.cancel') }}</button>
+        <button type="submit" class="btn btn-accent">{{ t('reports.save_schedule') }}</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Toast Notification -->
