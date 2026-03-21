@@ -15,7 +15,7 @@ Generate interactive API documentation for all 38 Flask blueprints. Developers c
 ## Implementation Decisions
 
 ### Spec Generation
-- **D-01:** Use flask-apispec with marshmallow schemas for OpenAPI 3.0 generation
+- **D-01:** Use APIFlask with marshmallow schemas for OpenAPI 3.0 generation (updated from flask-apispec per research — flask-apispec unmaintained since 2021)
 - **D-02:** Auto-introspect existing Flask routes — no manual YAML maintenance
 - **D-03:** Generate spec at runtime (not static file) to stay in sync with code
 
