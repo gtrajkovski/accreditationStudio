@@ -402,8 +402,15 @@
     "customize": "Customize",
     "customize_metrics": "Customize Metrics",
     "customize_metrics_help": "Select which metrics to display in the executive summary. The overall readiness score is always visible.",
+    "change": "Change",
+    "compare": "Compare",
     "compare_reports": "Compare Reports",
-    "select_report": "Select report...",
-    "compare": "Compare"
+    "comparison_results": "Comparison Results",
+    "declined": "Declined",
+    "improved": "Improved",
+    "newer_report": "Newer Report",
+    "no_change": "No Change",
+    "older_report": "Older Report",
+    "select_report": "Select report..."
   }
 }

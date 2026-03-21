@@ -402,8 +402,15 @@
     "customize": "Personalizar",
     "customize_metrics": "Personalizar Métricas",
     "customize_metrics_help": "Seleccione qué métricas mostrar en el resumen ejecutivo. La puntuación general de preparación siempre es visible.",
+    "change": "Cambio",
+    "compare": "Comparar",
     "compare_reports": "Comparar Informes",
-    "select_report": "Seleccionar informe...",
-    "compare": "Comparar"
+    "comparison_results": "Resultados de Comparación",
+    "declined": "Empeorado",
+    "improved": "Mejorado",
+    "newer_report": "Informe Reciente",
+    "no_change": "Sin Cambio",
+    "older_report": "Informe Anterior",
+    "select_report": "Seleccionar informe..."
   }
 }
