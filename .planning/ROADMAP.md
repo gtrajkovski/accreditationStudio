@@ -144,19 +144,19 @@ Plans:
 65. ✅ Evidence Assistant (context-aware evidence finder with citations)
 66. ✅ Enhanced AI Chat (conversation memory, suggested actions, quick commands)
 
-### Phase 16: Reporting
+### Phase 16: Reporting ✅
 **Goal:** Generate professional compliance reports with executive summaries, scheduled exports, and customizable templates
 **Requirements:** [67, 68, 69]
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans executed ✅ **PHASE COMPLETE**
 
 Plans:
 - [x] 16-01-PLAN.md — ReportService + PDFExporter + ChartGenerator + API (WeasyPrint PDF generation with matplotlib charts) ✅ **COMPLETE** (c2cce69, 3303ed7, e6f9d8e)
-- [ ] 16-02-PLAN.md — Executive summary dashboard UI with Chart.js visualizations and export
-- [ ] 16-03-PLAN.md — SchedulerService + EmailService + scheduling UI (APScheduler + Flask-Mail)
+- [x] 16-02-PLAN.md — Executive summary dashboard UI with Chart.js visualizations and export ✅ **COMPLETE** (75cf963, 35ac33d, 1fba648)
+- [x] 16-03-PLAN.md — SchedulerService + EmailService + scheduling UI (APScheduler + Flask-Mail) ✅ **COMPLETE** (fab34c1, cca033c, 227da60)
 
 67. ✅ PDF Compliance Reports (multi-format export with charts)
-68. Executive Summary (board-ready overview with key metrics)
-69. Scheduled Reports (automated generation, email delivery)
+68. ✅ Executive Summary (board-ready overview with key metrics)
+69. ✅ Scheduled Reports (automated generation, email delivery)
 
 ---
 
