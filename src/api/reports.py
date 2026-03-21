@@ -596,3 +596,229 @@ def get_schedule_logs(schedule_id: str):
     except Exception as e:
         current_app.logger.error(f"Error getting schedule logs: {e}", exc_info=True)
         return jsonify({"success": False, "error": "Failed to get schedule logs"}), 500
+
+
+# =============================================================================
+# Report Comparison Endpoints
+# =============================================================================
+
+@reports_bp.route("/compare", methods=["POST"])
+def compare_reports_endpoint():
+    """Compare two reports.
+
+    Body:
+        {
+            "report_id_a": "rpt_abc123",
+            "report_id_b": "rpt_def456"
+        }
+
+    Returns:
+        JSON with comparison data
+    """
+    try:
+        data = request.get_json()
+
+        # Validate inputs
+        report_id_a = data.get("report_id_a")
+        report_id_b = data.get("report_id_b")
+
+        if not report_id_a or not report_id_b:
+            return jsonify({
+                "success": False,
+                "error": "Both report_id_a and report_id_b are required"
+            }), 400
+
+        # Call comparison service
+        comparison = ReportService.compare_reports(report_id_a, report_id_b)
+
+        return jsonify({
+            "success": True,
+            "comparison": comparison,
+        })
+
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 404
+    except Exception as e:
+        current_app.logger.error(f"Error comparing reports: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Failed to compare reports"}), 500
+
+
+# =============================================================================
+# Report Templates Endpoints
+# =============================================================================
+
+@reports_bp.route("/templates", methods=["POST"])
+def create_template():
+    """Create new report template.
+
+    Body:
+        {
+            "institution_id": "inst_123",
+            "name": "Board Report",
+            "sections": ["readiness", "findings_summary", "charts"],
+            "description": "Optional description",
+            "is_default": false
+        }
+
+    Returns:
+        JSON with template_id
+    """
+    try:
+        data = request.get_json()
+
+        # Validate required fields
+        required = ["institution_id", "name", "sections"]
+        for field in required:
+            if field not in data:
+                return jsonify({"success": False, "error": f"Missing required field: {field}"}), 400
+
+        # Validate sections is non-empty list
+        sections = data["sections"]
+        if not isinstance(sections, list) or len(sections) == 0:
+            return jsonify({"success": False, "error": "sections must be a non-empty list"}), 400
+
+        # Create template
+        template_id = ReportService.create_template(
+            institution_id=data["institution_id"],
+            name=data["name"],
+            sections=sections,
+            description=data.get("description"),
+            is_default=data.get("is_default", False)
+        )
+
+        return jsonify({
+            "success": True,
+            "template_id": template_id,
+        }), 201
+
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error creating template: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Failed to create template"}), 500
+
+
+@reports_bp.route("/templates", methods=["GET"])
+def list_templates():
+    """List templates for institution.
+
+    Query params:
+        institution_id: Institution ID (required)
+
+    Returns:
+        JSON array of templates
+    """
+    try:
+        institution_id = request.args.get("institution_id")
+        if not institution_id:
+            return jsonify({"success": False, "error": "Missing institution_id parameter"}), 400
+
+        templates = ReportService.list_templates(institution_id)
+
+        return jsonify({
+            "success": True,
+            "templates": templates,
+            "count": len(templates),
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"Error listing templates: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Failed to list templates"}), 500
+
+
+@reports_bp.route("/templates/<template_id>", methods=["GET"])
+def get_single_template(template_id: str):
+    """Get single template details.
+
+    Args:
+        template_id: Template ID
+
+    Returns:
+        JSON with template details
+    """
+    try:
+        template = ReportService.get_template(template_id)
+
+        if not template:
+            return jsonify({"success": False, "error": "Template not found"}), 404
+
+        return jsonify({
+            "success": True,
+            "template": template,
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"Error getting template: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Failed to get template"}), 500
+
+
+@reports_bp.route("/templates/<template_id>", methods=["PATCH"])
+def update_template_endpoint(template_id: str):
+    """Update template.
+
+    Body:
+        {
+            "name": "New Name",          # Optional
+            "sections": ["..."],         # Optional
+            "description": "...",        # Optional
+            "is_default": true           # Optional
+        }
+
+    Returns:
+        JSON with success status
+    """
+    try:
+        data = request.get_json()
+
+        # At least one field must be provided
+        if not any(key in data for key in ["name", "sections", "description", "is_default"]):
+            return jsonify({"success": False, "error": "At least one field must be provided"}), 400
+
+        # Update template
+        success = ReportService.update_template(
+            template_id=template_id,
+            name=data.get("name"),
+            sections=data.get("sections"),
+            description=data.get("description"),
+            is_default=data.get("is_default")
+        )
+
+        if not success:
+            return jsonify({"success": False, "error": "Template not found"}), 404
+
+        return jsonify({
+            "success": True,
+            "message": "Template updated",
+        })
+
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        current_app.logger.error(f"Error updating template: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Failed to update template"}), 500
+
+
+@reports_bp.route("/templates/<template_id>", methods=["DELETE"])
+def delete_template_endpoint(template_id: str):
+    """Delete a template.
+
+    Args:
+        template_id: Template ID
+
+    Returns:
+        JSON with success status
+    """
+    try:
+        success = ReportService.delete_template(template_id)
+
+        if not success:
+            return jsonify({"success": False, "error": "Template not found"}), 404
+
+        return jsonify({
+            "success": True,
+            "message": "Template deleted",
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"Error deleting template: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Failed to delete template"}), 500
