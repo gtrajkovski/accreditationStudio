@@ -144,7 +144,7 @@ Plans:
 65. ✅ Evidence Assistant (context-aware evidence finder with citations)
 66. ✅ Enhanced AI Chat (conversation memory, suggested actions, quick commands)
 
-### Phase 16: Reporting ✅
+### Phase 16: Reporting ✅ COMPLETE
 **Goal:** Generate professional compliance reports with executive summaries, scheduled exports, and customizable templates
 **Requirements:** [67, 68, 69]
 **Plans:** 3/3 plans complete
@@ -157,6 +157,75 @@ Plans:
 67. ✅ PDF Compliance Reports (multi-format export with charts)
 68. ✅ Executive Summary (board-ready overview with key metrics)
 69. ✅ Scheduled Reports (automated generation, email delivery)
+
+---
+
+## Milestone: v1.4 - Enterprise & Polish
+
+### Phase 17: Report Enhancements
+**Goal:** Users can customize and compare compliance reports over time
+**Depends on:** Phase 16 (Reporting)
+**Requirements:** RPT-01, RPT-02, RPT-03, RPT-04, RPT-05
+**Success Criteria** (what must be TRUE):
+  1. User can create a custom report template by selecting which sections to include
+  2. User can save template configurations and reuse them for future reports
+  3. User can select two report dates and view a side-by-side comparison showing changed metrics
+  4. User can view a trend chart showing readiness score changes over the last 30/60/90 days
+  5. User can customize which metrics appear in the executive summary section
+
+**Plans:** TBD
+
+### Phase 18: API Documentation
+**Goal:** Developers can explore and integrate with the API via interactive documentation
+**Depends on:** Nothing (independent infrastructure)
+**Requirements:** API-01, API-02, API-03, API-04
+**Success Criteria** (what must be TRUE):
+  1. System automatically generates OpenAPI 3.0 specification from all 35+ Flask blueprints
+  2. User can navigate to /api/docs and see interactive Swagger UI
+  3. API documentation includes request/response examples for every endpoint
+  4. Endpoints are grouped by blueprint (institutions, documents, agents, etc.) in the UI
+  5. User can test API endpoints directly from the Swagger UI interface
+
+**Plans:** TBD
+
+### Phase 19: Audit Trail Export
+**Goal:** Users can export complete compliance audit trails for regulatory evidence
+**Depends on:** Nothing (leverages existing agent session data)
+**Requirements:** AUD-01, AUD-02, AUD-03, AUD-04, AUD-05
+**Success Criteria** (what must be TRUE):
+  1. User can export agent session logs as structured JSON files
+  2. User can export activity history for a custom date range (e.g., last 90 days)
+  3. User can package audit trail with a compliance report as a single ZIP file
+  4. Exported logs include all tool calls, agent decisions, confidence scores, and timestamps
+  5. User can filter export by agent type (e.g., only Compliance Audit sessions) or operation type
+
+**Plans:** TBD
+
+---
+
+## Progress Table
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Foundation Infrastructure | N/A | Complete | 2026-Q1 |
+| 2. Ingestion + Standards | N/A | Complete | 2026-Q1 |
+| 3. Audit Engine | N/A | Complete | 2026-Q1 |
+| 4. Remediation | N/A | Complete | 2026-Q1 |
+| 5. Findings + Packets | N/A | Complete | 2026-Q1 |
+| 6. Catalog + Exhibits + Faculty | N/A | Complete | 2026-Q1 |
+| 7. Visit Prep | N/A | Complete | 2026-Q1 |
+| 8. Post-Visit + Ongoing | N/A | Complete | 2026-Q1 |
+| 9. Analytics & Visualization | N/A | Complete | 2026-Q2 |
+| 10. Planning & Search | N/A | Complete | 2026-Q2 |
+| 11. Advanced Features | N/A | Complete | 2026-Q2 |
+| 12. Bulk Operations | 4/4 | Complete | 2026-Q3 |
+| 13. Search Enhancement | 3/3 | Complete | 2026-Q3 |
+| 14. Polish & UX | 3/3 | Complete | 2026-Q3 |
+| 15. AI Explainers | 3/3 | Complete | 2026-Q3 |
+| 16. Reporting | 3/3 | Complete | 2026-Q3 |
+| 17. Report Enhancements | 0/3 | Not started | - |
+| 18. API Documentation | 0/2 | Not started | - |
+| 19. Audit Trail Export | 0/3 | Not started | - |
 
 ---
 

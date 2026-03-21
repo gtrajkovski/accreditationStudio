@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Enterprise & Polish
-status: defining_requirements
-last_updated: "2026-03-21T16:00:00.000Z"
+status: roadmap_created
+last_updated: "2026-03-21T16:30:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 8
   completed_plans: 0
 ---
 
@@ -15,31 +15,61 @@ progress:
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Phase 17 - Report Enhancements (Ready to plan)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-21 — Milestone v1.4 started
+Status: Roadmap created, ready for phase planning
+Last activity: 2026-03-21 — v1.4 roadmap created
 
 ## Next Session: Start Here
 
-**v1.4 - Enterprise & Polish** 🚀 STARTING
+**v1.4 - Enterprise & Polish** 🚀 ROADMAP CREATED
 
-Three phases planned:
+Ready to plan Phase 17.
 
 ### Phase 17: Report Enhancements
-- Custom report templates
-- Report comparison over time
-- Trend analysis charts
+**Goal:** Users can customize and compare compliance reports over time
+**Requirements:** RPT-01, RPT-02, RPT-03, RPT-04, RPT-05
+**Success Criteria:**
+  1. User can create custom report template by selecting sections
+  2. User can save and reuse template configurations
+  3. User can compare reports between two dates side-by-side
+  4. User can view readiness trend chart (30/60/90 days)
+  5. User can customize executive summary metrics
+
+**Next:** Run `/gsd:plan-phase 17` to create implementation plans
 
 ### Phase 18: API Documentation
-- OpenAPI/Swagger spec generation
-- Swagger UI integration
-- API endpoint documentation
+**Goal:** Developers can explore and integrate via interactive documentation
+**Requirements:** API-01, API-02, API-03, API-04
+**Success Criteria:**
+  1. System generates OpenAPI 3.0 spec from all 35+ blueprints
+  2. Swagger UI accessible at /api/docs
+  3. Request/response examples for every endpoint
+  4. Endpoints grouped by blueprint
+  5. Interactive testing from Swagger UI
 
 ### Phase 19: Audit Trail Export
-- Agent session log export
-- Compliance evidence packaging
-- Activity history reports
+**Goal:** Users can export compliance audit trails for regulatory evidence
+**Requirements:** AUD-01, AUD-02, AUD-03, AUD-04, AUD-05
+**Success Criteria:**
+  1. Export agent session logs as JSON
+  2. Export activity history for date range
+  3. Package audit trail with compliance report (ZIP)
+  4. Logs include tool calls, decisions, confidence, timestamps
+  5. Filter export by agent type or operation
+
+---
+
+## Progress Bar
+
+```
+v1.4: [░░░░░░░░░░░░░░░░░░░░] 0/3 phases (0%)
+  Phase 17: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans
+  Phase 18: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans
+  Phase 19: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans
+```
+
+---
 
 ## v1.3 Complete ✅
 
@@ -100,9 +130,6 @@ All 3 plans complete:
 - Window load event (not DOMContentLoaded) to ensure full page render before removing skeletons
 - Skeleton dimensions match real content to prevent cumulative layout shift
 - All skeleton styles use CSS variables for automatic theme adaptation
-
-**Next:**
-- Additional production hardening (SSL, logging, monitoring) if needed
 
 ---
 
@@ -293,15 +320,15 @@ coverage_map_bp, simulation_bp, portfolios_bp, evidence_highlighting_bp
 compliance_heatmap_bp, standard_explainer_bp, evidence_assistant_bp, reports_bp
 ```
 
-## v1.2 Roadmap (Next Milestone)
+## v1.4 Roadmap (Current Milestone)
 
-| Phase | Features |
-|-------|----------|
-| 12 | Bulk Operations (batch remediation, bulk audit, progress tracking) |
-| 13 | Search Enhancement (global search UI, autocomplete, filters) |
-| 14 | Polish & UX (loading skeletons, shortcuts modal, onboarding) |
+| Phase | Requirements | Features |
+|-------|--------------|----------|
+| 17 | RPT-01 to RPT-05 | Report Enhancements (custom templates, comparison, trends) |
+| 18 | API-01 to API-04 | API Documentation (OpenAPI/Swagger, interactive docs) |
+| 19 | AUD-01 to AUD-05 | Audit Trail Export (session logs, activity history, packaging) |
 
 ## Repository
 - Remote: https://github.com/gtrajkovski/accreditationStudio
 - Branch: master
-- Latest tag: v1.1.1 (pending)
+- Latest tag: v1.3.0 (pending)
