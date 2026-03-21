@@ -217,6 +217,87 @@ Plans:
 
 ---
 
+## Milestone: v1.5 - Operational Intelligence
+
+### Phase 20: Autopilot & Morning Brief
+**Goal:** Nightly autopilot runs with morning brief generation
+**Depends on:** Nothing (enhances existing autopilot infrastructure)
+**Requirements:** AUTO-01, AUTO-02, AUTO-03
+**Success Criteria** (what must be TRUE):
+  1. Autopilot runs nightly for enabled institutions
+  2. Morning brief generated with readiness delta
+  3. User can trigger "Run Now" manually
+  4. Document changes detected via SHA256
+
+**Plans:** 0/3 plans complete
+
+Plans:
+- [ ] 20-01-PLAN.md — AutopilotService enhancement (wire audit, change detection, morning brief)
+- [ ] 20-02-PLAN.md — Autopilot API + Run Now endpoint with SSE progress
+- [ ] 20-03-PLAN.md — Autopilot UI (dashboard controls, morning brief panel)
+
+### Phase 21: Evidence Coverage Contract
+**Goal:** Packet export gating based on evidence coverage
+**Depends on:** Nothing (enhances existing packet workflow)
+**Requirements:** EVID-01, EVID-02, EVID-03
+**Success Criteria** (what must be TRUE):
+  1. Packet export blocked without evidence coverage
+  2. Critical findings must be resolved or waived
+  3. Coverage step in Packet Studio shows gaps
+
+**Plans:** 0/2 plans complete
+
+Plans:
+- [ ] 21-01-PLAN.md — Evidence coverage validation service and gates
+- [ ] 21-02-PLAN.md — Packet Studio coverage UI with gap visualization
+
+### Phase 22: Change Detection + Targeted Re-Audit
+**Goal:** Incremental re-audits for changed documents only
+**Depends on:** Phase 20 (uses SHA256 change detection)
+**Requirements:** CHG-01, CHG-02, CHG-03
+**Success Criteria** (what must be TRUE):
+  1. SHA256 diff on document upload
+  2. Changed documents trigger re-audit recommendation
+  3. Targeted re-audit runs only impacted items
+
+**Plans:** 0/3 plans complete
+
+Plans:
+- [ ] 22-01-PLAN.md — Document change detection on upload
+- [ ] 22-02-PLAN.md — Change-triggered re-audit recommendations
+- [ ] 22-03-PLAN.md — Targeted re-audit execution
+
+### Phase 23: Audit Reproducibility
+**Goal:** Every audit can be explained and reproduced
+**Depends on:** Nothing (adds metadata to existing audits)
+**Requirements:** REPRO-01, REPRO-02
+**Success Criteria** (what must be TRUE):
+  1. Audit runs store reproducibility bundle
+  2. User can view "How this audit was produced"
+
+**Plans:** 0/2 plans complete
+
+Plans:
+- [ ] 23-01-PLAN.md — Reproducibility bundle storage
+- [ ] 23-02-PLAN.md — Audit explainer UI
+
+### Phase 24: Standards Harvester MVP
+**Goal:** Fetch standards from accreditor websites
+**Depends on:** Nothing (new feature)
+**Requirements:** HARV-01, HARV-02, HARV-03
+**Success Criteria** (what must be TRUE):
+  1. Fetch ACCSC standards from official URL
+  2. Store with version date and hash
+  3. User can view diff against previous version
+
+**Plans:** 0/2 plans complete
+
+Plans:
+- [ ] 24-01-PLAN.md — Standards fetching and parsing service
+- [ ] 24-02-PLAN.md — Standards diff viewer UI
+
+---
+
 ## Progress Table
 
 | Phase | Plans Complete | Status | Completed |
@@ -240,6 +321,11 @@ Plans:
 | 17. Report Enhancements | 4/4 | Complete | 2026-Q3 |
 | 18. API Documentation | 2/2 | Complete | 2026-Q3 |
 | 19. Audit Trail Export | 2/2 | Complete | 2026-Q3 |
+| 20. Autopilot & Morning Brief | 0/3 | Planning | - |
+| 21. Evidence Coverage Contract | 0/2 | Planning | - |
+| 22. Change Detection | 0/3 | Planning | - |
+| 23. Audit Reproducibility | 0/2 | Planning | - |
+| 24. Standards Harvester MVP | 0/2 | Planning | - |
 
 ---
 
