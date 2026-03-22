@@ -11,6 +11,10 @@ from src.services.change_detection_service import (
     ChangeEvent,
     calculate_reaudit_scope,
     ReauditScope,
+    get_change_diff,
+    trigger_targeted_reaudit,
+    mark_changes_processed,
+    get_pending_change_ids,
 )
 
 
@@ -165,3 +169,92 @@ def preview_reaudit_scope(institution_id: str):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@change_detection_bp.route('/api/institutions/<institution_id>/changes/<change_id>/diff', methods=['GET'])
+def get_diff(institution_id: str, change_id: str):
+    """Get side-by-side diff for a specific change event (per D-11).
+
+    Returns:
+        JSON with diff_html and metadata.
+    """
+    result = get_change_diff(change_id)
+
+    if "error" in result:
+        return jsonify(result), 404
+
+    return jsonify(result), 200
+
+
+@change_detection_bp.route('/api/institutions/<institution_id>/changes/reaudit', methods=['POST'])
+def trigger_reaudit(institution_id: str):
+    """Trigger targeted re-audit for changed documents (per D-07, CHG-03).
+
+    Request Body:
+        document_ids: List of document IDs to re-audit (optional, defaults to all pending)
+
+    Returns:
+        JSON with session_id, scope, and audit results.
+    """
+    from src.db.connection import get_conn
+    conn = get_conn()
+
+    data = request.get_json() or {}
+    document_ids = data.get('document_ids')
+
+    # Default to all pending changes if no specific docs provided
+    if not document_ids:
+        pending = get_pending_changes(institution_id, conn)
+        document_ids = [change.document_id for change in pending]
+
+    if not document_ids:
+        return jsonify({"error": "No documents to re-audit"}), 400
+
+    # Get change IDs for these documents to mark as processed later
+    pending_change_ids = get_pending_change_ids(institution_id, conn)
+
+    # Trigger re-audit (per D-04 - full cascade)
+    result = trigger_targeted_reaudit(
+        institution_id=institution_id,
+        document_ids=document_ids,
+        workspace_manager=_workspace_manager,
+        conn=conn
+    )
+
+    if "error" in result:
+        return jsonify(result), 500
+
+    # Mark changes as processed (per D-07 - after user triggers)
+    if pending_change_ids and result.get("session_id"):
+        mark_changes_processed(pending_change_ids, result["session_id"], conn)
+
+    return jsonify(result), 200
+
+
+@change_detection_bp.route('/api/institutions/<institution_id>/changes/<change_id>/dismiss', methods=['PATCH'])
+def dismiss_change(institution_id: str, change_id: str):
+    """Dismiss a change event without triggering re-audit.
+
+    Marks the change as processed without re-auditing.
+    Use when user reviews diff and determines no re-audit needed.
+
+    Returns:
+        JSON with success status.
+    """
+    from src.db.connection import get_conn
+    conn = get_conn()
+
+    # Mark as processed without re-audit session
+    cursor = conn.execute("""
+        UPDATE document_changes
+        SET processed_at = datetime('now'),
+            reaudit_triggered = 0
+        WHERE id = ? AND institution_id = ?
+    """, (change_id, institution_id))
+
+    conn.commit()
+
+    if cursor.rowcount == 0:
+        return jsonify({"error": "Change event not found"}), 404
+
+    return jsonify({"success": True, "change_id": change_id}), 200
