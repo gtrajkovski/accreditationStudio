@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Operational Intelligence
 status: executing
-last_updated: "2026-03-21T23:47:45Z"
+last_updated: "2026-03-21T23:58:35Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 12
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # AccreditAI State
@@ -16,9 +16,9 @@ progress:
 ## Current Position
 
 Phase: Phase 20 - Autopilot & Morning Brief (IN PROGRESS)
-Plan: 20-02 ready (Autopilot UI & Run Now)
-Status: Plan 20-01 complete, 1/3 plans done
-Last activity: 2026-03-21 — Completed AutopilotService Enhancement
+Plan: 20-03 ready (Autopilot Dashboard UI)
+Status: Plan 20-02 complete, 2/3 plans done
+Last activity: 2026-03-21 — Completed Autopilot API + Run Now
 
 ## Next Session: Start Here
 
@@ -34,19 +34,20 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 - ✅ Session round-trip tests created (7 tests pass)
 - ⚠️ Silent exception handlers: sample fix applied (290 remain for future sweep)
 
-### Phase 20: Autopilot & Morning Brief (1/3 complete)
+### Phase 20: Autopilot & Morning Brief (2/3 complete)
 **Goal:** Nightly autopilot runs with morning brief generation
 **Requirements:** AUTO-01, AUTO-02, AUTO-03
 **Success Criteria:**
   1. ✅ Autopilot runs for enabled institutions (wired to ComplianceAuditAgent)
   2. ✅ Morning brief generated with readiness delta
-  3. User can trigger "Run Now" manually
+  3. ✅ User can trigger "Run Now" manually (POST /run-now, SSE progress)
   4. ✅ Document changes detected via SHA256
 
 **Completed:**
 - 20-01: AutopilotService Enhancement (4.5 min, 13 tests)
+- 20-02: Autopilot API + Run Now (7 min, 19 tests)
 
-**Next:** Execute 20-02 (Autopilot UI & Run Now)
+**Next:** Execute 20-03 (Autopilot Dashboard UI)
 
 ### Phase 21: Evidence Coverage Contract
 **Goal:** Packet export gating based on evidence coverage
@@ -84,8 +85,8 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 ## Progress Bar
 
 ```
-v1.5: [██░░░░░░░░░░░░░░░░░░] 1/12 plans (8%)
-  Phase 20: [██████░░░░░░░░░░░░░░] 1/3 plans (IN PROGRESS)
+v1.5: [████░░░░░░░░░░░░░░░░] 2/12 plans (17%)
+  Phase 20: [████████████░░░░░░░░] 2/3 plans (IN PROGRESS)
   Phase 21: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
   Phase 22: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (PLANNED)
   Phase 23: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)

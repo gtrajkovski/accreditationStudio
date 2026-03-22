@@ -229,11 +229,11 @@ Plans:
   3. User can trigger "Run Now" manually
   4. Document changes detected via SHA256
 
-**Plans:** 1/3 plans complete
+**Plans:** 2/3 plans complete
 
 Plans:
 - [x] 20-01-PLAN.md — AutopilotService enhancement (wire audit, change detection, morning brief) ✅ **COMPLETE** (930f104, 14499aa, fdee113)
-- [ ] 20-02-PLAN.md — Autopilot API + Run Now endpoint with SSE progress
+- [x] 20-02-PLAN.md — Autopilot API + Run Now endpoint with SSE progress ✅ **COMPLETE** (ccbd9e5)
 - [ ] 20-03-PLAN.md — Autopilot UI (dashboard controls, morning brief panel)
 
 ### Phase 21: Evidence Coverage Contract
@@ -321,7 +321,7 @@ Plans:
 | 17. Report Enhancements | 4/4 | Complete | 2026-Q3 |
 | 18. API Documentation | 2/2 | Complete | 2026-Q3 |
 | 19. Audit Trail Export | 2/2 | Complete | 2026-Q3 |
-| 20. Autopilot & Morning Brief | 0/3 | Planning | - |
+| 20. Autopilot & Morning Brief | 2/3 | In Progress | - |
 | 21. Evidence Coverage Contract | 0/2 | Planning | - |
 | 22. Change Detection | 0/3 | Planning | - |
 | 23. Audit Reproducibility | 0/2 | Planning | - |

@@ -38,7 +38,7 @@ Requirements for v1.5 - Operational Intelligence milestone.
 
 - [x] **AUTO-01**: System runs nightly autopilot for institutions with autopilot enabled
 - [x] **AUTO-02**: Morning brief generated with readiness delta, blockers, and next actions
-- [ ] **AUTO-03**: User can trigger autopilot run manually via "Run Now"
+- [x] **AUTO-03**: User can trigger autopilot run manually via "Run Now"
 
 ### Evidence Contract
 
@@ -120,7 +120,7 @@ Deferred to future milestones.
 |-------------|-------|--------|
 | AUTO-01 | Phase 20 | Complete (20-01) |
 | AUTO-02 | Phase 20 | Complete (20-01) |
-| AUTO-03 | Phase 20 | Pending |
+| AUTO-03 | Phase 20 | Complete (20-02) |
 | EVID-01 | Phase 21 | Pending |
 | EVID-02 | Phase 21 | Pending |
 | EVID-03 | Phase 21 | Pending |
