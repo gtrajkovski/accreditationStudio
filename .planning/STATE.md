@@ -16,9 +16,9 @@ progress:
 ## Current Position
 
 Phase: Phase 22 - Change Detection + Targeted Re-Audit
-Plan: 22-01 complete
-Status: 1/3 plans done
-Last activity: 2026-03-22 — Completed Change Detection Service (22-01)
+Plan: 22-02 complete
+Status: 2/3 plans done
+Last activity: 2026-03-22 — Completed Change Detection Dashboard UI (22-02)
 
 ## Next Session: Start Here
 
@@ -97,7 +97,16 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
   - TDD workflow (RED → GREEN phases)
   - Commits: 7893761, 4660530, 29a6290, 49f3a81
 
-**Next:** Phase 22-02 - Change Detection Dashboard UI
+- 22-02: Change Detection Dashboard UI (5.4 min, 5 tests)
+  - Cascade scope calculation (ReauditScope, get_affected_standards, get_impacted_documents, calculate_reaudit_scope)
+  - 2 API endpoints (scope, scope/preview)
+  - Non-blocking badge component with pulse animation
+  - ChangeDetectionManager class with 30s polling
+  - Modal with checkbox selection and scope preview
+  - i18n strings (12 keys, en-US and es-PR)
+  - Commits: 2060724, fe50754, 9b5cea2, 3725c60, 4fe987f
+
+**Next:** Phase 22-03 - Targeted Re-Audit Execution
 
 ### Phase 23: Audit Reproducibility
 **Goal:** Every audit can be explained and reproduced
@@ -119,10 +128,10 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 ## Progress Bar
 
 ```
-v1.5: [██████████████░░░░░░] 6/12 plans (50%)
+v1.5: [██████████████████░░] 7/12 plans (58%)
   Phase 20: [████████████████████] 3/3 plans (COMPLETE)
   Phase 21: [████████████████████] 2/2 plans (COMPLETE)
-  Phase 22: [███████░░░░░░░░░░░░░] 1/3 plans (IN PROGRESS)
+  Phase 22: [█████████████░░░░░░░] 2/3 plans (IN PROGRESS)
   Phase 23: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
   Phase 24: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
 ```
