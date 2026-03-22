@@ -276,11 +276,11 @@ Plans:
   1. Audit runs store reproducibility bundle
   2. User can view "How this audit was produced"
 
-**Plans:** 0/2 plans complete
+**Plans:** 2 plans
 
 Plans:
-- [ ] 23-01-PLAN.md — Reproducibility bundle storage
-- [ ] 23-02-PLAN.md — Audit explainer UI
+- [ ] 23-01-PLAN.md — Wire reproducibility capture into ComplianceAuditAgent, add API endpoint (REPRO-01)
+- [ ] 23-02-PLAN.md — Reproducibility viewer UI at /audits/{id}/reproducibility (REPRO-02)
 
 ### Phase 24: Standards Harvester MVP
 **Goal:** Fetch standards from accreditor websites
@@ -324,8 +324,8 @@ Plans:
 | 19. Audit Trail Export | 2/2 | Complete | 2026-Q3 |
 | 20. Autopilot & Morning Brief | 3/3 | Complete | 2026-Q3 |
 | 21. Evidence Coverage Contract | 2/2 | Complete | 2026-Q3 |
-| 22. Change Detection | 0/3 | Planned | - |
-| 23. Audit Reproducibility | 0/2 | Planning | - |
+| 22. Change Detection | 3/3 | Complete | 2026-Q3 |
+| 23. Audit Reproducibility | 0/2 | Planned | - |
 | 24. Standards Harvester MVP | 0/2 | Planning | - |
 
 ---
