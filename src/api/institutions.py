@@ -21,6 +21,7 @@ from src.core.models import (
     Modality,
     DocumentType,
 )
+from src.db.connection import get_conn
 
 
 # Create Blueprint
@@ -585,6 +586,192 @@ def update_truth_index(institution_id: str):
         _workspace_manager.update_truth_index(institution_id, updates, path)
         truth_index = _workspace_manager.get_truth_index(institution_id)
         return jsonify(truth_index), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Checkpoint endpoints (for packet export override flow)
+
+@institutions_bp.route('/api/institutions/<institution_id>/checkpoints', methods=['POST'])
+def create_checkpoint(institution_id: str):
+    """Create a checkpoint for export override.
+
+    Request Body:
+        packet_id: The packet requiring override (required)
+        type: Checkpoint type, e.g. 'finalize_submission' (required)
+        context: Additional context data (optional)
+
+    Returns:
+        JSON with checkpoint_id and details.
+    """
+    # Verify institution exists
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    data = request.get_json() or {}
+
+    packet_id = data.get('packet_id')
+    checkpoint_type = data.get('type', 'finalize_submission')
+    context = data.get('context', {})
+
+    if not packet_id:
+        return jsonify({"error": "packet_id is required"}), 400
+
+    try:
+        conn = get_conn()
+
+        # Generate checkpoint ID
+        checkpoint_id = f"cp_{packet_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        now = datetime.now().isoformat()
+
+        # Build reason from context
+        override_reason = context.get('override_reason', 'Manual override requested')
+        validation = context.get('validation', {})
+
+        reasons = []
+        if validation.get('missing_standards'):
+            reasons.append(f"{len(validation['missing_standards'])} standards lack evidence")
+        if validation.get('blocking_findings'):
+            reasons.append(f"{len(validation['blocking_findings'])} critical findings unresolved")
+
+        reason = "; ".join(reasons) if reasons else override_reason
+
+        # Store context as JSON notes
+        import json
+        notes = json.dumps({
+            "packet_id": packet_id,
+            "validation": validation,
+            "override_reason": override_reason,
+            "created_at": now,
+        })
+
+        conn.execute("""
+            INSERT INTO human_checkpoints
+            (id, institution_id, checkpoint_type, status, requested_by, reason, notes, created_at)
+            VALUES (?, ?, ?, 'pending', 'user', ?, ?, ?)
+        """, (checkpoint_id, institution_id, checkpoint_type, reason, notes, now))
+        conn.commit()
+
+        return jsonify({
+            "checkpoint_id": checkpoint_id,
+            "checkpoint_type": checkpoint_type,
+            "status": "pending",
+            "reason": reason,
+            "created_at": now,
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/checkpoints/<checkpoint_id>', methods=['PATCH'])
+def update_checkpoint(institution_id: str, checkpoint_id: str):
+    """Update/resolve a checkpoint.
+
+    Request Body:
+        status: New status ('resolved', 'approved', 'rejected') (required)
+        resolution: Resolution reason/notes (optional)
+
+    Returns:
+        JSON with updated checkpoint.
+    """
+    # Verify institution exists
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    data = request.get_json() or {}
+
+    status = data.get('status')
+    resolution = data.get('resolution', '')
+
+    if not status:
+        return jsonify({"error": "status is required"}), 400
+
+    if status not in ('resolved', 'approved', 'rejected', 'pending'):
+        return jsonify({"error": "Invalid status. Valid values: resolved, approved, rejected, pending"}), 400
+
+    try:
+        conn = get_conn()
+
+        # Verify checkpoint exists and belongs to this institution
+        cursor = conn.execute("""
+            SELECT id, institution_id, status
+            FROM human_checkpoints
+            WHERE id = ?
+        """, (checkpoint_id,))
+
+        checkpoint = cursor.fetchone()
+        if not checkpoint:
+            return jsonify({"error": "Checkpoint not found"}), 404
+
+        if checkpoint["institution_id"] != institution_id:
+            return jsonify({"error": "Checkpoint does not belong to this institution"}), 403
+
+        now = datetime.now().isoformat()
+
+        # Update checkpoint
+        conn.execute("""
+            UPDATE human_checkpoints
+            SET status = ?, resolved_by = 'user', resolved_at = ?, reason = COALESCE(?, reason)
+            WHERE id = ?
+        """, (status, now if status in ('resolved', 'approved') else None, resolution or None, checkpoint_id))
+        conn.commit()
+
+        return jsonify({
+            "checkpoint_id": checkpoint_id,
+            "status": status,
+            "resolution": resolution,
+            "resolved_at": now if status in ('resolved', 'approved') else None,
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@institutions_bp.route('/api/institutions/<institution_id>/checkpoints/<checkpoint_id>', methods=['GET'])
+def get_checkpoint(institution_id: str, checkpoint_id: str):
+    """Get checkpoint details.
+
+    Returns:
+        JSON with checkpoint data.
+    """
+    # Verify institution exists
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    try:
+        conn = get_conn()
+
+        cursor = conn.execute("""
+            SELECT id, institution_id, checkpoint_type, status, requested_by,
+                   reason, notes, created_at, resolved_by, resolved_at
+            FROM human_checkpoints
+            WHERE id = ?
+        """, (checkpoint_id,))
+
+        checkpoint = cursor.fetchone()
+        if not checkpoint:
+            return jsonify({"error": "Checkpoint not found"}), 404
+
+        if checkpoint["institution_id"] != institution_id:
+            return jsonify({"error": "Checkpoint does not belong to this institution"}), 403
+
+        return jsonify({
+            "checkpoint_id": checkpoint["id"],
+            "institution_id": checkpoint["institution_id"],
+            "checkpoint_type": checkpoint["checkpoint_type"],
+            "status": checkpoint["status"],
+            "requested_by": checkpoint["requested_by"],
+            "reason": checkpoint["reason"],
+            "notes": checkpoint["notes"],
+            "created_at": checkpoint["created_at"],
+            "resolved_by": checkpoint["resolved_by"],
+            "resolved_at": checkpoint["resolved_at"],
+        }), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
