@@ -34,6 +34,7 @@ def test_db():
             id TEXT PRIMARY KEY,
             institution_id TEXT NOT NULL,
             file_sha256 TEXT,
+            file_path TEXT,
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
     """)
@@ -344,3 +345,58 @@ def test_calculate_reaudit_scope_empty_returns_zero(test_db_with_audit_tables):
     assert result.changed_documents == []
     assert result.impacted_documents == []
     assert result.total_to_audit == 0
+
+
+# ========================================================================
+# Diff Generation Tests (Task 1 - TDD RED phase)
+# ========================================================================
+
+def test_generate_diff_returns_html_table():
+    """Test generate_diff returns HTML table with side-by-side diff."""
+    from src.services.change_detection_service import generate_diff
+
+    old_text = "Line 1\nLine 2\nLine 3"
+    new_text = "Line 1\nLine 2 modified\nLine 3"
+
+    result = generate_diff(old_text, new_text)
+
+    # Should return HTML table
+    assert "<table" in result
+    assert "diff" in result.lower()
+
+
+def test_generate_diff_empty_old_returns_info_message():
+    """Test generate_diff returns info message for new documents (empty old_text)."""
+    from src.services.change_detection_service import generate_diff
+
+    old_text = ""
+    new_text = "New document content"
+
+    result = generate_diff(old_text, new_text)
+
+    # Should return info message
+    assert "New document" in result
+    assert "no previous version" in result
+
+
+def test_generate_diff_shows_changes():
+    """Test generate_diff highlights added lines in diff output."""
+    from src.services.change_detection_service import generate_diff
+
+    old_text = "Line 1\nLine 2"
+    new_text = "Line 1\nLine 2\nLine 3 added"
+
+    result = generate_diff(old_text, new_text)
+
+    # Should contain the added line (HTML encodes spaces as &nbsp;)
+    assert "Line&nbsp;3&nbsp;added" in result or "Line 3 added" in result
+
+
+def test_get_change_diff_not_found_returns_error(test_db_with_audit_tables):
+    """Test get_change_diff returns error for invalid change_id."""
+    from src.services.change_detection_service import get_change_diff
+
+    result = get_change_diff("invalid_id", test_db_with_audit_tables)
+
+    assert "error" in result
+    assert result["error"] == "Change event not found"

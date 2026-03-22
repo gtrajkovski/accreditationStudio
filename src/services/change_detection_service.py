@@ -6,6 +6,7 @@ import logging
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from difflib import HtmlDiff
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
@@ -368,6 +369,103 @@ def calculate_reaudit_scope(
         impacted_documents=impacted_docs,
         total_to_audit=len(changed_doc_ids) + len(impacted_docs),
     )
+
+
+# ========================================================================
+# Diff Generation (Task 1 - Phase 22-03)
+# ========================================================================
+
+def generate_diff(old_text: str, new_text: str) -> str:
+    """Generate side-by-side HTML diff with inline highlights (per D-11).
+
+    Uses difflib.HtmlDiff for standard Python diff rendering.
+    Shows only changed sections + 3 lines context.
+
+    Args:
+        old_text: Previous document version text
+        new_text: Current document version text
+
+    Returns:
+        HTML string with side-by-side diff table
+    """
+    if not old_text:
+        return '<div class="diff-info">New document - no previous version for comparison</div>'
+
+    differ = HtmlDiff(wrapcolumn=80)
+
+    old_lines = old_text.splitlines(keepends=True)
+    new_lines = new_text.splitlines(keepends=True)
+
+    # Generate side-by-side table with context
+    html = differ.make_table(
+        old_lines,
+        new_lines,
+        fromdesc="Previous Version",
+        todesc="Current Version",
+        context=True,   # Only show changed sections
+        numlines=3      # 3 lines of context (per D-13)
+    )
+
+    return html
+
+
+def get_change_diff(change_id: str, conn: Optional[sqlite3.Connection] = None) -> Dict[str, Any]:
+    """Get diff HTML for a specific change event (per D-11, D-12).
+
+    Loads old text from stored file path, new text from current document.
+
+    Args:
+        change_id: Change event ID
+        conn: Optional database connection
+
+    Returns:
+        Dict with diff_html, old_version_path, document_id
+    """
+    conn = conn or get_conn()
+
+    # Get change event
+    cursor = conn.execute("""
+        SELECT dc.*, d.file_path as current_file_path
+        FROM document_changes dc
+        JOIN documents d ON dc.document_id = d.id
+        WHERE dc.id = ?
+    """, (change_id,))
+    row = cursor.fetchone()
+
+    if not row:
+        return {"error": "Change event not found"}
+
+    # Get old text from stored path
+    old_text = ""
+    old_version_path = row.get("previous_version_id")  # This stores the text file path
+    if old_version_path:
+        try:
+            old_text = Path(old_version_path).read_text(encoding='utf-8')
+        except Exception as e:
+            logger.warning(f"Failed to read old version: {e}")
+
+    # Get new text from current document
+    new_text = ""
+    current_file = row.get("current_file_path")
+    if current_file:
+        try:
+            from src.importers import parse_document
+            parsed = parse_document(current_file)
+            new_text = parsed.text or ""
+        except Exception as e:
+            logger.warning(f"Failed to parse current document: {e}")
+
+    # Generate diff
+    diff_html = generate_diff(old_text, new_text)
+
+    return {
+        "change_id": change_id,
+        "document_id": row["document_id"],
+        "diff_html": diff_html,
+        "old_version_path": old_version_path,
+        "change_type": row["change_type"],
+        "detected_at": row["detected_at"],
+    }
 
 
 # ========================================================================
