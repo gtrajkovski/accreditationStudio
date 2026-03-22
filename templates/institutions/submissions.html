@@ -344,6 +344,56 @@
     </div>
 </div>
 
+<!-- Force Export Modal -->
+<div id="forceExportModal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideForceExportModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: var(--warning);">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <h3>Force Export Anyway</h3>
+            </div>
+            <button class="btn btn-ghost" onclick="hideForceExportModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="alert alert-warning" style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: rgba(251, 191, 36, 0.1); border: 1px solid var(--warning); border-radius: var(--radius-md);">
+                <strong>Warning:</strong> This packet has validation issues that normally prevent export.
+            </div>
+
+            <p style="margin-bottom: var(--spacing-md);">The following issues will be waived if you proceed:</p>
+
+            <div id="forceExportIssuesList" class="force-export-issues">
+                <!-- Issues will be populated here -->
+            </div>
+
+            <div class="form-group" style="margin-top: var(--spacing-lg);">
+                <label class="checkbox-label" style="display: flex; align-items: flex-start; gap: var(--spacing-sm); cursor: pointer;">
+                    <input type="checkbox" id="forceExportConfirm" style="margin-top: 2px;">
+                    <span style="flex: 1;">
+                        <strong>I understand and acknowledge</strong> that this export does not meet all evidence requirements.
+                        This action will be logged in the audit trail for compliance review.
+                    </span>
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label for="forceExportReason">Reason for Override (required)</label>
+                <textarea id="forceExportReason" class="form-control" rows="3" placeholder="e.g., Evidence is being gathered and will be submitted separately..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideForceExportModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmForceExportBtn" onclick="confirmForceExport()" disabled>
+                Force Export Anyway
+            </button>
+        </div>
+    </div>
+</div>
+
 <style>
 .stat-value {
     font-size: 2.5em;
@@ -591,6 +641,50 @@
 
 .modal-lg .modal-content {
     max-width: 700px;
+}
+
+/* Force Export Modal Styles */
+.force-export-issues {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.force-export-issue {
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    background: var(--bg-primary);
+    border-left: 3px solid var(--danger);
+    border-radius: var(--radius-sm);
+}
+
+.force-export-issue:last-child {
+    margin-bottom: 0;
+}
+
+.issue-type {
+    font-weight: 600;
+    color: var(--danger);
+    font-size: 0.9em;
+    margin-bottom: var(--spacing-xs);
+}
+
+.issue-desc {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+.checkbox-label {
+    user-select: none;
+}
+
+.alert-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
 }
 </style>
 
@@ -1098,7 +1192,15 @@ function renderCoverageData(validation) {
         const issues = [];
         if (missingCount > 0) issues.push(`${missingCount} standard(s) missing evidence`);
         if (blocking_findings.length > 0) issues.push(`${blocking_findings.length} blocking finding(s)`);
-        statusMsg.innerHTML = `<strong>✗ Export Blocked</strong> — ${issues.join(', ')}. Resolve issues or use Force Export.`;
+        statusMsg.innerHTML = `
+            <div style="margin-bottom: var(--spacing-sm);">
+                <strong>✗ Export Blocked</strong> — ${issues.join(', ')}.
+            </div>
+            <div style="display: flex; gap: var(--spacing-sm);">
+                <button class="btn btn-secondary btn-sm" onclick="switchTab('sections')">Resolve Issues</button>
+                <button class="btn btn-danger btn-sm" onclick="showForceExportModal('zip')">Force Export Anyway</button>
+            </div>
+        `;
         statusMsg.style.display = 'block';
     }
 }
@@ -1243,7 +1345,11 @@ function addEvidenceForStandard(standardCode) {
 }
 
 // Update export button state based on validation
+let currentValidation = null;
+
 function updateExportButtonState(validation) {
+    currentValidation = validation; // Store for force export modal
+
     const exportDocxBtn = document.getElementById('exportDocxBtn');
     const exportZipBtn = document.getElementById('exportZipBtn');
 
@@ -1253,6 +1359,153 @@ function updateExportButtonState(validation) {
     } else {
         exportDocxBtn.disabled = true;
         exportZipBtn.disabled = true;
+    }
+}
+
+// Force Export Modal Functions
+let forceExportType = null; // 'docx' or 'zip'
+
+function showForceExportModal(exportType) {
+    if (!currentValidation) return;
+
+    forceExportType = exportType;
+
+    // Populate issues list
+    const issuesList = document.getElementById('forceExportIssuesList');
+    const issues = [];
+
+    if (currentValidation.missing_standards && currentValidation.missing_standards.length > 0) {
+        issues.push({
+            type: 'Missing Evidence',
+            description: `${currentValidation.missing_standards.length} standard(s) without evidence: ${currentValidation.missing_standards.join(', ')}`
+        });
+    }
+
+    if (currentValidation.blocking_findings && currentValidation.blocking_findings.length > 0) {
+        currentValidation.blocking_findings.forEach(finding => {
+            issues.push({
+                type: 'Critical Finding',
+                description: finding.message || finding.description || `${finding.standard_code} requires resolution`
+            });
+        });
+    }
+
+    issuesList.innerHTML = issues.map(issue => `
+        <div class="force-export-issue">
+            <div class="issue-type">${issue.type}</div>
+            <div class="issue-desc">${issue.description}</div>
+        </div>
+    `).join('');
+
+    document.getElementById('forceExportModal').style.display = 'flex';
+    document.getElementById('forceExportConfirm').checked = false;
+    document.getElementById('forceExportReason').value = '';
+    document.getElementById('confirmForceExportBtn').disabled = true;
+}
+
+function hideForceExportModal() {
+    document.getElementById('forceExportModal').style.display = 'none';
+    forceExportType = null;
+}
+
+// Enable confirm button only when checkbox is checked and reason is provided
+document.addEventListener('DOMContentLoaded', () => {
+    const confirmCheckbox = document.getElementById('forceExportConfirm');
+    const reasonTextarea = document.getElementById('forceExportReason');
+    const confirmBtn = document.getElementById('confirmForceExportBtn');
+
+    function updateConfirmButton() {
+        const canConfirm = confirmCheckbox.checked && reasonTextarea.value.trim().length > 0;
+        confirmBtn.disabled = !canConfirm;
+    }
+
+    confirmCheckbox.addEventListener('change', updateConfirmButton);
+    reasonTextarea.addEventListener('input', updateConfirmButton);
+});
+
+async function confirmForceExport() {
+    if (!currentPacket || !forceExportType || !currentValidation) return;
+
+    const reason = document.getElementById('forceExportReason').value.trim();
+
+    if (!reason) {
+        alert('Please provide a reason for the override.');
+        return;
+    }
+
+    try {
+        // First, create a checkpoint for this override
+        const checkpointData = await apiCall(`/api/institutions/${institutionId}/checkpoints`, 'POST', {
+            packet_id: currentPacket.id,
+            type: 'finalize_submission',
+            context: {
+                validation: currentValidation,
+                override_reason: reason,
+                timestamp: new Date().toISOString()
+            }
+        });
+
+        if (checkpointData.error) {
+            alert('Error creating checkpoint: ' + checkpointData.error);
+            return;
+        }
+
+        const checkpointId = checkpointData.checkpoint_id;
+
+        // Resolve the checkpoint immediately (user confirmed)
+        await apiCall(`/api/institutions/${institutionId}/checkpoints/${checkpointId}`, 'PATCH', {
+            status: 'resolved',
+            resolution: reason
+        });
+
+        // Now export with force flag and checkpoint_id
+        hideForceExportModal();
+
+        if (forceExportType === 'docx') {
+            await forceExportDocx(checkpointId);
+        } else if (forceExportType === 'zip') {
+            await forceExportZip(checkpointId);
+        }
+
+    } catch (error) {
+        console.error('Error during force export:', error);
+        alert('Failed to force export: ' + error.message);
+    }
+}
+
+async function forceExportDocx(checkpointId) {
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/export/docx?force=true&checkpoint_id=${checkpointId}`, 'POST');
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        // Trigger download
+        window.location.href = `/api/institutions/${institutionId}/packets/${currentPacket.id}/download/docx`;
+        await loadPackets();
+        await selectPacket(currentPacket.id);
+    } catch (error) {
+        console.error('Error exporting DOCX:', error);
+    }
+}
+
+async function forceExportZip(checkpointId) {
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/export/zip?force=true&checkpoint_id=${checkpointId}`, 'POST');
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        // Trigger download
+        window.location.href = `/api/institutions/${institutionId}/packets/${currentPacket.id}/download/zip`;
+        await loadPackets();
+        await selectPacket(currentPacket.id);
+    } catch (error) {
+        console.error('Error exporting ZIP:', error);
     }
 }
 
