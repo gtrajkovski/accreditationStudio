@@ -1,0 +1,35 @@
+<!-- Diff Viewer Modal - Side-by-side comparison per D-11 -->
+<div class="modal-overlay" id="diff-modal" style="display: none;">
+    <div class="modal-content modal-xl">
+        <div class="modal-header">
+            <h3>{{ t('change_detection.document_diff') }}</h3>
+            <button class="modal-close" onclick="hideDiffModal()" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="diff-meta" id="diff-meta">
+                <span class="diff-meta-item">
+                    <strong>Document:</strong> <span id="diff-doc-id"></span>
+                </span>
+                <span class="diff-meta-item">
+                    <strong>Changed:</strong> <span id="diff-detected"></span>
+                </span>
+            </div>
+            <div class="diff-container" id="diff-container">
+                <div class="diff-loading">Loading diff...</div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideDiffModal()">
+                {{ t('common.close') }}
+            </button>
+            <button class="btn btn-warning" onclick="dismissCurrentChange()">
+                {{ t('change_detection.dismiss_change') }}
+            </button>
+        </div>
+    </div>
+</div>

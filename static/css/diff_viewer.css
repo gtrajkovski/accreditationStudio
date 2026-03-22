@@ -1,0 +1,135 @@
+/* Diff Viewer Styles - Side-by-side comparison per D-11 */
+
+.modal-xl {
+    max-width: 1200px;
+    width: 95%;
+}
+
+.diff-meta {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.diff-meta-item {
+    color: var(--text-secondary);
+}
+
+.diff-meta-item strong {
+    color: var(--text-primary);
+}
+
+.diff-container {
+    max-height: 60vh;
+    overflow: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-card);
+}
+
+.diff-loading {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.diff-info {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Override difflib HTML table styles for dark theme */
+.diff-container table.diff {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 13px;
+}
+
+.diff-container table.diff td {
+    padding: 2px 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.diff-container table.diff th {
+    padding: 8px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Line numbers */
+.diff-container table.diff td.diff_header {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    text-align: right;
+    width: 50px;
+    user-select: none;
+}
+
+/* Additions (green) per D-11 */
+.diff-container table.diff .diff_add {
+    background-color: rgba(74, 222, 128, 0.2);
+}
+
+.diff-container table.diff .diff_add span.diff_add {
+    background-color: rgba(74, 222, 128, 0.4);
+    color: var(--success);
+}
+
+/* Removals (red) per D-11 */
+.diff-container table.diff .diff_sub {
+    background-color: rgba(239, 68, 68, 0.2);
+}
+
+.diff-container table.diff .diff_sub span.diff_sub {
+    background-color: rgba(239, 68, 68, 0.4);
+    color: var(--danger);
+}
+
+/* Changed lines */
+.diff-container table.diff .diff_chg {
+    background-color: rgba(251, 191, 36, 0.2);
+}
+
+.diff-container table.diff .diff_chg span.diff_chg {
+    background-color: rgba(251, 191, 36, 0.4);
+    color: var(--warning);
+}
+
+/* Section separator */
+.diff-container table.diff td.diff_next {
+    background-color: var(--bg-primary);
+    text-align: center;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+/* Scrollbar for diff container */
+.diff-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.diff-container::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.diff-container::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 4px;
+}
+
+.diff-container::-webkit-scrollbar-thumb:hover {
+    background: var(--text-primary);
+}
