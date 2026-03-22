@@ -269,6 +269,135 @@
         </a>
     </div>
 </div>
+
+<!-- Autopilot Section (shown when an institution is selected) -->
+<div class="autopilot-section mt-lg" id="autopilot-section" style="display: none;">
+    <div class="dashboard-grid">
+        <!-- Last Autopilot Run Card -->
+        <div class="card autopilot-run-card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; margin-right: 8px;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12,6 12,12 16,14"/>
+                    </svg>
+                    {{ t('autopilot.brief.summary') }}
+                </h2>
+                <button class="btn btn-primary btn-sm" onclick="runAutopilotNow()" id="run-now-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                        <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                    Run Now
+                </button>
+            </div>
+            <div class="card-body" id="autopilot-run-card-body">
+                <div class="autopilot-run-content" id="autopilot-run-content">
+                    <div class="autopilot-stat">
+                        <span class="autopilot-stat-label">Last Run</span>
+                        <span class="autopilot-stat-value" id="autopilot-last-run">Never</span>
+                    </div>
+                    <div class="autopilot-stat">
+                        <span class="autopilot-stat-label">Status</span>
+                        <span class="autopilot-stat-value" id="autopilot-status">-</span>
+                    </div>
+                    <div class="autopilot-stat">
+                        <span class="autopilot-stat-label">{{ t('autopilot.brief.docs_indexed') }}</span>
+                        <span class="autopilot-stat-value" id="autopilot-docs">-</span>
+                    </div>
+                    <div class="autopilot-stat">
+                        <span class="autopilot-stat-label">Readiness</span>
+                        <span class="autopilot-stat-value" id="autopilot-readiness">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Morning Brief Panel -->
+        <div class="card morning-brief-card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; margin-right: 8px;">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                    {{ t('autopilot.brief.title') }}
+                </h2>
+                <div class="brief-actions">
+                    <a href="#" class="btn btn-ghost btn-sm" id="view-full-brief" style="display: none;">View Full</a>
+                    <button class="btn btn-ghost btn-sm" id="download-brief" style="display: none;" onclick="downloadBrief()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7,10 12,15 17,10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" id="morning-brief-body">
+                <div class="brief-empty" id="brief-empty">
+                    <p class="text-muted">No morning brief available yet. Run autopilot to generate one.</p>
+                </div>
+                <div class="brief-content" id="brief-content" style="display: none;">
+                    <!-- Readiness Score Ring -->
+                    <div class="brief-readiness">
+                        <div class="readiness-ring" id="brief-readiness-ring">
+                            <svg viewBox="0 0 100 100" width="80" height="80">
+                                <circle class="ring-bg" cx="50" cy="50" r="42" stroke-width="8" fill="none"/>
+                                <circle class="ring-progress" id="brief-ring-progress" cx="50" cy="50" r="42" stroke-width="8" fill="none" stroke-linecap="round"/>
+                            </svg>
+                            <div class="ring-value">
+                                <span class="ring-number" id="brief-score">--</span>
+                                <span class="ring-label">%</span>
+                            </div>
+                        </div>
+                        <div class="readiness-delta" id="brief-delta"></div>
+                    </div>
+
+                    <!-- Top Blockers -->
+                    <div class="brief-section">
+                        <h4 class="brief-section-title">{{ t('autopilot.brief.blockers') }}</h4>
+                        <ul class="brief-list" id="brief-blockers">
+                            <li class="text-muted">{{ t('autopilot.brief.no_blockers') }}</li>
+                        </ul>
+                    </div>
+
+                    <!-- Next Actions -->
+                    <div class="brief-section">
+                        <h4 class="brief-section-title">{{ t('autopilot.brief.actions') }}</h4>
+                        <ul class="brief-list" id="brief-actions">
+                            <li class="text-muted">{{ t('autopilot.brief.no_actions') }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Autopilot Progress Modal -->
+<div class="modal" id="autopilot-progress-modal" style="display: none;">
+    <div class="modal-backdrop" onclick="closeAutopilotModal()"></div>
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h3 class="modal-title">Running Autopilot</h3>
+        </div>
+        <div class="modal-body">
+            <div class="autopilot-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="autopilot-progress-fill" style="width: 0%"></div>
+                </div>
+                <p class="progress-message" id="autopilot-progress-message">Starting...</p>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -366,6 +495,185 @@
 }
 .session-actions .btn {
     padding: 4px 8px;
+}
+
+/* Autopilot Section Styles */
+.autopilot-section .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 900px) {
+    .autopilot-section .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.autopilot-run-card .card-body {
+    padding: var(--spacing-md);
+}
+.autopilot-run-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+}
+.autopilot-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.autopilot-stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+.autopilot-stat-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+.autopilot-stat-value.success { color: var(--success); }
+.autopilot-stat-value.error { color: var(--danger); }
+.autopilot-stat-value.running { color: var(--info); }
+.autopilot-stat-value .delta-positive { color: var(--success); }
+.autopilot-stat-value .delta-negative { color: var(--danger); }
+
+/* Morning Brief Card Styles */
+.morning-brief-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.brief-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+.morning-brief-card .card-body {
+    padding: var(--spacing-md);
+}
+.brief-empty {
+    text-align: center;
+    padding: var(--spacing-lg) 0;
+}
+.brief-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+.brief-readiness {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+.readiness-ring {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+.readiness-ring svg {
+    transform: rotate(-90deg);
+}
+.ring-bg {
+    stroke: var(--bg-secondary);
+}
+.ring-progress {
+    stroke: var(--success);
+    stroke-dasharray: 264;
+    stroke-dashoffset: 264;
+    transition: stroke-dashoffset 0.5s ease;
+}
+.ring-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+.ring-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.ring-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+.readiness-delta {
+    font-size: 0.9rem;
+}
+.readiness-delta .delta-positive {
+    color: var(--success);
+}
+.readiness-delta .delta-negative {
+    color: var(--danger);
+}
+.brief-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+.brief-section-title {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+.brief-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+.brief-list li {
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+.brief-list li:last-child {
+    border-bottom: none;
+}
+.brief-list li a {
+    margin-left: auto;
+    font-size: var(--font-size-sm);
+}
+.brief-list .blocker-severity {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.brief-list .blocker-severity.critical { background: var(--danger); }
+.brief-list .blocker-severity.high { background: var(--warning); }
+.brief-list .blocker-severity.medium { background: var(--info); }
+
+/* Autopilot Progress Modal */
+.autopilot-progress {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) 0;
+}
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+}
+.progress-message {
+    text-align: center;
+    color: var(--text-muted);
+    margin: 0;
 }
 </style>
 <script>
@@ -508,6 +816,323 @@ document.getElementById('risk-alerts-dismiss')?.addEventListener('click', functi
 });
 
 document.addEventListener('DOMContentLoaded', loadRiskAlerts);
+
+// Autopilot Section
+let currentInstitutionId = null;
+let autopilotEventSource = null;
+let latestBriefDate = null;
+
+async function initAutopilotSection() {
+    // Get current institution from page context
+    const context = document.getElementById('page-context');
+    const ctx = context ? JSON.parse(context.textContent) : {};
+    currentInstitutionId = ctx.institution_id;
+
+    if (!currentInstitutionId) {
+        // No institution selected, hide autopilot section
+        document.getElementById('autopilot-section').style.display = 'none';
+        return;
+    }
+
+    // Show autopilot section
+    document.getElementById('autopilot-section').style.display = 'block';
+
+    // Load latest autopilot run
+    await loadLatestAutopilotRun();
+
+    // Load morning brief
+    await loadLatestBrief();
+}
+
+async function loadLatestAutopilotRun() {
+    try {
+        const res = await fetch(`/api/autopilot/institutions/${currentInstitutionId}/latest`);
+        const data = await res.json();
+
+        if (data.run) {
+            renderAutopilotRun(data.run);
+        }
+    } catch (e) {
+        console.error('Failed to load autopilot run:', e);
+    }
+}
+
+function renderAutopilotRun(run) {
+    // Last run time
+    const lastRunEl = document.getElementById('autopilot-last-run');
+    if (run.created_at) {
+        const date = new Date(run.created_at);
+        lastRunEl.textContent = date.toLocaleString();
+    }
+
+    // Status
+    const statusEl = document.getElementById('autopilot-status');
+    statusEl.textContent = run.status;
+    statusEl.className = 'autopilot-stat-value ' + run.status;
+
+    // Docs indexed
+    const docsEl = document.getElementById('autopilot-docs');
+    const failed = run.docs_failed > 0 ? ` (${run.docs_failed} failed)` : '';
+    docsEl.innerHTML = `${run.docs_indexed || 0}${failed ? `<span class="error">${failed}</span>` : ''}`;
+
+    // Readiness
+    const readinessEl = document.getElementById('autopilot-readiness');
+    if (run.readiness_score_after !== null) {
+        let delta = '';
+        if (run.readiness_score_before !== null) {
+            const diff = run.readiness_score_after - run.readiness_score_before;
+            if (diff !== 0) {
+                const sign = diff > 0 ? '+' : '';
+                const cls = diff > 0 ? 'delta-positive' : 'delta-negative';
+                delta = ` <span class="${cls}">(${sign}${diff})</span>`;
+            }
+        }
+        readinessEl.innerHTML = `${run.readiness_score_after}%${delta}`;
+    }
+}
+
+async function loadLatestBrief() {
+    try {
+        const res = await fetch(`/api/autopilot/institutions/${currentInstitutionId}/briefs/latest`);
+        if (!res.ok) {
+            // No brief available
+            document.getElementById('brief-empty').style.display = 'block';
+            document.getElementById('brief-content').style.display = 'none';
+            return;
+        }
+
+        const data = await res.json();
+        if (data.brief) {
+            renderBrief(data.brief);
+            latestBriefDate = data.brief.date;
+        }
+    } catch (e) {
+        console.error('Failed to load brief:', e);
+    }
+}
+
+function renderBrief(brief) {
+    document.getElementById('brief-empty').style.display = 'none';
+    document.getElementById('brief-content').style.display = 'flex';
+
+    // Show action buttons
+    document.getElementById('download-brief').style.display = 'inline-flex';
+
+    // Readiness score ring
+    const score = brief.readiness_score || 0;
+    document.getElementById('brief-score').textContent = score;
+
+    // Calculate stroke-dashoffset (264 is the circumference of the circle)
+    const offset = 264 - (264 * score / 100);
+    document.getElementById('brief-ring-progress').style.strokeDashoffset = offset;
+
+    // Update ring color based on score
+    const ringProgress = document.getElementById('brief-ring-progress');
+    if (score >= 80) {
+        ringProgress.style.stroke = 'var(--success)';
+    } else if (score >= 60) {
+        ringProgress.style.stroke = 'var(--warning)';
+    } else {
+        ringProgress.style.stroke = 'var(--danger)';
+    }
+
+    // Parse brief content for blockers and actions
+    parseBriefContent(brief.content);
+}
+
+function parseBriefContent(content) {
+    const lines = content.split('\n');
+    const blockers = [];
+    const actions = [];
+    let inBlockers = false;
+    let inActions = false;
+
+    for (const line of lines) {
+        if (line.includes('Blocker') || line.includes('Critical Issues')) {
+            inBlockers = true;
+            inActions = false;
+            continue;
+        }
+        if (line.includes('Next Actions') || line.includes('Recommended')) {
+            inBlockers = false;
+            inActions = true;
+            continue;
+        }
+
+        // Parse list items
+        const trimmed = line.trim();
+        if (trimmed.startsWith('-') || trimmed.startsWith('*') || /^\d+\./.test(trimmed)) {
+            const text = trimmed.replace(/^[-*]\s*/, '').replace(/^\d+\.\s*/, '');
+            if (text && inBlockers && blockers.length < 3) {
+                blockers.push({ text, severity: 'high' });
+            } else if (text && inActions && actions.length < 3) {
+                actions.push({ text });
+            }
+        }
+    }
+
+    // Render blockers
+    const blockersEl = document.getElementById('brief-blockers');
+    if (blockers.length > 0) {
+        blockersEl.innerHTML = blockers.map(b => `
+            <li>
+                <span class="blocker-severity ${b.severity}"></span>
+                <span>${escapeHtml(b.text)}</span>
+            </li>
+        `).join('');
+    } else {
+        blockersEl.innerHTML = '<li class="text-muted">No critical blockers</li>';
+    }
+
+    // Render actions
+    const actionsEl = document.getElementById('brief-actions');
+    if (actions.length > 0) {
+        actionsEl.innerHTML = actions.map(a => `
+            <li>
+                <span>${escapeHtml(a.text)}</span>
+            </li>
+        `).join('');
+    } else {
+        actionsEl.innerHTML = '<li class="text-muted">No pending actions</li>';
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+async function runAutopilotNow() {
+    if (!currentInstitutionId) {
+        window.toast?.error('No institution selected');
+        return;
+    }
+
+    const btn = document.getElementById('run-now-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Starting...';
+
+    try {
+        // Start the run
+        const res = await fetch(`/api/autopilot/institutions/${currentInstitutionId}/run-now`, {
+            method: 'POST'
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || 'Failed to start autopilot');
+        }
+
+        // Show progress modal
+        showAutopilotProgressModal();
+
+        // Connect to SSE for progress
+        connectAutopilotSSE(data.run_id);
+
+    } catch (e) {
+        console.error('Failed to start autopilot:', e);
+        window.toast?.error(e.message || 'Failed to start autopilot');
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                <polygon points="5,3 19,12 5,21"/>
+            </svg>
+            Run Now
+        `;
+    }
+}
+
+function showAutopilotProgressModal() {
+    document.getElementById('autopilot-progress-modal').style.display = 'flex';
+    document.getElementById('autopilot-progress-fill').style.width = '0%';
+    document.getElementById('autopilot-progress-message').textContent = 'Starting...';
+}
+
+function closeAutopilotModal() {
+    document.getElementById('autopilot-progress-modal').style.display = 'none';
+    if (autopilotEventSource) {
+        autopilotEventSource.close();
+        autopilotEventSource = null;
+    }
+}
+
+function connectAutopilotSSE(runId) {
+    autopilotEventSource = new EventSource(`/api/autopilot/institutions/${currentInstitutionId}/runs/${runId}/progress`);
+
+    autopilotEventSource.addEventListener('progress', (e) => {
+        const data = JSON.parse(e.data);
+        document.getElementById('autopilot-progress-fill').style.width = `${data.percent}%`;
+        document.getElementById('autopilot-progress-message').textContent = data.message;
+    });
+
+    autopilotEventSource.addEventListener('complete', (e) => {
+        const data = JSON.parse(e.data);
+        closeAutopilotModal();
+
+        // Reset button
+        const btn = document.getElementById('run-now-btn');
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                <polygon points="5,3 19,12 5,21"/>
+            </svg>
+            Run Now
+        `;
+
+        if (data.status === 'completed') {
+            window.toast?.success('Autopilot run completed!');
+        } else {
+            window.toast?.warning('Autopilot run finished with issues');
+        }
+
+        // Reload data
+        loadLatestAutopilotRun();
+        loadLatestBrief();
+    });
+
+    autopilotEventSource.addEventListener('error', (e) => {
+        let errorMsg = 'Unknown error';
+        try {
+            const data = JSON.parse(e.data);
+            errorMsg = data.error || errorMsg;
+        } catch (err) {
+            // SSE connection error
+        }
+
+        closeAutopilotModal();
+        window.toast?.error(`Autopilot error: ${errorMsg}`);
+
+        // Reset button
+        const btn = document.getElementById('run-now-btn');
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                <polygon points="5,3 19,12 5,21"/>
+            </svg>
+            Run Now
+        `;
+    });
+
+    autopilotEventSource.onerror = () => {
+        // Connection lost - close and cleanup
+        if (autopilotEventSource) {
+            autopilotEventSource.close();
+            autopilotEventSource = null;
+        }
+    };
+}
+
+function downloadBrief() {
+    if (!currentInstitutionId || !latestBriefDate) {
+        window.toast?.error('No brief available to download');
+        return;
+    }
+
+    window.location.href = `/api/autopilot/institutions/${currentInstitutionId}/briefs/${latestBriefDate}/download`;
+}
+
+document.addEventListener('DOMContentLoaded', initAutopilotSection);
 
 // Hide skeleton loaders and show real content on window load
 window.addEventListener('load', () => {
