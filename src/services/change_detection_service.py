@@ -244,6 +244,133 @@ def store_previous_text(institution_id: str, document_id: str, text: str) -> str
 
 
 # ========================================================================
+# Cascade Scope Calculation (Task 1 - Phase 22-02)
+# ========================================================================
+
+@dataclass
+class ReauditScope:
+    """Re-audit scope with standards cascade calculation."""
+    affected_standards: List[str]
+    changed_documents: List[str]
+    impacted_documents: List[str]
+    total_to_audit: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "affected_standards": self.affected_standards,
+            "changed_documents": self.changed_documents,
+            "impacted_documents": self.impacted_documents,
+            "total_to_audit": self.total_to_audit,
+        }
+
+
+def get_affected_standards(document_ids: List[str], conn: Optional[sqlite3.Connection] = None) -> List[str]:
+    """Get all standards that have findings for given documents (per D-05).
+
+    Args:
+        document_ids: List of document IDs to check
+        conn: Optional database connection
+
+    Returns:
+        List of standard IDs with findings for these documents
+    """
+    if not document_ids:
+        return []
+
+    if conn is None:
+        conn = get_conn()
+
+    placeholders = ','.join(['?' for _ in document_ids])
+    cursor = conn.execute(f"""
+        SELECT DISTINCT fsr.standard_id
+        FROM audit_findings af
+        JOIN finding_standard_refs fsr ON af.id = fsr.finding_id
+        WHERE af.document_id IN ({placeholders})
+    """, document_ids)
+
+    return [row['standard_id'] for row in cursor.fetchall()]
+
+
+def get_impacted_documents(
+    standard_ids: List[str],
+    exclude_doc_ids: List[str],
+    conn: Optional[sqlite3.Connection] = None
+) -> List[str]:
+    """Get documents with findings for standards, excluding specified docs (per D-06).
+
+    Args:
+        standard_ids: List of standard IDs to check
+        exclude_doc_ids: Document IDs to exclude from results
+        conn: Optional database connection
+
+    Returns:
+        List of impacted document IDs (excluding changed documents)
+    """
+    if not standard_ids:
+        return []
+
+    if conn is None:
+        conn = get_conn()
+
+    std_placeholders = ','.join(['?' for _ in standard_ids])
+    params = list(standard_ids)
+
+    query = f"""
+        SELECT DISTINCT af.document_id
+        FROM audit_findings af
+        JOIN finding_standard_refs fsr ON af.id = fsr.finding_id
+        WHERE fsr.standard_id IN ({std_placeholders})
+    """
+
+    if exclude_doc_ids:
+        exc_placeholders = ','.join(['?' for _ in exclude_doc_ids])
+        query += f" AND af.document_id NOT IN ({exc_placeholders})"
+        params.extend(exclude_doc_ids)
+
+    cursor = conn.execute(query, params)
+    return [row['document_id'] for row in cursor.fetchall()]
+
+
+def calculate_reaudit_scope(
+    changed_doc_ids: List[str],
+    conn: Optional[sqlite3.Connection] = None
+) -> ReauditScope:
+    """Calculate full re-audit scope using standards cascade (per D-04).
+
+    Algorithm:
+    1. Find all findings for changed documents
+    2. Extract all affected standards from those findings
+    3. Find all OTHER documents with findings for those standards
+    4. Return scope: affected standards + impacted documents
+
+    Args:
+        changed_doc_ids: List of changed document IDs
+        conn: Optional database connection
+
+    Returns:
+        ReauditScope with affected standards, changed docs, impacted docs, and total count
+    """
+    if not changed_doc_ids:
+        return ReauditScope([], [], [], 0)
+
+    if conn is None:
+        conn = get_conn()
+
+    # Get affected standards
+    affected_standards = get_affected_standards(changed_doc_ids, conn)
+
+    # Get impacted documents (exclude changed docs to avoid duplicate work)
+    impacted_docs = get_impacted_documents(affected_standards, changed_doc_ids, conn)
+
+    return ReauditScope(
+        affected_standards=affected_standards,
+        changed_documents=changed_doc_ids,
+        impacted_documents=impacted_docs,
+        total_to_audit=len(changed_doc_ids) + len(impacted_docs),
+    )
+
+
+# ========================================================================
 # Legacy API (for compatibility with existing code)
 # ========================================================================
 

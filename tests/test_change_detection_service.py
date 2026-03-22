@@ -222,3 +222,125 @@ def test_get_change_count_counts_unprocessed(test_db):
     count = get_change_count("inst_test", test_db)
 
     assert count == 2
+
+
+# ========================================================================
+# Cascade Scope Calculation Tests (Task 1 - TDD RED phase)
+# ========================================================================
+
+@pytest.fixture
+def test_db_with_audit_tables(test_db):
+    """Extend test_db with audit tables for cascade scope tests."""
+    # Create standards table
+    test_db.execute("""
+        CREATE TABLE standards (
+            id TEXT PRIMARY KEY,
+            code TEXT NOT NULL,
+            name TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+
+    # Create audit_findings table
+    test_db.execute("""
+        CREATE TABLE audit_findings (
+            id TEXT PRIMARY KEY,
+            audit_run_id TEXT NOT NULL,
+            document_id TEXT,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+
+    # Create finding_standard_refs table
+    test_db.execute("""
+        CREATE TABLE finding_standard_refs (
+            id TEXT PRIMARY KEY,
+            finding_id TEXT NOT NULL,
+            standard_id TEXT NOT NULL,
+            FOREIGN KEY (finding_id) REFERENCES audit_findings(id) ON DELETE CASCADE,
+            FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE
+        )
+    """)
+
+    test_db.commit()
+    return test_db
+
+
+def test_get_affected_standards_returns_standards(test_db_with_audit_tables):
+    """Test get_affected_standards returns standard IDs for documents with findings."""
+    from src.services.change_detection_service import get_affected_standards
+
+    # Insert test data
+    test_db_with_audit_tables.execute("INSERT INTO standards (id, code, name) VALUES ('std_01', 'STD-01', 'Standard 1')")
+    test_db_with_audit_tables.execute("INSERT INTO audit_findings (id, audit_run_id, document_id, status) VALUES ('find_01', 'run_01', 'doc_test', 'non_compliant')")
+    test_db_with_audit_tables.execute("INSERT INTO finding_standard_refs (id, finding_id, standard_id) VALUES ('ref_01', 'find_01', 'std_01')")
+    test_db_with_audit_tables.commit()
+
+    result = get_affected_standards(['doc_test'], test_db_with_audit_tables)
+
+    assert len(result) == 1
+    assert 'std_01' in result
+
+
+def test_get_affected_standards_empty_docs_returns_empty(test_db_with_audit_tables):
+    """Test get_affected_standards returns empty list for empty input."""
+    from src.services.change_detection_service import get_affected_standards
+
+    result = get_affected_standards([], test_db_with_audit_tables)
+
+    assert result == []
+
+
+def test_get_impacted_documents_excludes_changed_docs(test_db_with_audit_tables):
+    """Test get_impacted_documents excludes the originally changed documents."""
+    from src.services.change_detection_service import get_impacted_documents
+
+    # Insert test data: 2 documents with findings for same standard
+    test_db_with_audit_tables.execute("INSERT INTO documents (id, institution_id) VALUES ('doc_02', 'inst_test')")
+    test_db_with_audit_tables.execute("INSERT INTO standards (id, code, name) VALUES ('std_01', 'STD-01', 'Standard 1')")
+    test_db_with_audit_tables.execute("INSERT INTO audit_findings (id, audit_run_id, document_id, status) VALUES ('find_01', 'run_01', 'doc_test', 'non_compliant')")
+    test_db_with_audit_tables.execute("INSERT INTO audit_findings (id, audit_run_id, document_id, status) VALUES ('find_02', 'run_01', 'doc_02', 'non_compliant')")
+    test_db_with_audit_tables.execute("INSERT INTO finding_standard_refs (id, finding_id, standard_id) VALUES ('ref_01', 'find_01', 'std_01')")
+    test_db_with_audit_tables.execute("INSERT INTO finding_standard_refs (id, finding_id, standard_id) VALUES ('ref_02', 'find_02', 'std_01')")
+    test_db_with_audit_tables.commit()
+
+    result = get_impacted_documents(['std_01'], ['doc_test'], test_db_with_audit_tables)
+
+    # Should return doc_02 only (doc_test excluded)
+    assert len(result) == 1
+    assert 'doc_02' in result
+    assert 'doc_test' not in result
+
+
+def test_calculate_reaudit_scope_full_cascade(test_db_with_audit_tables):
+    """Test calculate_reaudit_scope performs full standards cascade."""
+    from src.services.change_detection_service import calculate_reaudit_scope
+
+    # Setup: 2 documents with findings for same standard
+    test_db_with_audit_tables.execute("INSERT INTO documents (id, institution_id) VALUES ('doc_02', 'inst_test')")
+    test_db_with_audit_tables.execute("INSERT INTO standards (id, code, name) VALUES ('std_01', 'STD-01', 'Standard 1')")
+    test_db_with_audit_tables.execute("INSERT INTO audit_findings (id, audit_run_id, document_id, status) VALUES ('find_01', 'run_01', 'doc_test', 'non_compliant')")
+    test_db_with_audit_tables.execute("INSERT INTO audit_findings (id, audit_run_id, document_id, status) VALUES ('find_02', 'run_01', 'doc_02', 'non_compliant')")
+    test_db_with_audit_tables.execute("INSERT INTO finding_standard_refs (id, finding_id, standard_id) VALUES ('ref_01', 'find_01', 'std_01')")
+    test_db_with_audit_tables.execute("INSERT INTO finding_standard_refs (id, finding_id, standard_id) VALUES ('ref_02', 'find_02', 'std_01')")
+    test_db_with_audit_tables.commit()
+
+    result = calculate_reaudit_scope(['doc_test'], test_db_with_audit_tables)
+
+    assert result.affected_standards == ['std_01']
+    assert result.changed_documents == ['doc_test']
+    assert result.impacted_documents == ['doc_02']
+    assert result.total_to_audit == 2
+
+
+def test_calculate_reaudit_scope_empty_returns_zero(test_db_with_audit_tables):
+    """Test calculate_reaudit_scope returns empty scope for empty input."""
+    from src.services.change_detection_service import calculate_reaudit_scope
+
+    result = calculate_reaudit_scope([], test_db_with_audit_tables)
+
+    assert result.affected_standards == []
+    assert result.changed_documents == []
+    assert result.impacted_documents == []
+    assert result.total_to_audit == 0
