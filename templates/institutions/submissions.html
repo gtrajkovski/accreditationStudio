@@ -157,17 +157,7 @@
 
     <!-- Validation Tab -->
     <div id="validationTab" class="tab-content" style="display: none;">
-        <div id="validationStatus" class="validation-status">
-            <div class="validation-pending">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px;">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 8v4M12 16h.01"/>
-                </svg>
-                <h4>Not Yet Validated</h4>
-                <p>Click "Validate" to check evidence coverage requirements.</p>
-            </div>
-        </div>
-        <div id="issuesList" style="display: none;"></div>
+        {% include 'partials/packet_coverage.html' %}
     </div>
 </div>
 
@@ -715,7 +705,7 @@ function renderPacketDetail() {
 
     renderSections();
     renderExhibits();
-    renderValidation();
+    // Note: Validation rendering now happens via loadCoverageValidation() when tab is switched
 }
 
 function renderSections() {
@@ -773,76 +763,7 @@ function renderExhibits() {
     `).join('');
 }
 
-function renderValidation() {
-    const statusContainer = document.getElementById('validationStatus');
-    const issuesList = document.getElementById('issuesList');
-
-    if (!currentPacket.validated_at) {
-        statusContainer.innerHTML = `
-            <div class="validation-pending">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px;">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 8v4M12 16h.01"/>
-                </svg>
-                <h4>Not Yet Validated</h4>
-                <p>Click "Validate" to check evidence coverage requirements.</p>
-            </div>
-        `;
-        statusContainer.style.display = 'block';
-        issuesList.style.display = 'none';
-        return;
-    }
-
-    const issues = currentPacket.validation_issues || [];
-
-    if (currentPacket.is_valid) {
-        statusContainer.innerHTML = `
-            <div class="validation-passed">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px;">
-                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                    <polyline points="22,4 12,14.01 9,11.01"/>
-                </svg>
-                <h4>Validation Passed</h4>
-                <p>Packet is ready for export.</p>
-            </div>
-        `;
-    } else {
-        const errors = issues.filter(i => i.severity === 'error').length;
-        const warnings = issues.filter(i => i.severity === 'warning').length;
-        statusContainer.innerHTML = `
-            <div class="validation-failed">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px;">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="15" y1="9" x2="9" y2="15"/>
-                    <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
-                <h4>Validation Failed</h4>
-                <p>${errors} error(s), ${warnings} warning(s) found.</p>
-            </div>
-        `;
-    }
-    statusContainer.style.display = 'block';
-
-    if (issues.length > 0) {
-        issuesList.innerHTML = issues.map(issue => `
-            <div class="issue-item ${issue.severity}">
-                <div class="issue-icon ${issue.severity}">
-                    ${issue.severity === 'error' ?
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' :
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
-                    }
-                </div>
-                <div>
-                    <strong>${issue.issue_type}</strong>
-                    <p style="margin: var(--spacing-xs) 0 0 0; color: var(--text-secondary);">${issue.message}</p>
-                </div>
-            </div>
-        `).join('');
-        issuesList.style.display = 'block';
-    } else {
-        issuesList.style.display = 'none';
-    }
-}
+// Removed old renderValidation() - now using packet_coverage.html partial with loadCoverageValidation()
 
 // Tab switching
 function switchTab(tab) {
@@ -851,6 +772,11 @@ function switchTab(tab) {
 
     document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
     document.getElementById(`${tab}Tab`).style.display = 'block';
+
+    // Load coverage data when switching to validation tab
+    if (tab === 'validation' && currentPacket) {
+        loadCoverageValidation();
+    }
 }
 
 // Modal functions
@@ -1096,8 +1022,237 @@ async function validatePacket() {
         await selectPacket(currentPacket.id);
         switchTab('validation');
         await loadPackets(); // Update status in list
+        await loadCoverageValidation(); // Load coverage data
     } catch (error) {
         console.error('Error validating packet:', error);
+    }
+}
+
+// Load evidence coverage validation data
+async function loadCoverageValidation() {
+    if (!currentPacket) return;
+
+    try {
+        const data = await apiCall(`/api/institutions/${institutionId}/packets/${currentPacket.id}/evidence-validation`);
+        renderCoverageData(data);
+        updateExportButtonState(data);
+    } catch (error) {
+        console.error('Error loading coverage validation:', error);
+    }
+}
+
+// Render coverage validation data
+function renderCoverageData(validation) {
+    const { ok, missing_standards = [], missing_evidence = [], blocking_findings = [] } = validation;
+
+    // Calculate coverage stats
+    const allStandards = [...new Set([...missing_standards, ...Object.keys(missing_evidence)])];
+    const totalStandards = allStandards.length;
+    const missingCount = missing_standards.length;
+    const coveredCount = totalStandards - missingCount;
+    const coveragePercent = totalStandards > 0 ? Math.round((coveredCount / totalStandards) * 100) : 0;
+
+    // Update summary stats
+    document.getElementById('coveredCount').textContent = coveredCount;
+    document.getElementById('totalStandards').textContent = totalStandards;
+    document.getElementById('coverageProgress').style.width = `${coveragePercent}%`;
+    document.getElementById('missingCount').textContent = missingCount;
+    document.getElementById('blockingCount').textContent = blocking_findings.length;
+
+    // Render blocking issues panel
+    const blockingPanel = document.getElementById('blockingIssuesPanel');
+    const blockingList = document.getElementById('blockingIssuesList');
+
+    if (blocking_findings.length > 0) {
+        blockingPanel.style.display = 'block';
+        blockingList.innerHTML = blocking_findings.map(finding => `
+            <div class="blocking-issue-item">
+                <div class="blocking-issue-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </div>
+                <div class="blocking-issue-content">
+                    <div class="blocking-issue-title">${finding.standard_code || 'Critical Finding'}</div>
+                    <div class="blocking-issue-description">${finding.message || finding.description || 'Must be resolved before export'}</div>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        blockingPanel.style.display = 'none';
+    }
+
+    // Render standards coverage list
+    renderStandardsCoverage(missing_standards, missing_evidence);
+
+    // Update export status message
+    const statusMsg = document.getElementById('exportStatusMessage');
+    if (ok) {
+        statusMsg.className = 'export-status-message ready';
+        statusMsg.innerHTML = '<strong>✓ Export Ready</strong> — All evidence requirements met.';
+        statusMsg.style.display = 'block';
+    } else {
+        statusMsg.className = 'export-status-message blocked';
+        const issues = [];
+        if (missingCount > 0) issues.push(`${missingCount} standard(s) missing evidence`);
+        if (blocking_findings.length > 0) issues.push(`${blocking_findings.length} blocking finding(s)`);
+        statusMsg.innerHTML = `<strong>✗ Export Blocked</strong> — ${issues.join(', ')}. Resolve issues or use Force Export.`;
+        statusMsg.style.display = 'block';
+    }
+}
+
+// Render standards coverage list with evidence counts
+function renderStandardsCoverage(missing_standards, missing_evidence) {
+    const container = document.getElementById('standardsList');
+
+    // Build combined standards map
+    const standardsMap = {};
+
+    missing_standards.forEach(code => {
+        if (!standardsMap[code]) {
+            standardsMap[code] = { code, title: '', evidence: [] };
+        }
+    });
+
+    Object.entries(missing_evidence).forEach(([code, evidence]) => {
+        if (!standardsMap[code]) {
+            standardsMap[code] = { code, title: '', evidence: evidence || [] };
+        } else {
+            standardsMap[code].evidence = evidence || [];
+        }
+    });
+
+    const standards = Object.values(standardsMap);
+
+    if (standards.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin-bottom: var(--spacing-md); color: var(--success);">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <polyline points="22,4 12,14.01 9,11.01"/>
+                </svg>
+                <p>All standards have evidence coverage!</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = standards.map(std => {
+        const evidenceCount = std.evidence.length;
+        const hasCoverage = evidenceCount > 0;
+        const statusClass = hasCoverage ? 'covered' : 'missing';
+        const badgeClass = hasCoverage ? 'has-evidence' : 'no-evidence';
+
+        return `
+            <div class="standard-item ${statusClass}" data-standard="${std.code}">
+                <div class="standard-header" onclick="toggleStandard('${std.code}')">
+                    <div class="standard-info">
+                        <div class="standard-code">${std.code}</div>
+                        ${std.title ? `<div class="standard-title">${std.title}</div>` : ''}
+                    </div>
+                    <div class="standard-badges">
+                        <span class="evidence-badge ${badgeClass}">
+                            ${evidenceCount} evidence
+                        </span>
+                        <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                            <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="standard-details">
+                    ${evidenceCount > 0 ? `
+                        <div class="evidence-list">
+                            <div class="evidence-list-header">Linked Evidence:</div>
+                            ${std.evidence.map(doc => `
+                                <div class="evidence-item">
+                                    <svg class="evidence-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                                        <path d="M9 11l3 3L22 4"/>
+                                    </svg>
+                                    <a href="#" class="evidence-link">${doc.title || doc.id || 'Evidence Document'}</a>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div class="no-evidence-message">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <div>
+                                <strong>No evidence linked</strong>
+                                <p style="margin: var(--spacing-xs) 0 0 0;">Add exhibits that demonstrate compliance with ${std.code}.</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm add-evidence-btn" onclick="addEvidenceForStandard('${std.code}')">
+                            Add Evidence
+                        </button>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Toggle standard expansion
+function toggleStandard(code) {
+    const item = document.querySelector(`.standard-item[data-standard="${code}"]`);
+    if (item) {
+        item.classList.toggle('expanded');
+    }
+}
+
+// Expand/collapse all standards
+function expandAllStandards() {
+    document.querySelectorAll('.standard-item').forEach(item => {
+        item.classList.add('expanded');
+    });
+}
+
+function collapseAllStandards() {
+    document.querySelectorAll('.standard-item').forEach(item => {
+        item.classList.remove('expanded');
+    });
+}
+
+// Toggle missing-only filter
+function toggleMissingFilter() {
+    const showMissingOnly = document.getElementById('showMissingOnly').checked;
+    document.querySelectorAll('.standard-item').forEach(item => {
+        if (showMissingOnly) {
+            item.style.display = item.classList.contains('missing') ? '' : 'none';
+        } else {
+            item.style.display = '';
+        }
+    });
+}
+
+// Helper: Navigate to findings tab
+function goToFindings() {
+    // In a real implementation, this would navigate to compliance findings page
+    alert('Navigate to Compliance Findings page to resolve issues');
+}
+
+// Helper: Add evidence for a specific standard
+function addEvidenceForStandard(standardCode) {
+    // Pre-fill the add exhibit modal with the standard code
+    document.getElementById('exhibitStandards').value = standardCode;
+    showAddExhibitModal();
+}
+
+// Update export button state based on validation
+function updateExportButtonState(validation) {
+    const exportDocxBtn = document.getElementById('exportDocxBtn');
+    const exportZipBtn = document.getElementById('exportZipBtn');
+
+    if (validation.ok) {
+        exportDocxBtn.disabled = false;
+        exportZipBtn.disabled = false;
+    } else {
+        exportDocxBtn.disabled = true;
+        exportZipBtn.disabled = true;
     }
 }
 
