@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('reproducibility.title') }} - {{ t('app.name') }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/audit_reproducibility.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="repro-container">
+  <!-- Header -->
+  <header class="repro-header">
+    <div class="repro-header-left">
+      <a href="{{ url_for('compliance_page', institution_id=institution_id) }}" class="back-link">
+        <span class="icon">&#x2190;</span> {{ t('common.back') }}
+      </a>
+      <h1>{{ t('reproducibility.title') }}</h1>
+      <p class="subtitle">{{ t('reproducibility.subtitle') }}</p>
+    </div>
+    <div class="repro-header-right">
+      <button id="verify-btn" class="btn btn-secondary">
+        <span class="icon">&#x2713;</span> {{ t('reproducibility.verify') }}
+      </button>
+      <button id="export-btn" class="btn btn-primary">
+        <span class="icon">&#x2193;</span> {{ t('reproducibility.export') }}
+      </button>
+    </div>
+  </header>
+
+  <!-- Loading state -->
+  <div id="loading-state" class="loading-state">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card"></div>
+  </div>
+
+  <!-- Error state -->
+  <div id="error-state" class="error-state" style="display: none;">
+    <div class="error-icon">&#x26A0;</div>
+    <h2>{{ t('reproducibility.not_found') }}</h2>
+    <p id="error-message"></p>
+  </div>
+
+  <!-- Main content -->
+  <div id="content" style="display: none;">
+    <!-- Executive Summary (D-06) -->
+    <section class="summary-section" id="executive-summary">
+      <h2>{{ t('reproducibility.summary') }}</h2>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <span class="card-label">{{ t('reproducibility.model') }}</span>
+          <span class="card-value" id="summary-model">-</span>
+        </div>
+        <div class="summary-card">
+          <span class="card-label">{{ t('reproducibility.date') }}</span>
+          <span class="card-value" id="summary-date">-</span>
+        </div>
+        <div class="summary-card">
+          <span class="card-label">{{ t('reproducibility.accreditor') }}</span>
+          <span class="card-value" id="summary-accreditor">-</span>
+        </div>
+        <div class="summary-card">
+          <span class="card-label">{{ t('reproducibility.documents') }}</span>
+          <span class="card-value" id="summary-doc-count">-</span>
+        </div>
+        <div class="summary-card">
+          <span class="card-label">{{ t('reproducibility.threshold') }}</span>
+          <span class="card-value" id="summary-threshold">-</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Verification Banner (D-13) -->
+    <div id="verification-banner" class="verification-banner" style="display: none;">
+      <div class="banner-icon" id="verification-icon"></div>
+      <div class="banner-content">
+        <strong id="verification-title"></strong>
+        <p id="verification-message"></p>
+      </div>
+    </div>
+
+    <!-- Technical Details Toggle (D-05) -->
+    <section class="technical-section">
+      <button id="toggle-technical" class="toggle-btn">
+        <span class="toggle-icon">&#x25B6;</span>
+        {{ t('reproducibility.show_technical') }}
+      </button>
+
+      <div id="technical-details" class="technical-details" style="display: none;">
+        <!-- System Prompt -->
+        <div class="detail-block">
+          <h3>{{ t('reproducibility.system_prompt') }}</h3>
+          <div class="hash-row">
+            <span class="hash-label">{{ t('reproducibility.hash') }}:</span>
+            <code id="prompt-hash">-</code>
+          </div>
+          <pre id="prompt-text" class="prompt-box"></pre>
+        </div>
+
+        <!-- Document Hashes -->
+        <div class="detail-block">
+          <h3>{{ t('reproducibility.document_hashes') }}</h3>
+          <table class="hash-table" id="document-hashes-table">
+            <thead>
+              <tr>
+                <th>{{ t('reproducibility.document_id') }}</th>
+                <th>{{ t('reproducibility.sha256') }}</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- Tool Definitions -->
+        <div class="detail-block">
+          <h3>{{ t('reproducibility.tools') }}</h3>
+          <div class="hash-row">
+            <span class="hash-label">{{ t('reproducibility.hash') }}:</span>
+            <code id="tools-hash">-</code>
+          </div>
+        </div>
+
+        <!-- Truth Index -->
+        <div class="detail-block">
+          <h3>{{ t('reproducibility.truth_index') }}</h3>
+          <div class="hash-row">
+            <span class="hash-label">{{ t('reproducibility.hash') }}:</span>
+            <code id="truth-hash">-</code>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Finding Provenance (click to expand) -->
+    <section class="findings-section">
+      <h2>{{ t('reproducibility.findings_provenance') }}</h2>
+      <p class="section-hint">{{ t('reproducibility.findings_hint') }}</p>
+      <div id="findings-list" class="findings-list">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Finding Detail Modal -->
+<div id="finding-modal" class="modal" style="display: none;">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <button class="modal-close">&times;</button>
+    <h2>{{ t('reproducibility.finding_detail') }}</h2>
+    <div id="finding-detail-content">
+      <div class="detail-row">
+        <label>{{ t('reproducibility.prompt_sent') }}</label>
+        <pre id="modal-prompt"></pre>
+      </div>
+      <div class="detail-row">
+        <label>{{ t('reproducibility.response_received') }}</label>
+        <pre id="modal-response"></pre>
+      </div>
+      <div class="detail-row">
+        <label>{{ t('reproducibility.tokens') }}</label>
+        <span id="modal-tokens"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.institutionId = "{{ institution_id }}";
+  window.auditId = "{{ audit_id }}";
+</script>
+<script src="{{ url_for('static', filename='js/audit_reproducibility.js') }}"></script>
+{% endblock %}

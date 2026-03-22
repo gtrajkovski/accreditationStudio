@@ -929,6 +929,16 @@ def audit_trails_page():
     )
 
 
+@app.route('/institutions/<institution_id>/audits/<audit_id>/reproducibility')
+def audit_reproducibility_page(institution_id: str, audit_id: str):
+    """Audit reproducibility viewer page."""
+    return render_template(
+        'audit_reproducibility.html',
+        institution_id=institution_id,
+        audit_id=audit_id,
+    )
+
+
 # =============================================================================
 # Error Handlers
 # =============================================================================
