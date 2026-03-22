@@ -15,6 +15,10 @@ from flask import Blueprint, request, jsonify, Response, stream_with_context
 from src.agents.compliance_audit import ComplianceAuditAgent
 from src.core.models import AgentSession, AuditStatus, generate_id
 from src.services.batch_service import BatchService, estimate_batch_cost
+from src.services.audit_reproducibility_service import (
+    get_audit_snapshot,
+    verify_audit_reproducibility,
+)
 
 
 # Create Blueprint
@@ -698,3 +702,98 @@ def update_finding(institution_id: str, audit_id: str, finding_id: str):
             return jsonify(finding), 200
 
     return jsonify({"error": "Finding not found after update"}), 500
+
+
+@audits_bp.route('/api/institutions/<institution_id>/audits/<audit_id>/reproducibility', methods=['GET'])
+def get_audit_reproducibility(institution_id: str, audit_id: str):
+    """Get reproducibility bundle for an audit.
+
+    Returns complete audit context: model, prompts, document hashes, standards.
+
+    Query Parameters:
+        include_prompts: Include full prompt text (default: false, returns hashes only)
+        verify: Check if audit can be reproduced with current state (default: false)
+
+    Returns:
+        JSON with reproducibility bundle and optional verification status.
+    """
+    include_prompts = request.args.get('include_prompts', 'false').lower() == 'true'
+    verify = request.args.get('verify', 'false').lower() == 'true'
+
+    # Get snapshot
+    snapshot = get_audit_snapshot(audit_id)
+    if not snapshot:
+        return jsonify({"error": "Reproducibility data not found for this audit"}), 404
+
+    # Build response (per D-05, D-06)
+    result = {
+        "audit_id": audit_id,
+        "snapshot_id": snapshot.id,
+        "created_at": snapshot.created_at,
+
+        # Executive summary (D-06)
+        "summary": {
+            "model": snapshot.model_id,
+            "model_version": snapshot.model_version,
+            "accreditor": snapshot.accreditor_code,
+            "confidence_threshold": snapshot.confidence_threshold,
+            "document_count": len(snapshot.document_hashes),
+        },
+
+        # Technical detail (shown when D-05 toggle enabled)
+        "technical": {
+            "system_prompt_hash": snapshot.system_prompt_hash,
+            "tool_definitions_hash": snapshot.tool_definitions_hash,
+            "document_hashes": snapshot.document_hashes,
+            "truth_index_hash": snapshot.truth_index_hash,
+            "agent_config": snapshot.agent_config,
+        },
+    }
+
+    # Include full prompts if requested (D-07)
+    if include_prompts:
+        result["technical"]["system_prompt"] = snapshot.system_prompt
+
+    # Verify reproducibility if requested (D-11, D-13)
+    if verify:
+        verification = verify_audit_reproducibility(audit_id)
+        result["verification"] = verification
+        if not verification["verified"]:
+            result["warning"] = "Audit may not reproduce identically - see discrepancies"
+
+    return jsonify(result), 200
+
+
+@audits_bp.route('/api/institutions/<institution_id>/audits/<audit_id>/findings/<finding_id>/provenance', methods=['GET'])
+def get_finding_provenance(institution_id: str, audit_id: str, finding_id: str):
+    """Get provenance data for a specific finding.
+
+    Returns the prompt, response, and reasoning that produced this finding.
+    """
+    from src.db.connection import get_conn
+
+    conn = get_conn()
+    cursor = conn.execute("""
+        SELECT fp.*, asp.model_id
+        FROM finding_provenance fp
+        JOIN audit_snapshots asp ON fp.audit_snapshot_id = asp.id
+        WHERE asp.audit_run_id = ?
+          AND fp.finding_id LIKE ?
+    """, (audit_id, f"%{finding_id}%"))
+
+    row = cursor.fetchone()
+    if not row:
+        return jsonify({"error": "Provenance not found"}), 404
+
+    return jsonify({
+        "finding_id": finding_id,
+        "model": row["model_id"],
+        "prompt_hash": row["prompt_hash"],
+        "response_hash": row["response_hash"],
+        "prompt_text": row["prompt_text"],
+        "response_text": row["response_text"],
+        "input_tokens": row["input_tokens"],
+        "output_tokens": row["output_tokens"],
+        "evidence_hashes": json.loads(row["evidence_chunk_hashes"] or "[]"),
+        "reasoning_steps": json.loads(row["reasoning_steps"] or "[]"),
+    }), 200
