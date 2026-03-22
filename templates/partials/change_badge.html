@@ -1,0 +1,51 @@
+<!-- Change Detection Badge - Non-blocking notification per D-01 -->
+<div class="change-badge-card card" id="changes-card" style="display: none;">
+    <div class="stat-card">
+        <div class="stat-icon change-badge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value" id="changes-count">0</div>
+            <div class="stat-label">{{ t('change_detection.documents_changed') }}</div>
+            <a href="#" onclick="showChangesModal(); return false;" class="stat-link">
+                {{ t('change_detection.review_changes') }} &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Changes Review Modal -->
+<div class="modal-overlay" id="changes-modal" style="display: none;">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3>{{ t('change_detection.pending_changes') }}</h3>
+            <button class="modal-close" onclick="hideChangesModal()" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body" id="changes-modal-body">
+            <div class="changes-list" id="changes-list">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="reaudit-scope" id="reaudit-scope" style="display: none;">
+                <h4>{{ t('change_detection.reaudit_scope') }}</h4>
+                <div class="scope-details" id="scope-details">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideChangesModal()">
+                {{ t('common.close') }}
+            </button>
+            <button class="btn btn-primary" id="reaudit-btn" onclick="triggerReaudit()" disabled>
+                {{ t('change_detection.reaudit_impacted') }}
+            </button>
+        </div>
+    </div>
+</div>

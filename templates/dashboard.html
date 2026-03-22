@@ -5,6 +5,7 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/change_detection.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -110,6 +111,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- Change Detection Badge (per D-01, D-02, D-03) -->
+        {% include 'partials/change_badge.html' %}
     </div>
 </div>
 
@@ -1147,4 +1151,5 @@ window.addEventListener('load', () => {
     });
 });
 </script>
+<script src="{{ url_for('static', filename='js/change_detection.js') }}"></script>
 {% endblock %}

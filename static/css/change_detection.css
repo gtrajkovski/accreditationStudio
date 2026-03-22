@@ -1,0 +1,97 @@
+/* Change Detection Badge Styles */
+.change-badge-card {
+    animation: pulse-badge 2s ease-in-out infinite;
+}
+
+.change-badge-icon {
+    background-color: var(--warning) !important;
+}
+
+@keyframes pulse-badge {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
+}
+
+/* Changes Modal */
+.changes-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.change-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 12px;
+}
+
+.change-item:last-child {
+    border-bottom: none;
+}
+
+.change-item-checkbox {
+    flex-shrink: 0;
+}
+
+.change-item-info {
+    flex: 1;
+}
+
+.change-item-title {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.change-item-meta {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.change-item-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.change-item-badge.modified {
+    background-color: var(--warning);
+    color: #000;
+}
+
+/* Re-audit Scope */
+.reaudit-scope {
+    margin-top: 16px;
+    padding: 16px;
+    background-color: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.reaudit-scope h4 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+}
+
+.scope-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.scope-stat:last-child {
+    border-bottom: none;
+}
+
+.scope-stat-label {
+    color: var(--text-secondary);
+}
+
+.scope-stat-value {
+    font-weight: 600;
+}
+
+.scope-stat-value.highlight {
+    color: var(--accent);
+}
