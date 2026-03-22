@@ -400,3 +400,121 @@ def test_get_change_diff_not_found_returns_error(test_db_with_audit_tables):
 
     assert "error" in result
     assert result["error"] == "Change event not found"
+
+
+# ========================================================================
+# Targeted Re-audit Execution Tests (Task 2 - TDD RED phase)
+# ========================================================================
+
+def test_mark_changes_processed_updates_rows(test_db):
+    """Test mark_changes_processed sets processed_at and session_id."""
+    from src.services.change_detection_service import mark_changes_processed
+
+    # Insert change event
+    change_id = record_change("doc_test", "inst_test", "abc", "def", None, test_db)
+
+    # Mark as processed
+    session_id = "session_123"
+    rows_updated = mark_changes_processed([change_id], session_id, test_db)
+
+    assert rows_updated == 1
+
+    # Verify row updated
+    cursor = test_db.execute("SELECT * FROM document_changes WHERE id = ?", (change_id,))
+    row = cursor.fetchone()
+
+    assert row["processed_at"] is not None
+    assert row["reaudit_triggered"] == 1
+    assert row["reaudit_session_id"] == session_id
+
+
+def test_mark_changes_processed_links_session(test_db):
+    """Test mark_changes_processed links change events to re-audit session."""
+    from src.services.change_detection_service import mark_changes_processed
+
+    # Insert 2 changes
+    change_id_1 = record_change("doc_test", "inst_test", "abc", "def", None, test_db)
+    change_id_2 = record_change("doc_test", "inst_test", "def", "ghi", None, test_db)
+
+    # Mark both as processed with same session
+    session_id = "session_456"
+    mark_changes_processed([change_id_1, change_id_2], session_id, test_db)
+
+    # Verify both linked to same session
+    cursor = test_db.execute("""
+        SELECT id, reaudit_session_id FROM document_changes
+        WHERE id IN (?, ?)
+    """, (change_id_1, change_id_2))
+    rows = cursor.fetchall()
+
+    assert len(rows) == 2
+    assert all(row["reaudit_session_id"] == session_id for row in rows)
+
+
+def test_get_pending_change_ids_returns_unprocessed(test_db):
+    """Test get_pending_change_ids returns only unprocessed change IDs."""
+    from src.services.change_detection_service import get_pending_change_ids
+
+    # Insert 2 changes, mark 1 as processed
+    change_id_1 = record_change("doc_test", "inst_test", "abc", "def", None, test_db)
+    change_id_2 = record_change("doc_test", "inst_test", "def", "ghi", None, test_db)
+
+    # Mark first as processed
+    test_db.execute(
+        "UPDATE document_changes SET processed_at = datetime('now') WHERE id = ?",
+        (change_id_1,)
+    )
+    test_db.commit()
+
+    result = get_pending_change_ids("inst_test", test_db)
+
+    assert len(result) == 1
+    assert change_id_2 in result
+    assert change_id_1 not in result
+
+
+def test_cascade_scope_filtering(test_db_with_audit_tables):
+    """Test CHG-03: ONLY documents in cascade scope are audited (not entire library).
+
+    Scenario:
+    - 3 documents exist: doc_test, doc_02, doc_03
+    - doc_test is changed
+    - doc_test and doc_02 share standard std_01 (both in cascade scope)
+    - doc_03 has NO findings for std_01 (OUT OF SCOPE)
+
+    Expected: Re-audit ONLY doc_test and doc_02. doc_03 should NOT be audited.
+    """
+    from src.services.change_detection_service import calculate_reaudit_scope
+
+    # Insert 3 documents
+    test_db_with_audit_tables.execute("INSERT INTO documents (id, institution_id) VALUES ('doc_02', 'inst_test')")
+    test_db_with_audit_tables.execute("INSERT INTO documents (id, institution_id) VALUES ('doc_03', 'inst_test')")
+
+    # Insert standards
+    test_db_with_audit_tables.execute("INSERT INTO standards (id, code, name) VALUES ('std_01', 'STD-01', 'Standard 1')")
+    test_db_with_audit_tables.execute("INSERT INTO standards (id, code, name) VALUES ('std_02', 'STD-02', 'Standard 2')")
+
+    # doc_test and doc_02 have findings for std_01 (cascade scope)
+    test_db_with_audit_tables.execute("INSERT INTO audit_findings (id, audit_run_id, document_id, status) VALUES ('find_01', 'run_01', 'doc_test', 'non_compliant')")
+    test_db_with_audit_tables.execute("INSERT INTO audit_findings (id, audit_run_id, document_id, status) VALUES ('find_02', 'run_01', 'doc_02', 'non_compliant')")
+    test_db_with_audit_tables.execute("INSERT INTO finding_standard_refs (id, finding_id, standard_id) VALUES ('ref_01', 'find_01', 'std_01')")
+    test_db_with_audit_tables.execute("INSERT INTO finding_standard_refs (id, finding_id, standard_id) VALUES ('ref_02', 'find_02', 'std_01')")
+
+    # doc_03 has findings ONLY for std_02 (OUT OF SCOPE for std_01 cascade)
+    test_db_with_audit_tables.execute("INSERT INTO audit_findings (id, audit_run_id, document_id, status) VALUES ('find_03', 'run_01', 'doc_03', 'non_compliant')")
+    test_db_with_audit_tables.execute("INSERT INTO finding_standard_refs (id, finding_id, standard_id) VALUES ('ref_03', 'find_03', 'std_02')")
+
+    test_db_with_audit_tables.commit()
+
+    # Calculate scope for changed doc_test
+    result = calculate_reaudit_scope(['doc_test'], test_db_with_audit_tables)
+
+    # CHG-03 CRITICAL: ONLY doc_test and doc_02 should be in scope
+    # doc_03 should NOT be in scope because it has no findings for std_01
+    assert result.affected_standards == ['std_01']
+    assert result.changed_documents == ['doc_test']
+    assert result.impacted_documents == ['doc_02']
+    assert result.total_to_audit == 2
+
+    # CRITICAL: doc_03 should NOT be in the scope
+    assert 'doc_03' not in result.impacted_documents
