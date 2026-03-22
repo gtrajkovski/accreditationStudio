@@ -469,6 +469,164 @@ def get_change_diff(change_id: str, conn: Optional[sqlite3.Connection] = None) -
 
 
 # ========================================================================
+# Targeted Re-audit Execution (Task 2 - Phase 22-03)
+# ========================================================================
+
+def trigger_targeted_reaudit(
+    institution_id: str,
+    document_ids: List[str],
+    workspace_manager,
+    conn: Optional[sqlite3.Connection] = None
+) -> Dict[str, Any]:
+    """Trigger targeted re-audit for changed documents and cascade scope (per D-04, CHG-03).
+
+    Algorithm:
+    1. Calculate full cascade scope
+    2. Create agent session
+    3. For each document in scope, invoke ComplianceAuditAgent
+    4. Return session ID for tracking
+
+    CRITICAL (CHG-03): Only audits documents in scope.changed_documents + scope.impacted_documents.
+    Documents NOT in cascade scope are NOT audited.
+
+    Args:
+        institution_id: Institution ID
+        document_ids: Changed document IDs to re-audit
+        workspace_manager: Workspace manager instance
+        conn: Optional database connection
+
+    Returns:
+        Dict with session_id, scope, findings_count
+    """
+    from src.agents.registry import AgentRegistry
+    from src.agents.base_agent import AgentType
+    from src.core.models import AgentSession, SessionStatus
+
+    conn = conn or get_conn()
+
+    # Calculate full scope (per D-04, D-05, D-06)
+    scope = calculate_reaudit_scope(document_ids, conn)
+
+    # Get standards library for this institution
+    cursor = conn.execute("""
+        SELECT id FROM standards_libraries
+        WHERE institution_id = ? OR institution_id IS NULL
+        ORDER BY institution_id DESC NULLS LAST
+        LIMIT 1
+    """, (institution_id,))
+    lib_row = cursor.fetchone()
+    standards_library_id = lib_row["id"] if lib_row else "std_accsc"
+
+    # Create agent session
+    session = AgentSession(
+        institution_id=institution_id,
+        agent_type=AgentType.COMPLIANCE_AUDIT.value,
+        status=SessionStatus.RUNNING,
+        orchestrator_request=f"Targeted re-audit for {len(document_ids)} changed documents",
+    )
+
+    # Create agent
+    agent = AgentRegistry.create(
+        AgentType.COMPLIANCE_AUDIT, session, workspace_manager
+    )
+
+    if agent is None:
+        return {"error": "Failed to create ComplianceAuditAgent"}
+
+    findings_count = 0
+    audited_docs = []
+
+    # All documents to audit: changed + impacted (per CHG-03)
+    # CRITICAL: This is the ONLY set of documents that will be audited
+    all_doc_ids = scope.changed_documents + scope.impacted_documents
+
+    for doc_id in all_doc_ids:
+        try:
+            # Initialize audit for this document
+            init_result = agent._execute_tool("initialize_audit", {
+                "institution_id": institution_id,
+                "document_id": doc_id,
+                "standards_library_id": standards_library_id,
+            })
+
+            if "error" in init_result:
+                logger.warning(f"Audit init failed for {doc_id}: {init_result['error']}")
+                continue
+
+            audit_id = init_result.get("audit_id")
+            if not audit_id:
+                continue
+
+            # Run completeness pass
+            agent._execute_tool("run_completeness_pass", {"audit_id": audit_id})
+
+            # Count findings
+            cursor = conn.execute("""
+                SELECT COUNT(*) as count FROM audit_findings WHERE audit_run_id = ?
+            """, (audit_id,))
+            count_row = cursor.fetchone()
+            if count_row:
+                findings_count += count_row["count"]
+
+            audited_docs.append(doc_id)
+
+        except Exception as e:
+            logger.error(f"Re-audit failed for {doc_id}: {e}")
+            continue
+
+    return {
+        "session_id": session.id,
+        "scope": scope.to_dict(),
+        "documents_audited": len(audited_docs),
+        "audited_doc_ids": audited_docs,  # For verification (CHG-03)
+        "findings_count": findings_count,
+    }
+
+
+def mark_changes_processed(
+    change_ids: List[str],
+    session_id: str,
+    conn: Optional[sqlite3.Connection] = None
+) -> int:
+    """Mark change events as processed after re-audit completes.
+
+    Args:
+        change_ids: List of change event IDs to mark
+        session_id: Re-audit session ID to link
+        conn: Optional database connection
+
+    Returns:
+        Number of rows updated
+    """
+    if not change_ids:
+        return 0
+
+    conn = conn or get_conn()
+    placeholders = ','.join(['?' for _ in change_ids])
+
+    cursor = conn.execute(f"""
+        UPDATE document_changes
+        SET processed_at = datetime('now'),
+            reaudit_triggered = 1,
+            reaudit_session_id = ?
+        WHERE id IN ({placeholders})
+    """, [session_id] + change_ids)
+
+    conn.commit()
+    return cursor.rowcount
+
+
+def get_pending_change_ids(institution_id: str, conn: Optional[sqlite3.Connection] = None) -> List[str]:
+    """Get IDs of pending (unprocessed) change events for linking."""
+    conn = conn or get_conn()
+    cursor = conn.execute("""
+        SELECT id FROM document_changes
+        WHERE institution_id = ? AND processed_at IS NULL
+    """, (institution_id,))
+    return [row['id'] for row in cursor.fetchall()]
+
+
+# ========================================================================
 # Legacy API (for compatibility with existing code)
 # ========================================================================
 
