@@ -84,6 +84,26 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>Notifications</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-on-complete" checked>
+                        <span class="checkbox-label">
+                            <strong>On Completion</strong>
+                            <small>Notify when autopilot run completes</small>
+                        </span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="notify-on-error" checked>
+                        <span class="checkbox-label">
+                            <strong>On Error</strong>
+                            <small>Notify if autopilot run fails</small>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
             <div class="form-actions">
                 <button class="btn btn-primary" onclick="saveConfig()">Save Settings</button>
             </div>
@@ -394,6 +414,84 @@
     color: var(--info);
 }
 
+/* Progress Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    max-width: 400px;
+    width: 90%;
+}
+
+.modal-sm {
+    max-width: 320px;
+}
+
+.modal-header {
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: var(--space-md);
+}
+
+.autopilot-progress {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+}
+
+.progress-message {
+    text-align: center;
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .autopilot-grid {
@@ -430,6 +528,8 @@ function applyConfig(config) {
     document.getElementById('run-consistency').checked = config.run_consistency;
     document.getElementById('run-audit').checked = config.run_audit;
     document.getElementById('run-readiness').checked = config.run_readiness;
+    document.getElementById('notify-on-complete').checked = config.notify_on_complete !== false;
+    document.getElementById('notify-on-error').checked = config.notify_on_error !== false;
 
     // Update status
     if (config.last_run_at) {
@@ -456,6 +556,8 @@ async function saveConfig() {
         run_consistency: document.getElementById('run-consistency').checked,
         run_audit: document.getElementById('run-audit').checked,
         run_readiness: document.getElementById('run-readiness').checked,
+        notify_on_complete: document.getElementById('notify-on-complete').checked,
+        notify_on_error: document.getElementById('notify-on-error').checked,
     };
 
     try {
@@ -469,28 +571,129 @@ async function saveConfig() {
     }
 }
 
+let runEventSource = null;
+
 async function runNow() {
     const btn = document.getElementById('run-now-btn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Running...';
+    btn.innerHTML = '<span class="spinner"></span> Starting...';
 
     try {
-        const response = await window.API.post(`/api/autopilot/institutions/${institutionId}/run`, {});
-        window.Toast?.success('Autopilot run completed');
-        loadHistory();
-        loadConfig();
+        // Start async run
+        const response = await window.API.post(`/api/autopilot/institutions/${institutionId}/run-now`, {});
+
+        if (!response.run_id) {
+            throw new Error('No run ID returned');
+        }
+
+        // Show progress modal
+        showProgressModal();
+
+        // Connect to SSE for progress updates
+        runEventSource = new EventSource(`/api/autopilot/institutions/${institutionId}/runs/${response.run_id}/progress`);
+
+        runEventSource.addEventListener('progress', (e) => {
+            const data = JSON.parse(e.data);
+            updateProgress(data.message, data.percent);
+        });
+
+        runEventSource.addEventListener('complete', (e) => {
+            const data = JSON.parse(e.data);
+            closeProgressModal();
+
+            if (data.status === 'completed') {
+                window.Toast?.success('Autopilot run completed!');
+            } else {
+                window.Toast?.warning('Autopilot run finished with issues');
+            }
+
+            loadHistory();
+            loadConfig();
+            resetRunButton();
+        });
+
+        runEventSource.addEventListener('error', (e) => {
+            let errorMsg = 'Unknown error';
+            try {
+                const data = JSON.parse(e.data);
+                errorMsg = data.error || errorMsg;
+            } catch (err) {}
+
+            closeProgressModal();
+            window.Toast?.error(`Autopilot error: ${errorMsg}`);
+            resetRunButton();
+        });
+
+        runEventSource.onerror = () => {
+            if (runEventSource) {
+                runEventSource.close();
+                runEventSource = null;
+            }
+        };
+
     } catch (error) {
         console.error('Failed to run autopilot:', error);
         window.Toast?.error('Autopilot run failed');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="5,3 19,12 5,21"/>
-            </svg>
-            Run Now
-        `;
+        resetRunButton();
     }
+}
+
+function resetRunButton() {
+    const btn = document.getElementById('run-now-btn');
+    btn.disabled = false;
+    btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5,3 19,12 5,21"/>
+        </svg>
+        Run Now
+    `;
+}
+
+function showProgressModal() {
+    let modal = document.getElementById('autopilot-progress-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'autopilot-progress-modal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-backdrop" onclick="closeProgressModal()"></div>
+            <div class="modal-content modal-sm">
+                <div class="modal-header">
+                    <h3 class="modal-title">Running Autopilot</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="autopilot-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="autopilot-progress-fill" style="width: 0%"></div>
+                        </div>
+                        <p class="progress-message" id="autopilot-progress-message">Starting...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    modal.style.display = 'flex';
+    document.getElementById('autopilot-progress-fill').style.width = '0%';
+    document.getElementById('autopilot-progress-message').textContent = 'Starting...';
+}
+
+function closeProgressModal() {
+    const modal = document.getElementById('autopilot-progress-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    if (runEventSource) {
+        runEventSource.close();
+        runEventSource = null;
+    }
+}
+
+function updateProgress(message, percent) {
+    const fill = document.getElementById('autopilot-progress-fill');
+    const msg = document.getElementById('autopilot-progress-message');
+    if (fill) fill.style.width = `${percent}%`;
+    if (msg) msg.textContent = message;
 }
 
 async function loadHistory() {
