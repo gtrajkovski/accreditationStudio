@@ -237,20 +237,20 @@ Plans:
 - [x] 20-02-PLAN.md — Autopilot API + Run Now endpoint with SSE progress ✅ **COMPLETE** (ccbd9e5)
 - [x] 20-03-PLAN.md — Autopilot UI (dashboard controls, morning brief panel) ✅ **COMPLETE** (24e7447, 0dbebdf, 34b8ec9, ccde890, 62fde99, 581ee38)
 
-### Phase 21: Evidence Coverage Contract
+### Phase 21: Evidence Coverage Contract ✅ COMPLETE
 **Goal:** Packet export gating based on evidence coverage
 **Depends on:** Nothing (enhances existing packet workflow)
 **Requirements:** EVID-01, EVID-02, EVID-03
 **Success Criteria** (what must be TRUE):
-  1. Packet export blocked without evidence coverage
-  2. Critical findings must be resolved or waived
-  3. Coverage step in Packet Studio shows gaps
+  1. ✅ Packet export blocked without evidence coverage
+  2. ✅ Critical findings must be resolved or waived
+  3. ✅ Coverage step in Packet Studio shows gaps
 
-**Plans:** 1/2 plans complete
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 21-01-PLAN.md — Evidence coverage validation service and gates ✅ **COMPLETE** (0de649b, c3ab3d3, fd34eea, e38bf98)
-- [ ] 21-02-PLAN.md — Packet Studio coverage UI with gap visualization
+- [x] 21-02-PLAN.md — Packet Studio coverage UI with gap visualization ✅ **COMPLETE** (35d98a0, 0fe747e, ed13d72, 2f33e0f, db1cd25)
 
 ### Phase 22: Change Detection + Targeted Re-Audit
 **Goal:** Incremental re-audits for changed documents only
@@ -261,12 +261,12 @@ Plans:
   2. Changed documents trigger re-audit recommendation
   3. Targeted re-audit runs only impacted items
 
-**Plans:** 0/3 plans complete
+**Plans:** 3 plans
 
 Plans:
-- [ ] 22-01-PLAN.md — Document change detection on upload
-- [ ] 22-02-PLAN.md — Change-triggered re-audit recommendations
-- [ ] 22-03-PLAN.md — Targeted re-audit execution
+- [ ] 22-01-PLAN.md — ChangeDetectionService with hash comparison, change recording, API blueprint (CHG-01)
+- [ ] 22-02-PLAN.md — Dashboard badge, cascade scope calculation, re-audit recommendations UI (CHG-02)
+- [ ] 22-03-PLAN.md — Diff viewer, targeted re-audit execution via ComplianceAuditAgent (CHG-03)
 
 ### Phase 23: Audit Reproducibility
 **Goal:** Every audit can be explained and reproduced
@@ -323,8 +323,8 @@ Plans:
 | 18. API Documentation | 2/2 | Complete | 2026-Q3 |
 | 19. Audit Trail Export | 2/2 | Complete | 2026-Q3 |
 | 20. Autopilot & Morning Brief | 3/3 | Complete | 2026-Q3 |
-| 21. Evidence Coverage Contract | 1/2 | In Progress | - |
-| 22. Change Detection | 0/3 | Planning | - |
+| 21. Evidence Coverage Contract | 2/2 | Complete | 2026-Q3 |
+| 22. Change Detection | 0/3 | Planned | - |
 | 23. Audit Reproducibility | 0/2 | Planning | - |
 | 24. Standards Harvester MVP | 0/2 | Planning | - |
 
