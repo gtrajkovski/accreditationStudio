@@ -3,22 +3,22 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Operational Intelligence
 status: executing
-last_updated: "2026-03-21T23:58:35Z"
+last_updated: "2026-03-22T00:12:00Z"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 12
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # AccreditAI State
 
 ## Current Position
 
-Phase: Phase 20 - Autopilot & Morning Brief (IN PROGRESS)
-Plan: 20-03 ready (Autopilot Dashboard UI)
-Status: Plan 20-02 complete, 2/3 plans done
-Last activity: 2026-03-21 — Completed Autopilot API + Run Now
+Phase: Phase 20 - Autopilot & Morning Brief (COMPLETE)
+Plan: Phase 20 complete, ready for Phase 21
+Status: 3/3 plans done, phase complete
+Last activity: 2026-03-22 — Completed Autopilot UI (20-03)
 
 ## Next Session: Start Here
 
@@ -34,7 +34,7 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 - ✅ Session round-trip tests created (7 tests pass)
 - ⚠️ Silent exception handlers: sample fix applied (290 remain for future sweep)
 
-### Phase 20: Autopilot & Morning Brief (2/3 complete)
+### Phase 20: Autopilot & Morning Brief (COMPLETE)
 **Goal:** Nightly autopilot runs with morning brief generation
 **Requirements:** AUTO-01, AUTO-02, AUTO-03
 **Success Criteria:**
@@ -42,12 +42,14 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
   2. ✅ Morning brief generated with readiness delta
   3. ✅ User can trigger "Run Now" manually (POST /run-now, SSE progress)
   4. ✅ Document changes detected via SHA256
+  5. ✅ Dashboard shows autopilot status and morning brief
 
 **Completed:**
 - 20-01: AutopilotService Enhancement (4.5 min, 13 tests)
 - 20-02: Autopilot API + Run Now (7 min, 19 tests)
+- 20-03: Autopilot Dashboard UI (7.5 min, 6 commits)
 
-**Next:** Execute 20-03 (Autopilot Dashboard UI)
+**Next:** Phase 21 - Evidence Coverage Contract
 
 ### Phase 21: Evidence Coverage Contract
 **Goal:** Packet export gating based on evidence coverage
@@ -85,9 +87,9 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 ## Progress Bar
 
 ```
-v1.5: [████░░░░░░░░░░░░░░░░] 2/12 plans (17%)
-  Phase 20: [████████████░░░░░░░░] 2/3 plans (IN PROGRESS)
-  Phase 21: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
+v1.5: [██████░░░░░░░░░░░░░░] 3/12 plans (25%)
+  Phase 20: [████████████████████] 3/3 plans (COMPLETE)
+  Phase 21: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (NEXT)
   Phase 22: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (PLANNED)
   Phase 23: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
   Phase 24: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)

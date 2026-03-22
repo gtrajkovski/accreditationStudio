@@ -219,22 +219,23 @@ Plans:
 
 ## Milestone: v1.5 - Operational Intelligence
 
-### Phase 20: Autopilot & Morning Brief
+### Phase 20: Autopilot & Morning Brief ✅ COMPLETE
 **Goal:** Nightly autopilot runs with morning brief generation
 **Depends on:** Nothing (enhances existing autopilot infrastructure)
 **Requirements:** AUTO-01, AUTO-02, AUTO-03
 **Success Criteria** (what must be TRUE):
-  1. Autopilot runs nightly for enabled institutions
-  2. Morning brief generated with readiness delta
-  3. User can trigger "Run Now" manually
-  4. Document changes detected via SHA256
+  1. ✅ Autopilot runs nightly for enabled institutions
+  2. ✅ Morning brief generated with readiness delta
+  3. ✅ User can trigger "Run Now" manually
+  4. ✅ Document changes detected via SHA256
+  5. ✅ Dashboard shows autopilot status and morning brief
 
-**Plans:** 2/3 plans complete
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 20-01-PLAN.md — AutopilotService enhancement (wire audit, change detection, morning brief) ✅ **COMPLETE** (930f104, 14499aa, fdee113)
 - [x] 20-02-PLAN.md — Autopilot API + Run Now endpoint with SSE progress ✅ **COMPLETE** (ccbd9e5)
-- [ ] 20-03-PLAN.md — Autopilot UI (dashboard controls, morning brief panel)
+- [x] 20-03-PLAN.md — Autopilot UI (dashboard controls, morning brief panel) ✅ **COMPLETE** (24e7447, 0dbebdf, 34b8ec9, ccde890, 62fde99, 581ee38)
 
 ### Phase 21: Evidence Coverage Contract
 **Goal:** Packet export gating based on evidence coverage
@@ -321,7 +322,7 @@ Plans:
 | 17. Report Enhancements | 4/4 | Complete | 2026-Q3 |
 | 18. API Documentation | 2/2 | Complete | 2026-Q3 |
 | 19. Audit Trail Export | 2/2 | Complete | 2026-Q3 |
-| 20. Autopilot & Morning Brief | 2/3 | In Progress | - |
+| 20. Autopilot & Morning Brief | 3/3 | Complete | 2026-Q3 |
 | 21. Evidence Coverage Contract | 0/2 | Planning | - |
 | 22. Change Detection | 0/3 | Planning | - |
 | 23. Audit Reproducibility | 0/2 | Planning | - |
