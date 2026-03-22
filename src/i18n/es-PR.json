@@ -463,6 +463,37 @@
     "view_details": "Ver Detalles"
   },
   "autopilot": {
+    "title": "Autopiloto",
+    "settings": "Configuracion de Autopiloto",
+    "enabled": "Habilitado",
+    "disabled": "Deshabilitado",
+    "schedule": "Configuracion de Horario",
+    "run_time": "Hora de Ejecucion (UTC)",
+    "tasks": "Tareas a Ejecutar",
+    "task_reindex": "Re-indexar Documentos",
+    "task_reindex_desc": "Analizar e indexar documentos nuevos/modificados",
+    "task_consistency": "Verificaciones de Consistencia",
+    "task_consistency_desc": "Detectar inconsistencias entre documentos",
+    "task_audit": "Auditoria de Cumplimiento",
+    "task_audit_desc": "Auditoria completa (mas lenta, usa IA)",
+    "task_readiness": "Puntuacion de Preparacion",
+    "task_readiness_desc": "Recalcular metricas de preparacion",
+    "notifications": "Notificaciones",
+    "notify_complete": "Al Completar",
+    "notify_complete_desc": "Notificar cuando el autopiloto termine",
+    "notify_error": "En Error",
+    "notify_error_desc": "Notificar si el autopiloto falla",
+    "save_settings": "Guardar Configuracion",
+    "run_now": "Ejecutar Ahora",
+    "running": "Ejecutando...",
+    "starting": "Iniciando...",
+    "last_run": "Ultima Ejecucion",
+    "next_run": "Proxima Programada",
+    "last_result": "Ultimo Resultado",
+    "readiness_change": "Cambio de Preparacion",
+    "not_scheduled": "No programado",
+    "never": "Nunca",
+    "run_history": "Historial de Ejecuciones",
     "brief": {
       "title": "Informe Matutino",
       "score": "Puntuacion de Preparacion",
@@ -476,7 +507,9 @@
       "seconds": "segundos",
       "no_blockers": "Sin bloqueos criticos",
       "no_actions": "Sin acciones pendientes",
-      "from_yesterday": "desde ayer"
+      "from_yesterday": "desde ayer",
+      "view_full": "Ver Informe Completo",
+      "download": "Descargar"
     }
   }
 }

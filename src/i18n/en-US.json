@@ -463,6 +463,37 @@
     "view_details": "View Details"
   },
   "autopilot": {
+    "title": "Autopilot",
+    "settings": "Autopilot Settings",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "schedule": "Schedule Configuration",
+    "run_time": "Run Time (UTC)",
+    "tasks": "Tasks to Run",
+    "task_reindex": "Re-index Documents",
+    "task_reindex_desc": "Parse and embed new/changed documents",
+    "task_consistency": "Consistency Checks",
+    "task_consistency_desc": "Detect cross-document mismatches",
+    "task_audit": "Compliance Audit",
+    "task_audit_desc": "Full audit (slower, uses AI)",
+    "task_readiness": "Readiness Score",
+    "task_readiness_desc": "Recompute readiness metrics",
+    "notifications": "Notifications",
+    "notify_complete": "On Completion",
+    "notify_complete_desc": "Notify when autopilot run completes",
+    "notify_error": "On Error",
+    "notify_error_desc": "Notify if autopilot run fails",
+    "save_settings": "Save Settings",
+    "run_now": "Run Now",
+    "running": "Running...",
+    "starting": "Starting...",
+    "last_run": "Last Run",
+    "next_run": "Next Scheduled",
+    "last_result": "Last Result",
+    "readiness_change": "Readiness Change",
+    "not_scheduled": "Not scheduled",
+    "never": "Never",
+    "run_history": "Run History",
     "brief": {
       "title": "Morning Brief",
       "score": "Readiness Score",
@@ -476,7 +507,9 @@
       "seconds": "seconds",
       "no_blockers": "No critical blockers",
       "no_actions": "No pending actions",
-      "from_yesterday": "from yesterday"
+      "from_yesterday": "from yesterday",
+      "view_full": "View Full Brief",
+      "download": "Download"
     }
   }
 }
