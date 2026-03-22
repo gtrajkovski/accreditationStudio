@@ -273,13 +273,13 @@ Plans:
 **Depends on:** Nothing (adds metadata to existing audits)
 **Requirements:** REPRO-01, REPRO-02
 **Success Criteria** (what must be TRUE):
-  1. Audit runs store reproducibility bundle
+  1. ✅ Audit runs store reproducibility bundle
   2. User can view "How this audit was produced"
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans complete
 
 Plans:
-- [ ] 23-01-PLAN.md — Wire reproducibility capture into ComplianceAuditAgent, add API endpoint (REPRO-01)
+- [x] 23-01-PLAN.md — Wire reproducibility capture into ComplianceAuditAgent, add API endpoint (REPRO-01) ✅ **COMPLETE** (d6a28e9, 0a5260d, b0610ab)
 - [ ] 23-02-PLAN.md — Reproducibility viewer UI at /audits/{id}/reproducibility (REPRO-02)
 
 ### Phase 24: Standards Harvester MVP
