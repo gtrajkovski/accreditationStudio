@@ -76,6 +76,11 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
   - Full i18n support (36 strings)
   - Commits: 35d98a0, 0fe747e, ed13d72, 2f33e0f, db1cd25
 
+- Gap Fix: Checkpoint API Endpoints (f2c92ab)
+  - POST/PATCH/GET /api/institutions/<id>/checkpoints
+  - Wires force export modal to human_checkpoints table
+  - Verification now passes 3/3 must-haves
+
 **Next:** Phase 22 - Change Detection + Targeted Re-Audit
 
 ### Phase 22: Change Detection + Targeted Re-Audit
