@@ -3,22 +3,22 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Operational Intelligence
 status: executing
-last_updated: "2026-03-22T00:12:00Z"
+last_updated: "2026-03-22T00:40:00Z"
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 12
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # AccreditAI State
 
 ## Current Position
 
-Phase: Phase 20 - Autopilot & Morning Brief (COMPLETE)
-Plan: Phase 20 complete, ready for Phase 21
-Status: 3/3 plans done, phase complete
-Last activity: 2026-03-22 — Completed Autopilot UI (20-03)
+Phase: Phase 21 - Evidence Coverage Contract
+Plan: 21-01 complete, ready for 21-02
+Status: 1/2 plans done
+Last activity: 2026-03-22 — Completed validate_packet() + Export Gating (21-01)
 
 ## Next Session: Start Here
 
@@ -49,15 +49,25 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 - 20-02: Autopilot API + Run Now (7 min, 19 tests)
 - 20-03: Autopilot Dashboard UI (7.5 min, 6 commits)
 
-**Next:** Phase 21 - Evidence Coverage Contract
+**Next:** Phase 21-02 - Packet Studio Coverage UI
 
-### Phase 21: Evidence Coverage Contract
+### Phase 21: Evidence Coverage Contract (IN PROGRESS)
 **Goal:** Packet export gating based on evidence coverage
 **Requirements:** EVID-01, EVID-02, EVID-03
 **Success Criteria:**
-  1. Packet export blocked without evidence coverage
-  2. Critical findings must be resolved or waived
+  1. ✅ Packet export blocked without evidence coverage
+  2. ✅ Critical findings must be resolved or waived
   3. Coverage step in Packet Studio shows gaps
+
+**Completed:**
+- 21-01: validate_packet() + Export Gating (8 min, 13 tests)
+  - ValidationResult dataclass with ok, missing_standards, blocking_findings
+  - validate_packet() service function
+  - Export endpoint gating with checkpoint override
+  - CheckpointType enum with FINALIZE_SUBMISSION
+  - Commits: 0de649b, c3ab3d3, fd34eea, e38bf98
+
+**Next:** 21-02 - Packet Studio Coverage UI
 
 ### Phase 22: Change Detection + Targeted Re-Audit
 **Goal:** Incremental re-audits for changed documents only
@@ -87,9 +97,9 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 ## Progress Bar
 
 ```
-v1.5: [██████░░░░░░░░░░░░░░] 3/12 plans (25%)
+v1.5: [████████░░░░░░░░░░░░] 4/12 plans (33%)
   Phase 20: [████████████████████] 3/3 plans (COMPLETE)
-  Phase 21: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (NEXT)
+  Phase 21: [██████████░░░░░░░░░░] 1/2 plans (IN PROGRESS)
   Phase 22: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (PLANNED)
   Phase 23: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
   Phase 24: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)

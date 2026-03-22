@@ -246,10 +246,10 @@ Plans:
   2. Critical findings must be resolved or waived
   3. Coverage step in Packet Studio shows gaps
 
-**Plans:** 0/2 plans complete
+**Plans:** 1/2 plans complete
 
 Plans:
-- [ ] 21-01-PLAN.md — Evidence coverage validation service and gates
+- [x] 21-01-PLAN.md — Evidence coverage validation service and gates ✅ **COMPLETE** (0de649b, c3ab3d3, fd34eea, e38bf98)
 - [ ] 21-02-PLAN.md — Packet Studio coverage UI with gap visualization
 
 ### Phase 22: Change Detection + Targeted Re-Audit
@@ -323,7 +323,7 @@ Plans:
 | 18. API Documentation | 2/2 | Complete | 2026-Q3 |
 | 19. Audit Trail Export | 2/2 | Complete | 2026-Q3 |
 | 20. Autopilot & Morning Brief | 3/3 | Complete | 2026-Q3 |
-| 21. Evidence Coverage Contract | 0/2 | Planning | - |
+| 21. Evidence Coverage Contract | 1/2 | In Progress | - |
 | 22. Change Detection | 0/3 | Planning | - |
 | 23. Audit Reproducibility | 0/2 | Planning | - |
 | 24. Standards Harvester MVP | 0/2 | Planning | - |

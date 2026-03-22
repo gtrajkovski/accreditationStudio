@@ -42,8 +42,8 @@ Requirements for v1.5 - Operational Intelligence milestone.
 
 ### Evidence Contract
 
-- [ ] **EVID-01**: Packet export blocked unless all selected standards have evidence
-- [ ] **EVID-02**: Critical findings must be resolved or explicitly waived before export
+- [x] **EVID-01**: Packet export blocked unless all selected standards have evidence
+- [x] **EVID-02**: Critical findings must be resolved or explicitly waived before export
 - [ ] **EVID-03**: Coverage step in Packet Studio shows gaps visually
 
 ### Change Detection
@@ -121,8 +121,8 @@ Deferred to future milestones.
 | AUTO-01 | Phase 20 | Complete (20-01) |
 | AUTO-02 | Phase 20 | Complete (20-01) |
 | AUTO-03 | Phase 20 | Complete (20-02) |
-| EVID-01 | Phase 21 | Pending |
-| EVID-02 | Phase 21 | Pending |
+| EVID-01 | Phase 21 | Complete (21-01) |
+| EVID-02 | Phase 21 | Complete (21-01) |
 | EVID-03 | Phase 21 | Pending |
 | CHG-01 | Phase 22 | Pending |
 | CHG-02 | Phase 22 | Pending |
