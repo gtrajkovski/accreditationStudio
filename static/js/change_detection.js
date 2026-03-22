@@ -11,6 +11,7 @@ class ChangeDetectionManager {
         this.pollTimer = null;
         this.pendingChanges = [];
         this.selectedDocIds = new Set();
+        this.currentChangeId = null;
 
         this.init();
     }
@@ -113,6 +114,9 @@ class ChangeDetectionManager {
                         Detected: ${new Date(change.detected_at).toLocaleString()}
                     </div>
                 </div>
+                <button class="btn btn-sm btn-secondary" onclick="changeDetection.showDiff('${change.id}', '${change.document_id}')">
+                    View Diff
+                </button>
                 <span class="change-item-badge modified">Modified</span>
             </div>
         `).join('');
@@ -208,6 +212,125 @@ class ChangeDetectionManager {
             modal.style.display = 'none';
         }
     }
+
+    async showDiff(changeId, documentId) {
+        const modal = document.getElementById('diff-modal');
+        const container = document.getElementById('diff-container');
+        const docIdEl = document.getElementById('diff-doc-id');
+        const detectedEl = document.getElementById('diff-detected');
+
+        if (!modal || !container) return;
+
+        // Store current change for dismiss action
+        this.currentChangeId = changeId;
+
+        // Show modal with loading state
+        modal.style.display = 'flex';
+        container.innerHTML = '<div class="diff-loading">Loading diff...</div>';
+
+        // Update metadata
+        if (docIdEl) docIdEl.textContent = documentId;
+
+        try {
+            const response = await fetch(`/api/institutions/${this.institutionId}/changes/${changeId}/diff`);
+            if (!response.ok) {
+                throw new Error('Failed to load diff');
+            }
+
+            const data = await response.json();
+
+            // Update detected timestamp
+            if (detectedEl && data.detected_at) {
+                detectedEl.textContent = new Date(data.detected_at).toLocaleString();
+            }
+
+            // Inject diff HTML
+            container.innerHTML = data.diff_html;
+
+        } catch (error) {
+            console.error('Failed to load diff:', error);
+            container.innerHTML = '<div class="diff-info">Failed to load diff. Please try again.</div>';
+        }
+    }
+
+    hideDiff() {
+        const modal = document.getElementById('diff-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        this.currentChangeId = null;
+    }
+
+    async dismissChange(changeId) {
+        if (!this.institutionId || !changeId) return;
+
+        try {
+            const response = await fetch(`/api/institutions/${this.institutionId}/changes/${changeId}/dismiss`, {
+                method: 'PATCH',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to dismiss change');
+            }
+
+            // Remove from local list
+            this.pendingChanges = this.pendingChanges.filter(c => c.id !== changeId);
+            this.selectedDocIds.delete(changeId);
+
+            // Re-render and update badge
+            this.renderChangesList();
+            this.updateBadge();
+
+            // Close diff modal if open
+            this.hideDiff();
+
+        } catch (error) {
+            console.error('Failed to dismiss change:', error);
+            alert('Failed to dismiss change. Please try again.');
+        }
+    }
+
+    async triggerReaudit() {
+        if (!this.institutionId || this.selectedDocIds.size === 0) return;
+
+        const btn = document.getElementById('reaudit-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Re-auditing...';
+        }
+
+        try {
+            const response = await fetch(`/api/institutions/${this.institutionId}/changes/reaudit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ document_ids: Array.from(this.selectedDocIds) })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to trigger re-audit');
+            }
+
+            const result = await response.json();
+
+            // Show success message
+            alert(`Re-audit complete!\n\nDocuments audited: ${result.documents_audited}\nFindings: ${result.findings_count}`);
+
+            // Clear and refresh
+            this.pendingChanges = [];
+            this.selectedDocIds.clear();
+            this.hideModal();
+            this.updateBadge();
+
+        } catch (error) {
+            console.error('Failed to trigger re-audit:', error);
+            alert('Failed to trigger re-audit. Please try again.');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = window.i18n?.['change_detection.reaudit_impacted'] || 'Re-audit Impacted';
+            }
+        }
+    }
 }
 
 // Global instance
@@ -222,7 +345,16 @@ function hideChangesModal() {
     changeDetection.hideModal();
 }
 
+function hideDiffModal() {
+    changeDetection.hideDiff();
+}
+
+function dismissCurrentChange() {
+    if (changeDetection.currentChangeId) {
+        changeDetection.dismissChange(changeDetection.currentChangeId);
+    }
+}
+
 function triggerReaudit() {
-    // Placeholder - implemented in Plan 22-03
-    alert('Re-audit will be implemented in Plan 22-03');
+    changeDetection.triggerReaudit();
 }
