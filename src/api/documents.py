@@ -18,6 +18,13 @@ from datetime import datetime
 from src.core.models import Document, DocumentType
 from src.importers import parse_document, detect_pii, redact_pii
 from src.config import Config
+from src.services.change_detection_service import (
+    compute_file_hash,
+    detect_change,
+    record_change,
+    store_previous_text,
+)
+from src.db.connection import get_conn
 
 
 # Create Blueprint
@@ -120,6 +127,9 @@ def upload_document(institution_id: str):
         # Save the file
         file.save(str(upload_path))
 
+        # Compute SHA256 of uploaded file (per CHG-01)
+        new_hash = compute_file_hash(str(upload_path))
+
         # Parse the document
         parsed = parse_document(str(upload_path))
 
@@ -159,6 +169,46 @@ def upload_document(institution_id: str):
 
         _workspace_manager.save_institution(institution)
 
+        # Store the computed hash in extracted_structure for future change detection
+        document.extracted_structure["file_sha256"] = new_hash
+
+        # Check if document exists in database for change detection
+        try:
+            conn = get_conn()
+            cursor = conn.execute("SELECT file_sha256 FROM documents WHERE id = ?", (document.id,))
+            db_row = cursor.fetchone()
+
+            if db_row and db_row["file_sha256"]:
+                # Document exists in DB - detect changes
+                old_hash = db_row["file_sha256"]
+                if old_hash != new_hash:
+                    # Store previous text for diff
+                    old_text_path = None
+                    if parsed.text:
+                        old_text_path = store_previous_text(
+                            institution_id, document.id, parsed.text
+                        )
+
+                    # Record change event
+                    change_id = record_change(
+                        document_id=document.id,
+                        institution_id=institution_id,
+                        old_hash=old_hash,
+                        new_hash=new_hash,
+                        old_text_path=old_text_path,
+                        conn=conn
+                    )
+
+                    # Update hash in database
+                    conn.execute(
+                        "UPDATE documents SET file_sha256 = ?, updated_at = datetime('now') WHERE id = ?",
+                        (new_hash, document.id)
+                    )
+                    conn.commit()
+        except Exception as e:
+            # Database may not have this document yet - that's okay
+            pass
+
         # Return response with preview
         response = document.to_dict()
         text = parsed.text or ""
@@ -167,6 +217,7 @@ def upload_document(institution_id: str):
             {"type": m.pii_type, "confidence": m.confidence}
             for m in pii_matches
         ]
+        response["file_sha256"] = new_hash
 
         return jsonify(response), 201
 
