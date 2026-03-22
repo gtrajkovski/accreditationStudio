@@ -1,0 +1,224 @@
+"""Unit tests for change detection service.
+
+Tests SHA256 hash computation, change detection, and change event recording.
+"""
+
+import sqlite3
+import tempfile
+from datetime import datetime
+from pathlib import Path
+
+import pytest
+
+from src.services.change_detection_service import (
+    compute_file_hash,
+    detect_change,
+    record_change,
+    get_pending_changes,
+    get_change_count,
+    store_previous_text,
+    ChangeEvent,
+)
+
+
+@pytest.fixture
+def test_db():
+    """Create an in-memory test database."""
+    conn = sqlite3.connect(":memory:")
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.row_factory = sqlite3.Row
+
+    # Create required tables
+    conn.execute("""
+        CREATE TABLE documents (
+            id TEXT PRIMARY KEY,
+            institution_id TEXT NOT NULL,
+            file_sha256 TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+
+    conn.execute("""
+        CREATE TABLE institutions (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """)
+
+    conn.execute("""
+        CREATE TABLE document_changes (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL,
+            institution_id TEXT NOT NULL,
+            change_type TEXT NOT NULL,
+            previous_sha256 TEXT,
+            new_sha256 TEXT,
+            previous_version_id TEXT,
+            new_version_id TEXT,
+            sections_added INTEGER DEFAULT 0,
+            sections_removed INTEGER DEFAULT 0,
+            sections_modified INTEGER DEFAULT 0,
+            diff_summary TEXT,
+            affected_standards TEXT DEFAULT '[]',
+            reaudit_required INTEGER DEFAULT 0,
+            reaudit_triggered INTEGER DEFAULT 0,
+            reaudit_session_id TEXT,
+            detected_at TEXT NOT NULL DEFAULT (datetime('now')),
+            processed_at TEXT,
+            FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+            FOREIGN KEY (institution_id) REFERENCES institutions(id) ON DELETE CASCADE
+        )
+    """)
+
+    # Insert test data
+    conn.execute("INSERT INTO institutions (id, name) VALUES ('inst_test', 'Test Institution')")
+    conn.execute("INSERT INTO documents (id, institution_id, file_sha256) VALUES ('doc_test', 'inst_test', 'abc123')")
+    conn.commit()
+
+    yield conn
+    conn.close()
+
+
+def test_compute_file_hash_returns_sha256():
+    """Test that compute_file_hash returns 64-character hex digest."""
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+        f.write("Hello, World!")
+        temp_path = f.name
+
+    try:
+        result = compute_file_hash(temp_path)
+
+        # SHA256 produces 64 character hex digest
+        assert result is not None
+        assert len(result) == 64
+        assert all(c in '0123456789abcdef' for c in result)
+    finally:
+        Path(temp_path).unlink()
+
+
+def test_detect_change_returns_changed_true(test_db):
+    """Test detect_change returns changed=True when hashes differ."""
+    # Create a temp file with different content
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+        f.write("New content")
+        temp_path = f.name
+
+    try:
+        result = detect_change("doc_test", temp_path, test_db)
+
+        assert result["changed"] is True
+        assert result["old_hash"] == "abc123"
+        assert result["new_hash"] is not None
+        assert result["new_hash"] != "abc123"
+    finally:
+        Path(temp_path).unlink()
+
+
+def test_detect_change_returns_changed_false_same_hash(test_db):
+    """Test detect_change returns changed=False when hashes are the same."""
+    # Create a temp file and compute its hash
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+        f.write("Test content")
+        temp_path = f.name
+
+    try:
+        file_hash = compute_file_hash(temp_path)
+
+        # Update document with this hash
+        test_db.execute("UPDATE documents SET file_sha256 = ? WHERE id = 'doc_test'", (file_hash,))
+        test_db.commit()
+
+        result = detect_change("doc_test", temp_path, test_db)
+
+        assert result["changed"] is False
+        assert result["old_hash"] == file_hash
+        assert result["new_hash"] == file_hash
+    finally:
+        Path(temp_path).unlink()
+
+
+def test_detect_change_returns_changed_false_new_document(test_db):
+    """Test detect_change returns changed=False for new document (no old hash)."""
+    # Insert document with no hash
+    test_db.execute("INSERT INTO documents (id, institution_id, file_sha256) VALUES ('doc_new', 'inst_test', NULL)")
+    test_db.commit()
+
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+        f.write("New document")
+        temp_path = f.name
+
+    try:
+        result = detect_change("doc_new", temp_path, test_db)
+
+        # Not a change - just a new document
+        assert result["changed"] is False
+        assert result["old_hash"] is None
+        assert result["new_hash"] is not None
+    finally:
+        Path(temp_path).unlink()
+
+
+def test_record_change_inserts_row(test_db):
+    """Test record_change inserts a row into document_changes."""
+    change_id = record_change(
+        document_id="doc_test",
+        institution_id="inst_test",
+        old_hash="abc123",
+        new_hash="def456",
+        old_text_path=None,
+        conn=test_db
+    )
+
+    assert change_id is not None
+    assert change_id.startswith("chg_")
+
+    # Verify row exists
+    cursor = test_db.execute("SELECT * FROM document_changes WHERE id = ?", (change_id,))
+    row = cursor.fetchone()
+
+    assert row is not None
+    assert row["document_id"] == "doc_test"
+    assert row["institution_id"] == "inst_test"
+    assert row["change_type"] == "content_modified"
+    assert row["previous_sha256"] == "abc123"
+    assert row["new_sha256"] == "def456"
+    assert row["reaudit_required"] == 1
+
+
+def test_get_pending_changes_returns_unprocessed(test_db):
+    """Test get_pending_changes returns only unprocessed changes."""
+    # Insert 2 changes, mark 1 as processed
+    record_change("doc_test", "inst_test", "abc", "def", None, test_db)
+    change_id_2 = record_change("doc_test", "inst_test", "def", "ghi", None, test_db)
+
+    # Mark first as processed
+    test_db.execute(
+        "UPDATE document_changes SET processed_at = datetime('now') WHERE id != ?",
+        (change_id_2,)
+    )
+    test_db.commit()
+
+    result = get_pending_changes("inst_test", test_db)
+
+    assert len(result) == 1
+    assert result[0].id == change_id_2
+
+
+def test_get_change_count_counts_unprocessed(test_db):
+    """Test get_change_count returns count of unprocessed changes."""
+    # Insert 3 changes, mark 1 as processed
+    record_change("doc_test", "inst_test", "a", "b", None, test_db)
+    change_id_2 = record_change("doc_test", "inst_test", "b", "c", None, test_db)
+    change_id_3 = record_change("doc_test", "inst_test", "c", "d", None, test_db)
+
+    # Mark first as processed
+    test_db.execute(
+        "UPDATE document_changes SET processed_at = datetime('now') WHERE id NOT IN (?, ?)",
+        (change_id_2, change_id_3)
+    )
+    test_db.commit()
+
+    count = get_change_count("inst_test", test_db)
+
+    assert count == 2
