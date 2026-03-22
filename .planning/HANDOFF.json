@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-03-22T16:05:03.985Z",
+  "phase": "21",
+  "phase_name": "Evidence Coverage Contract",
+  "phase_dir": ".planning/phases/21-evidence-contract",
+  "plan": 2,
+  "task": 1,
+  "total_tasks": 6,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": "21-01-1", "name": "validate_packet() Function", "status": "done", "commit": "0de649b"},
+    {"id": "21-01-2", "name": "Validation Logic", "status": "done", "commit": "0de649b"},
+    {"id": "21-01-3", "name": "Export Endpoint Gating", "status": "done", "commit": "c3ab3d3"},
+    {"id": "21-01-4", "name": "finalize_submission Checkpoint Type", "status": "done", "commit": "fd34eea"},
+    {"id": "21-01-5", "name": "Unit Tests", "status": "done", "commit": "e38bf98"}
+  ],
+  "remaining_tasks": [
+    {"id": "21-02-1", "name": "Coverage Step Component", "status": "not_started"},
+    {"id": "21-02-2", "name": "Standards Coverage List", "status": "not_started"},
+    {"id": "21-02-3", "name": "Blocking Issues Panel", "status": "not_started"},
+    {"id": "21-02-4", "name": "Export Button State", "status": "not_started"},
+    {"id": "21-02-5", "name": "Force Export Modal", "status": "not_started"},
+    {"id": "21-02-6", "name": "CSS Styling", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "Integrated with existing packets.py API", "rationale": "Extends existing validate endpoint rather than creating new", "phase": "21"},
+    {"decision": "Created new packet_service.py", "rationale": "Clean separation of validation logic from API layer", "phase": "21"},
+    {"decision": "Added CheckpointType.FINALIZE_SUBMISSION enum", "rationale": "Audit trail for forced exports", "phase": "21"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Execute Plan 21-02 (Wave 2): Coverage Step UI in Packet Studio - add visual coverage verification to submissions.html",
+  "context_notes": "Phase 21 is 50% complete. Wave 1 (backend) done with 5/5 tasks and 13 unit tests. Wave 2 (UI) ready to start. The existing packet UI is at templates/institutions/submissions.html, not templates/packets/studio.html as listed in plan."
+}
