@@ -547,5 +547,19 @@
       "standards_missing": "estándar(es) sin evidencia",
       "blocking_findings": "hallazgo(s) bloqueante(s)"
     }
+  },
+  "change_detection": {
+    "documents_changed": "Documentos Modificados",
+    "review_changes": "Revisar Cambios",
+    "pending_changes": "Cambios Pendientes en Documentos",
+    "reaudit_scope": "Vista Previa del Alcance de Re-auditoría",
+    "reaudit_impacted": "Re-auditar Afectados",
+    "changed_documents": "Documentos Cambiados",
+    "affected_standards": "Estándares Afectados",
+    "impacted_documents": "Documentos Impactados (cascada)",
+    "total_to_audit": "Total a Re-auditar",
+    "no_pending_changes": "Sin cambios pendientes",
+    "change_detected": "Cambio detectado",
+    "content_modified": "Contenido modificado"
   }
 }

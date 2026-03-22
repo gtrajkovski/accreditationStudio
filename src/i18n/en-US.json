@@ -547,5 +547,19 @@
       "standards_missing": "standard(s) missing evidence",
       "blocking_findings": "blocking finding(s)"
     }
+  },
+  "change_detection": {
+    "documents_changed": "Documents Changed",
+    "review_changes": "Review Changes",
+    "pending_changes": "Pending Document Changes",
+    "reaudit_scope": "Re-audit Scope Preview",
+    "reaudit_impacted": "Re-audit Impacted",
+    "changed_documents": "Changed Documents",
+    "affected_standards": "Affected Standards",
+    "impacted_documents": "Impacted Documents (cascade)",
+    "total_to_audit": "Total to Re-audit",
+    "no_pending_changes": "No pending changes",
+    "change_detected": "Change detected",
+    "content_modified": "Content modified"
   }
 }
