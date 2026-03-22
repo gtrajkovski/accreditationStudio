@@ -3,22 +3,22 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Operational Intelligence
 status: executing
-last_updated: "2026-03-22T16:18:07Z"
+last_updated: "2026-03-22T18:17:00Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 12
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # AccreditAI State
 
 ## Current Position
 
-Phase: Phase 21 - Evidence Coverage Contract
-Plan: 21-02 complete, Phase 21 COMPLETE
-Status: 2/2 plans done
-Last activity: 2026-03-22 — Completed Coverage Step UI in Packet Studio (21-02)
+Phase: Phase 22 - Change Detection + Targeted Re-Audit
+Plan: 22-01 complete
+Status: 1/3 plans done
+Last activity: 2026-03-22 — Completed Change Detection Service (22-01)
 
 ## Next Session: Start Here
 
@@ -81,15 +81,23 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
   - Wires force export modal to human_checkpoints table
   - Verification now passes 3/3 must-haves
 
-**Next:** Phase 22 - Change Detection + Targeted Re-Audit
-
 ### Phase 22: Change Detection + Targeted Re-Audit
 **Goal:** Incremental re-audits for changed documents only
 **Requirements:** CHG-01, CHG-02, CHG-03
 **Success Criteria:**
-  1. SHA256 diff on document upload
+  1. ✅ SHA256 diff on document upload
   2. Changed documents trigger re-audit recommendation
   3. Targeted re-audit runs only impacted items
+
+**Completed:**
+- 22-01: Change Detection Service (4 min, 7 tests)
+  - ChangeDetectionService with compute_file_hash, detect_change, record_change
+  - 3 REST endpoints (pending, count, polling)
+  - Document upload integration with SHA256 computation
+  - TDD workflow (RED → GREEN phases)
+  - Commits: 7893761, 4660530, 29a6290, 49f3a81
+
+**Next:** Phase 22-02 - Change Detection Dashboard UI
 
 ### Phase 23: Audit Reproducibility
 **Goal:** Every audit can be explained and reproduced
@@ -111,10 +119,10 @@ All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
 ## Progress Bar
 
 ```
-v1.5: [████████████░░░░░░░░] 5/12 plans (42%)
+v1.5: [██████████████░░░░░░] 6/12 plans (50%)
   Phase 20: [████████████████████] 3/3 plans (COMPLETE)
   Phase 21: [████████████████████] 2/2 plans (COMPLETE)
-  Phase 22: [░░░░░░░░░░░░░░░░░░░░] 0/3 plans (PLANNED)
+  Phase 22: [███████░░░░░░░░░░░░░] 1/3 plans (IN PROGRESS)
   Phase 23: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
   Phase 24: [░░░░░░░░░░░░░░░░░░░░] 0/2 plans (PLANNED)
 ```
