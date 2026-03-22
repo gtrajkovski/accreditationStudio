@@ -48,9 +48,9 @@ Requirements for v1.5 - Operational Intelligence milestone.
 
 ### Change Detection
 
-- [ ] **CHG-01**: Document uploads compute sha256 diff against previous version
-- [ ] **CHG-02**: Changed documents trigger targeted re-audit recommendation
-- [ ] **CHG-03**: Targeted re-audit runs only impacted checklist items
+- [x] **CHG-01**: Document uploads compute sha256 diff against previous version
+- [x] **CHG-02**: Changed documents trigger targeted re-audit recommendation
+- [x] **CHG-03**: Targeted re-audit runs only impacted checklist items
 
 ### Reproducibility
 
@@ -124,9 +124,9 @@ Deferred to future milestones.
 | EVID-01 | Phase 21 | Complete (21-01) |
 | EVID-02 | Phase 21 | Complete (21-01) |
 | EVID-03 | Phase 21 | Pending |
-| CHG-01 | Phase 22 | Pending |
-| CHG-02 | Phase 22 | Pending |
-| CHG-03 | Phase 22 | Pending |
+| CHG-01 | Phase 22 | Complete (22-01) |
+| CHG-02 | Phase 22 | Complete (22-02) |
+| CHG-03 | Phase 22 | Complete (22-03) |
 | REPRO-01 | Phase 23 | Pending |
 | REPRO-02 | Phase 23 | Pending |
 | HARV-01 | Phase 24 | Pending |
