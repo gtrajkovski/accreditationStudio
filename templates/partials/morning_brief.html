@@ -1,0 +1,494 @@
+{#
+  Morning Brief Panel Partial
+  Include in any page that needs to show the morning brief.
+
+  Required context:
+    - institution_id: The institution ID to load the brief for
+
+  Usage:
+    {% include 'partials/morning_brief.html' %}
+#}
+
+<div class="morning-brief-panel" id="morning-brief-panel" data-institution="{{ institution_id }}">
+    <div class="brief-header">
+        <h3 class="brief-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            {{ t('autopilot.brief.title') }}
+        </h3>
+        <div class="brief-header-actions">
+            <button class="btn btn-ghost btn-sm" id="brief-download-btn" onclick="MorningBrief.download()" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7,10 12,15 17,10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="brief-body">
+        <!-- Empty State -->
+        <div class="brief-empty-state" id="brief-empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>
+            <p>{{ t('autopilot.brief.no_actions') }}</p>
+            <p class="text-sm">Run autopilot to generate a morning brief.</p>
+        </div>
+
+        <!-- Brief Content -->
+        <div class="brief-loaded" id="brief-loaded" style="display: none;">
+            <!-- Readiness Score with Delta -->
+            <div class="brief-readiness-section">
+                <div class="readiness-ring-container">
+                    <svg viewBox="0 0 100 100" width="100" height="100" class="readiness-ring">
+                        <circle class="ring-track" cx="50" cy="50" r="42" stroke-width="8" fill="none"/>
+                        <circle class="ring-fill" id="brief-ring-fill" cx="50" cy="50" r="42" stroke-width="8" fill="none" stroke-linecap="round"/>
+                    </svg>
+                    <div class="ring-center">
+                        <span class="ring-score" id="brief-ring-score">--</span>
+                        <span class="ring-percent">%</span>
+                    </div>
+                </div>
+                <div class="readiness-info">
+                    <span class="readiness-label">{{ t('autopilot.brief.score') }}</span>
+                    <span class="readiness-delta" id="brief-readiness-delta"></span>
+                </div>
+            </div>
+
+            <!-- Blockers Section -->
+            <div class="brief-section blockers-section">
+                <h4 class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    {{ t('autopilot.brief.blockers') }}
+                </h4>
+                <ul class="brief-items" id="brief-blockers-list">
+                    <li class="empty-item">{{ t('autopilot.brief.no_blockers') }}</li>
+                </ul>
+            </div>
+
+            <!-- Actions Section -->
+            <div class="brief-section actions-section">
+                <h4 class="section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                        <polyline points="22,4 12,14.01 9,11.01"/>
+                    </svg>
+                    {{ t('autopilot.brief.actions') }}
+                </h4>
+                <ul class="brief-items" id="brief-actions-list">
+                    <li class="empty-item">{{ t('autopilot.brief.no_actions') }}</li>
+                </ul>
+            </div>
+
+            <!-- Run Summary -->
+            <div class="brief-section summary-section">
+                <h4 class="section-title">{{ t('autopilot.brief.summary') }}</h4>
+                <div class="summary-stats" id="brief-summary-stats">
+                    <div class="summary-stat">
+                        <span class="stat-value" id="brief-docs-indexed">0</span>
+                        <span class="stat-label">{{ t('autopilot.brief.docs_indexed') }}</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="stat-value" id="brief-consistency-issues">0</span>
+                        <span class="stat-label">{{ t('autopilot.brief.consistency_issues') }}</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="stat-value" id="brief-duration">-</span>
+                        <span class="stat-label">{{ t('autopilot.brief.duration') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.morning-brief-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+}
+
+.brief-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.brief-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.brief-title svg {
+    color: var(--warning);
+}
+
+.brief-body {
+    padding: var(--spacing-md);
+}
+
+.brief-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.brief-empty-state svg {
+    opacity: 0.5;
+}
+
+.brief-loaded {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+/* Readiness Section */
+.brief-readiness-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.readiness-ring-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.readiness-ring {
+    transform: rotate(-90deg);
+}
+
+.ring-track {
+    stroke: var(--bg-secondary);
+}
+
+.ring-fill {
+    stroke: var(--success);
+    stroke-dasharray: 264;
+    stroke-dashoffset: 264;
+    transition: stroke-dashoffset 0.8s ease, stroke 0.3s ease;
+}
+
+.ring-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.ring-score {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.ring-percent {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.readiness-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.readiness-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
+.readiness-delta {
+    font-weight: 600;
+}
+
+.readiness-delta.positive {
+    color: var(--success);
+}
+
+.readiness-delta.negative {
+    color: var(--danger);
+}
+
+/* Brief Sections */
+.brief-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.blockers-section .section-title svg {
+    color: var(--danger);
+}
+
+.actions-section .section-title svg {
+    color: var(--success);
+}
+
+.brief-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.brief-items li {
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
+.brief-items li:last-child {
+    border-bottom: none;
+}
+
+.brief-items .empty-item {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.brief-items .severity-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.brief-items .severity-dot.critical { background: var(--danger); }
+.brief-items .severity-dot.high { background: var(--warning); }
+.brief-items .severity-dot.medium { background: var(--info); }
+.brief-items .severity-dot.low { background: var(--text-muted); }
+
+/* Summary Stats */
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md);
+}
+
+.summary-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.summary-stat .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.summary-stat .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+</style>
+
+<script>
+/**
+ * Morning Brief Controller
+ * Manages loading and displaying the morning brief in the partial
+ */
+const MorningBrief = {
+    institutionId: null,
+    briefDate: null,
+
+    init(institutionId) {
+        this.institutionId = institutionId || document.getElementById('morning-brief-panel')?.dataset.institution;
+        if (this.institutionId) {
+            this.load();
+        }
+    },
+
+    async load() {
+        try {
+            const res = await fetch(`/api/autopilot/institutions/${this.institutionId}/briefs/latest`);
+            if (!res.ok) {
+                this.showEmpty();
+                return;
+            }
+
+            const data = await res.json();
+            if (data.brief) {
+                this.render(data.brief);
+            } else {
+                this.showEmpty();
+            }
+        } catch (e) {
+            console.error('Failed to load morning brief:', e);
+            this.showEmpty();
+        }
+    },
+
+    showEmpty() {
+        document.getElementById('brief-empty-state').style.display = 'flex';
+        document.getElementById('brief-loaded').style.display = 'none';
+        document.getElementById('brief-download-btn').style.display = 'none';
+    },
+
+    render(brief) {
+        document.getElementById('brief-empty-state').style.display = 'none';
+        document.getElementById('brief-loaded').style.display = 'flex';
+        document.getElementById('brief-download-btn').style.display = 'inline-flex';
+
+        this.briefDate = brief.date;
+
+        // Render readiness score
+        const score = brief.readiness_score || 0;
+        document.getElementById('brief-ring-score').textContent = score;
+
+        // Animate ring
+        const offset = 264 - (264 * score / 100);
+        const ringFill = document.getElementById('brief-ring-fill');
+        ringFill.style.strokeDashoffset = offset;
+
+        // Color based on score
+        if (score >= 80) {
+            ringFill.style.stroke = 'var(--success)';
+        } else if (score >= 60) {
+            ringFill.style.stroke = 'var(--warning)';
+        } else {
+            ringFill.style.stroke = 'var(--danger)';
+        }
+
+        // Parse and render content
+        this.parseContent(brief.content);
+    },
+
+    parseContent(content) {
+        const lines = content.split('\n');
+        const blockers = [];
+        const actions = [];
+        let inBlockers = false;
+        let inActions = false;
+
+        // Simple parsing logic
+        for (const line of lines) {
+            const lower = line.toLowerCase();
+            if (lower.includes('blocker') || lower.includes('critical issue')) {
+                inBlockers = true;
+                inActions = false;
+                continue;
+            }
+            if (lower.includes('next action') || lower.includes('recommended')) {
+                inBlockers = false;
+                inActions = true;
+                continue;
+            }
+
+            const trimmed = line.trim();
+            if (trimmed.startsWith('-') || trimmed.startsWith('*') || /^\d+\./.test(trimmed)) {
+                const text = trimmed.replace(/^[-*]\s*/, '').replace(/^\d+\.\s*/, '');
+                if (text) {
+                    if (inBlockers && blockers.length < 3) {
+                        blockers.push({ text, severity: 'high' });
+                    } else if (inActions && actions.length < 3) {
+                        actions.push({ text });
+                    }
+                }
+            }
+        }
+
+        // Render blockers
+        const blockersList = document.getElementById('brief-blockers-list');
+        if (blockers.length > 0) {
+            blockersList.innerHTML = blockers.map(b => `
+                <li>
+                    <span class="severity-dot ${b.severity}"></span>
+                    <span>${this.escapeHtml(b.text)}</span>
+                </li>
+            `).join('');
+        }
+
+        // Render actions
+        const actionsList = document.getElementById('brief-actions-list');
+        if (actions.length > 0) {
+            actionsList.innerHTML = actions.map(a => `
+                <li>
+                    <span>${this.escapeHtml(a.text)}</span>
+                </li>
+            `).join('');
+        }
+    },
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+
+    download() {
+        if (!this.institutionId || !this.briefDate) {
+            window.toast?.error('No brief available to download');
+            return;
+        }
+        window.location.href = `/api/autopilot/institutions/${this.institutionId}/briefs/${this.briefDate}/download`;
+    }
+};
+
+// Auto-init if institution ID is available
+document.addEventListener('DOMContentLoaded', () => {
+    const panel = document.getElementById('morning-brief-panel');
+    if (panel && panel.dataset.institution) {
+        MorningBrief.init(panel.dataset.institution);
+    }
+});
+</script>
