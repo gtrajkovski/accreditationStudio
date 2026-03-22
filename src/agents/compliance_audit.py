@@ -12,6 +12,11 @@ from src.agents.base_agent import BaseAgent, AgentType
 
 logger = logging.getLogger(__name__)
 from src.agents.registry import register_agent
+from src.services.audit_reproducibility_service import (
+    capture_audit_snapshot,
+    save_audit_snapshot,
+    record_finding_provenance,
+)
 from src.core.models import (
     AgentResult,
     AgentSession,
@@ -93,6 +98,7 @@ class ComplianceAuditAgent(BaseAgent):
         super().__init__(session, workspace_manager, on_update)
         self._audit_cache: Dict[str, Audit] = {}
         self._institution_id: Optional[str] = None
+        self._current_snapshot: Optional[Any] = None
 
     @property
     def agent_type(self) -> AgentType:
@@ -366,6 +372,21 @@ Respond ONLY with valid JSON in this exact format:
             )
 
             response_text = response.content[0].text.strip()
+
+            # Record finding provenance (per D-02)
+            if self._current_snapshot:
+                try:
+                    record_finding_provenance(
+                        finding_id=f"{self._current_snapshot.audit_run_id}_{item_number}",
+                        snapshot_id=self._current_snapshot.id,
+                        prompt=prompt,
+                        response=response_text,
+                        input_tokens=getattr(response.usage, 'input_tokens', 0),
+                        output_tokens=getattr(response.usage, 'output_tokens', 0),
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to record finding provenance: {e}")
+
             # Try to extract JSON from response
             if response_text.startswith("{"):
                 result = json.loads(response_text)
@@ -503,6 +524,15 @@ Respond ONLY with valid JSON in this exact format:
         )
 
         self._save_audit(audit)
+
+        # Capture reproducibility snapshot (per D-01, D-02)
+        self._current_snapshot = capture_audit_snapshot(
+            audit_run_id=audit.id,
+            institution_id=institution_id,
+            system_prompt=SYSTEM_PROMPT,
+            tool_definitions=self.tools,
+            accreditor_code=standards_id.replace("std_", "").upper(),
+        )
 
         return {
             "success": True,
@@ -906,6 +936,10 @@ Keep response under 300 words."""
         # Final summary update
         self._update_audit_summary(audit)
         self._save_audit(audit)
+
+        # Save reproducibility bundle (per D-08, D-09)
+        if self._current_snapshot and self._current_snapshot.audit_run_id == audit.id:
+            save_audit_snapshot(self._current_snapshot)
 
         # Build report
         report = {
