@@ -4,6 +4,8 @@ Provides REST endpoints for submission packet management:
 - Create and manage packets
 - Add sections and exhibits
 - Validate and export
+
+Export endpoints are gated by evidence validation (EVID-01, EVID-02).
 """
 
 import json
@@ -11,6 +13,11 @@ from flask import Blueprint, request, jsonify, Response
 
 from src.agents.packet_agent import PacketAgent
 from src.core.models import AgentSession, generate_id
+from src.services.packet_service import (
+    validate_packet as validate_packet_service,
+    check_force_export_override,
+    create_finalize_checkpoint,
+)
 
 packets_bp = Blueprint("packets", __name__, url_prefix="/api/institutions/<institution_id>/packets")
 
@@ -261,14 +268,64 @@ def validate_packet(institution_id: str, packet_id: str):
     return jsonify(result)
 
 
+@packets_bp.route("/<packet_id>/evidence-validation", methods=["GET"])
+def get_evidence_validation(institution_id: str, packet_id: str):
+    """Get evidence coverage validation for a packet.
+
+    Returns validation status showing:
+    - missing_standards: Standards without evidence
+    - blocking_findings: Critical findings that must be resolved
+    - ok: Whether export is currently allowed
+    """
+    packet_data = _workspace_manager.load_file(institution_id, f"submissions/{packet_id}.json")
+    if not packet_data:
+        return jsonify({"error": "Packet not found"}), 404
+
+    validation = validate_packet_service(packet_id)
+    return jsonify(validation.to_dict())
+
+
 @packets_bp.route("/<packet_id>/export/docx", methods=["POST"])
 def export_docx(institution_id: str, packet_id: str):
-    """Export packet as DOCX."""
+    """Export packet as DOCX.
+
+    Export is gated by evidence validation. If validation fails:
+    - Returns 400 with validation errors
+    - Accepts ?force=true&checkpoint_id=XXX to override with valid checkpoint
+    """
     data = request.get_json() or {}
+    force = request.args.get("force", "").lower() == "true"
+    checkpoint_id = request.args.get("checkpoint_id", "")
 
     packet_data = _workspace_manager.load_file(institution_id, f"submissions/{packet_id}.json")
     if not packet_data:
         return jsonify({"error": "Packet not found"}), 404
+
+    # Validate packet for export
+    validation = validate_packet_service(packet_id)
+
+    if not validation.ok:
+        # Check for force override
+        if force and checkpoint_id:
+            override_result = check_force_export_override(packet_id, checkpoint_id)
+            if not override_result["valid"]:
+                return jsonify({
+                    "error": "Export blocked - override invalid",
+                    "override_reason": override_result["reason"],
+                    "validation": validation.to_dict(),
+                }), 400
+            # Override accepted - proceed with export
+        else:
+            # Create checkpoint for override if needed
+            checkpoint = create_finalize_checkpoint(
+                packet_id, institution_id, validation
+            )
+            return jsonify({
+                "error": "Export blocked - validation failed",
+                "validation": validation.to_dict(),
+                "checkpoint": checkpoint,
+                "hint": "Use ?force=true&checkpoint_id=XXX after resolving checkpoint",
+            }), 400
 
     agent = _create_agent(institution_id)
 
@@ -290,10 +347,44 @@ def export_docx(institution_id: str, packet_id: str):
 
 @packets_bp.route("/<packet_id>/export/zip", methods=["POST"])
 def export_zip(institution_id: str, packet_id: str):
-    """Export packet as ZIP folder."""
+    """Export packet as ZIP folder.
+
+    Export is gated by evidence validation. If validation fails:
+    - Returns 400 with validation errors
+    - Accepts ?force=true&checkpoint_id=XXX to override with valid checkpoint
+    """
+    force = request.args.get("force", "").lower() == "true"
+    checkpoint_id = request.args.get("checkpoint_id", "")
+
     packet_data = _workspace_manager.load_file(institution_id, f"submissions/{packet_id}.json")
     if not packet_data:
         return jsonify({"error": "Packet not found"}), 404
+
+    # Validate packet for export
+    validation = validate_packet_service(packet_id)
+
+    if not validation.ok:
+        # Check for force override
+        if force and checkpoint_id:
+            override_result = check_force_export_override(packet_id, checkpoint_id)
+            if not override_result["valid"]:
+                return jsonify({
+                    "error": "Export blocked - override invalid",
+                    "override_reason": override_result["reason"],
+                    "validation": validation.to_dict(),
+                }), 400
+            # Override accepted - proceed with export
+        else:
+            # Create checkpoint for override if needed
+            checkpoint = create_finalize_checkpoint(
+                packet_id, institution_id, validation
+            )
+            return jsonify({
+                "error": "Export blocked - validation failed",
+                "validation": validation.to_dict(),
+                "checkpoint": checkpoint,
+                "hint": "Use ?force=true&checkpoint_id=XXX after resolving checkpoint",
+            }), 400
 
     agent = _create_agent(institution_id)
 
