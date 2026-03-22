@@ -186,6 +186,15 @@ class TaskPriority(str, Enum):
     CRITICAL = "critical"
 
 
+class CheckpointType(str, Enum):
+    """Types of human checkpoints."""
+    APPROVAL = "approval"           # General approval checkpoint
+    REVIEW = "review"               # Human review required
+    DECISION = "decision"           # Decision point requiring human input
+    FINALIZE_SUBMISSION = "finalize_submission"  # Export override checkpoint
+    FORCED_EXPORT = "forced_export"  # Audit trail for forced exports
+
+
 # ===========================
 # Helper Functions
 # ===========================
