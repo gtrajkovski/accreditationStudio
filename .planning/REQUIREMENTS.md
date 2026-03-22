@@ -55,7 +55,7 @@ Requirements for v1.5 - Operational Intelligence milestone.
 ### Reproducibility
 
 - [x] **REPRO-01**: Each audit run stores a reproducibility bundle (standards, docs, model, timestamps)
-- [ ] **REPRO-02**: User can view "How this audit was produced" on audit detail page
+- [x] **REPRO-02**: User can view "How this audit was produced" on audit detail page
 
 ### Standards Harvester
 
@@ -128,11 +128,11 @@ Deferred to future milestones.
 | CHG-02 | Phase 22 | Complete (22-02) |
 | CHG-03 | Phase 22 | Complete (22-03) |
 | REPRO-01 | Phase 23 | Complete (23-01) |
-| REPRO-02 | Phase 23 | Pending |
+| REPRO-02 | Phase 23 | Complete (23-02) |
 | HARV-01 | Phase 24 | Pending |
 | HARV-02 | Phase 24 | Pending |
 | HARV-03 | Phase 24 | Pending |
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-21 after v1.5 milestone definition*
+*Last updated: 2026-03-22 after Phase 23 completion*

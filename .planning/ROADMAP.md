@@ -268,19 +268,19 @@ Plans:
 - [x] 22-02-PLAN.md — Dashboard badge, cascade scope calculation, re-audit recommendations UI (CHG-02) ✅ **COMPLETE** (2060724, fe50754, 9b5cea2, 3725c60, 4fe987f)
 - [x] 22-03-PLAN.md — Diff viewer, targeted re-audit execution via ComplianceAuditAgent (CHG-03) ✅ **COMPLETE** (0432638, 1851613, 88c5e84, d90aa84, 24f26a0, 62aee52)
 
-### Phase 23: Audit Reproducibility
+### Phase 23: Audit Reproducibility ✅ COMPLETE
 **Goal:** Every audit can be explained and reproduced
 **Depends on:** Nothing (adds metadata to existing audits)
 **Requirements:** REPRO-01, REPRO-02
 **Success Criteria** (what must be TRUE):
   1. ✅ Audit runs store reproducibility bundle
-  2. User can view "How this audit was produced"
+  2. ✅ User can view "How this audit was produced"
 
-**Plans:** 1/2 plans complete
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 23-01-PLAN.md — Wire reproducibility capture into ComplianceAuditAgent, add API endpoint (REPRO-01) ✅ **COMPLETE** (d6a28e9, 0a5260d, b0610ab)
-- [ ] 23-02-PLAN.md — Reproducibility viewer UI at /audits/{id}/reproducibility (REPRO-02)
+- [x] 23-02-PLAN.md — Reproducibility viewer UI at /audits/{id}/reproducibility (REPRO-02) ✅ **COMPLETE** (60d6977, 6f02e7d, 37d2571, 11fc5b7)
 
 ### Phase 24: Standards Harvester MVP
 **Goal:** Fetch standards from accreditor websites
