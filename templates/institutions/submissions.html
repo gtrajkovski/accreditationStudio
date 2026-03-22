@@ -3,6 +3,10 @@
 
 {% block title %}Submission Organizer - {{ institution.name }} - AccreditAI{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/packet_coverage.css') }}">
+{% endblock %}
+
 {% block header_actions %}
 <button class="btn btn-primary" onclick="showCreateModal()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
