@@ -283,7 +283,7 @@ Plans:
 - [x] 23-02-PLAN.md — Reproducibility viewer UI at /audits/{id}/reproducibility (REPRO-02) ✅ **COMPLETE** (60d6977, 6f02e7d, 37d2571, 11fc5b7)
 
 ### Phase 24: Standards Harvester MVP
-**Goal:** Fetch standards from accreditor websites
+**Goal:** Fetch standards from accreditor websites and track version changes
 **Depends on:** Nothing (new feature)
 **Requirements:** HARV-01, HARV-02, HARV-03
 **Success Criteria** (what must be TRUE):
@@ -291,11 +291,11 @@ Plans:
   2. Store with version date and hash
   3. User can view diff against previous version
 
-**Plans:** 0/2 plans complete
+**Plans:** 2 plans
 
 Plans:
-- [ ] 24-01-PLAN.md — Standards fetching and parsing service
-- [ ] 24-02-PLAN.md — Standards diff viewer UI
+- [ ] 24-01-PLAN.md — Harvesters (web/PDF/manual) + versioning service + migration + API + tests (HARV-01, HARV-02, HARV-03)
+- [ ] 24-02-PLAN.md — Standards Harvester UI page with tabbed fetch, version list, diff viewer (HARV-01, HARV-03)
 
 ---
 
@@ -325,7 +325,7 @@ Plans:
 | 20. Autopilot & Morning Brief | 3/3 | Complete | 2026-Q3 |
 | 21. Evidence Coverage Contract | 2/2 | Complete | 2026-Q3 |
 | 22. Change Detection | 3/3 | Complete | 2026-Q3 |
-| 23. Audit Reproducibility | 0/2 | Planned | - |
+| 23. Audit Reproducibility | 2/2 | Complete | 2026-Q3 |
 | 24. Standards Harvester MVP | 0/2 | Planning | - |
 
 ---
