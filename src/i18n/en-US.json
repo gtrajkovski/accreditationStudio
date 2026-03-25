@@ -593,5 +593,32 @@
     "no_pending_changes": "No pending changes",
     "change_detected": "Change detected",
     "content_modified": "Content modified"
+  },
+  "harvester": {
+    "title": "Standards Harvester",
+    "subtitle": "Fetch and track accreditation standards versions",
+    "fetch_standards": "Fetch Standards",
+    "upload_pdf": "Upload PDF",
+    "manual_entry": "Manual Entry",
+    "accreditor": "Accreditor",
+    "source_url": "Source URL",
+    "version_date": "Version Date",
+    "content_hash": "Content Hash",
+    "source_type": "Source Type",
+    "versions": "Versions",
+    "no_versions": "No versions found. Fetch or upload standards to get started.",
+    "view_diff": "View Diff",
+    "diff_title": "Standards Diff",
+    "previous_version": "Previous Version",
+    "current_version": "Current Version",
+    "fetch_success": "Standards fetched successfully",
+    "fetch_error": "Failed to fetch standards",
+    "upload_success": "Standards uploaded successfully",
+    "no_changes": "No changes detected from previous version",
+    "changes_detected": "Changes detected from previous version",
+    "first_version": "First version recorded",
+    "web_scrape": "Web Scrape",
+    "pdf_parse": "PDF Parse",
+    "manual_upload": "Manual Upload"
   }
 }

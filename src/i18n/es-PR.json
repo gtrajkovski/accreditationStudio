@@ -593,5 +593,32 @@
     "no_pending_changes": "Sin cambios pendientes",
     "change_detected": "Cambio detectado",
     "content_modified": "Contenido modificado"
+  },
+  "harvester": {
+    "title": "Recolector de Estándares",
+    "subtitle": "Obtener y rastrear versiones de estándares de acreditación",
+    "fetch_standards": "Obtener Estándares",
+    "upload_pdf": "Subir PDF",
+    "manual_entry": "Entrada Manual",
+    "accreditor": "Acreditador",
+    "source_url": "URL de Origen",
+    "version_date": "Fecha de Versión",
+    "content_hash": "Hash de Contenido",
+    "source_type": "Tipo de Origen",
+    "versions": "Versiones",
+    "no_versions": "No se encontraron versiones. Obtenga o suba estándares para comenzar.",
+    "view_diff": "Ver Diferencias",
+    "diff_title": "Diferencias de Estándares",
+    "previous_version": "Versión Anterior",
+    "current_version": "Versión Actual",
+    "fetch_success": "Estándares obtenidos exitosamente",
+    "fetch_error": "Error al obtener estándares",
+    "upload_success": "Estándares subidos exitosamente",
+    "no_changes": "No se detectaron cambios de la versión anterior",
+    "changes_detected": "Se detectaron cambios de la versión anterior",
+    "first_version": "Primera versión registrada",
+    "web_scrape": "Extracción Web",
+    "pdf_parse": "Análisis PDF",
+    "manual_upload": "Carga Manual"
   }
 }
