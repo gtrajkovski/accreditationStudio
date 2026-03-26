@@ -292,7 +292,12 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="main-wrapper">
+        <div class="main-wrapper"
+             data-page="{% block data_page %}{{ request.endpoint|replace('_', '-') if request.endpoint else 'unknown' }}{% endblock %}"
+             data-institution-id="{% block data_institution_id %}{{ current_institution.id if current_institution else '' }}{% endblock %}"
+             data-program-id="{% block data_program_id %}{% endblock %}"
+             data-document-id="{% block data_document_id %}{% endblock %}"
+             data-accreditor="{% block data_accreditor %}{% endblock %}">
             <header class="header">
                 <h1 class="header-title">{% block header_title %}{{ t('app.name') }}{% endblock %}</h1>
                 <div class="header-actions">
