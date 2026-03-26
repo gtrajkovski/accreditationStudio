@@ -8,14 +8,28 @@ AI-powered platform for managing the entire accreditation lifecycle of post-seco
 
 Institutions can achieve and maintain accreditation compliance with minimal manual effort through autonomous AI agents that audit, remediate, and prepare submission materials.
 
-## Current Version: v1.4.0 - Enterprise & Polish ✅
+## Current Milestone: v1.6 - Context-Sensitive Search
 
-**Released:** 2026-03-21
+**Goal:** Upgrade global search to automatically scope results based on where the user is in the application hierarchy.
+
+**Target features:**
+- SearchContext model with 6 scope levels (Global → Institution → Program → Document → Standards → Compliance)
+- ContextualSearchService with automatic scoping across 8 search sources
+- API blueprint with contextual search, sources list, and suggestions endpoints
+- Frontend integration with scope badge, manual scope cycling, inline search bar
+- Template data attributes for automatic context detection
+- ChromaDB + FTS5 scoping for semantic and structured search
+
+## Previous Version: v1.5.0 - Operational Intelligence ✅
+
+**Released:** 2026-03-26
 
 **Delivered:**
-- Report templates with comparison views and trend charts
-- OpenAPI/Swagger documentation at /api/docs (36 blueprints)
-- Audit trail export (JSON/ZIP) at /audit-trails
+- Autopilot with nightly runs and morning briefs
+- Evidence coverage contracts for packet export gating
+- Change detection with targeted re-audits
+- Audit reproducibility bundles
+- Standards harvester MVP
 
 ## Requirements
 
@@ -26,10 +40,11 @@ Institutions can achieve and maintain accreditation compliance with minimal manu
 - v1.2: Productivity (bulk operations, global search, UX polish)
 - v1.3: AI & reporting (explainers, evidence assistant, PDF reports, scheduling)
 - v1.4: Enterprise & polish (report enhancements, API docs, audit trails)
+- v1.5: Operational intelligence (autopilot, evidence contracts, change detection, reproducibility, standards harvester)
 
 ### Active
 
-No active requirements — awaiting v1.5 planning.
+v1.6 requirements defined in REQUIREMENTS.md.
 
 ### Out of Scope
 
@@ -41,10 +56,11 @@ No active requirements — awaiting v1.5 planning.
 
 - Flask + Jinja2 + vanilla JS + Anthropic SDK
 - 24-agent tiered architecture with registry pattern
-- 36 API blueprints registered
-- SQLite database with 29 migrations
-- ChromaDB for semantic search
+- 35+ API blueprints registered
+- SQLite database with 32 migrations
+- ChromaDB for semantic search + FTS5 for full-text
 - Docker deployment with gunicorn
+- Phase 13 global search provides foundation for v1.6
 
 ## Constraints
 
@@ -79,4 +95,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-21 after v1.4.0 release*
+*Last updated: 2026-03-26 after v1.6 milestone start*
