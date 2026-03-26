@@ -55,6 +55,10 @@ window.CommandPalette = (function() {
     let filterPresets = [];
     let activeTab = 'all';
 
+    // Contextual search scope state
+    let scopeBadge = null;
+    let currentScope = 'global';
+
     // DOM elements
     let paletteEl = null;
     let inputEl = null;
@@ -561,6 +565,16 @@ window.CommandPalette = (function() {
     }
 
     /**
+     * Update search input placeholder based on current scope
+     */
+    function updatePlaceholder() {
+        if (!inputEl) return;
+        const placeholderKey = `search.placeholder.${currentScope}`;
+        const placeholder = t(placeholderKey);
+        inputEl.placeholder = placeholder || t('commands.search_or_command');
+    }
+
+    /**
      * Initialize command palette
      */
     function init() {
@@ -587,6 +601,23 @@ window.CommandPalette = (function() {
         // Load commands
         allCommands = defaultCommands;
         filteredCommands = filterCommands('');
+
+        // Initialize scope badge
+        const scopeBadgeContainer = document.getElementById('command-palette-scope-badge');
+        if (scopeBadgeContainer && window.ScopeBadge) {
+            scopeBadge = new ScopeBadge(scopeBadgeContainer);
+            currentScope = scopeBadge.getCurrentScope();
+
+            // Listen for scope changes
+            scopeBadgeContainer.addEventListener('scope-changed', (e) => {
+                currentScope = e.detail;
+                updatePlaceholder();
+                // Re-search if query is long enough
+                if (inputEl.value.length >= 2 && currentMode === MODES.SEARCH) {
+                    search(inputEl.value);
+                }
+            });
+        }
 
         // Event listeners
         inputEl.addEventListener('input', handleInput);
@@ -654,6 +685,14 @@ window.CommandPalette = (function() {
         selectedIndex = 0;
         filteredCommands = [];
         searchResults = [];
+
+        // Reset scope to current page context
+        if (scopeBadge) {
+            scopeBadge.setScope(scopeBadge._detectContextScope());
+            currentScope = scopeBadge.getCurrentScope();
+            updatePlaceholder();
+        }
+
         renderRecentSearches();  // Show recent on open
     }
 
@@ -816,41 +855,58 @@ window.CommandPalette = (function() {
 
     /**
      * Perform debounced search with race condition handling
+     * Uses contextual search API with current scope
      */
     async function search(query) {
-        if (!context.institution_id) return;
-
         const searchId = ++currentSearchId;
         renderLoading();
+
+        // Build context from page data attributes
+        const wrapper = document.querySelector('.main-wrapper');
+        const institutionId = wrapper?.dataset.institutionId || context.institution_id;
+        const programId = wrapper?.dataset.programId || null;
+        const documentId = wrapper?.dataset.documentId || null;
+        const accreditorCode = wrapper?.dataset.accreditor || null;
 
         try {
             const payload = {
                 query,
-                filters: {
-                    ...activeFilters,
-                    sources: activeTab === 'all' ? [] : [activeTab]
-                },
-                limit: 30
+                scope: currentScope,
+                institution_id: institutionId,
+                program_id: programId,
+                document_id: documentId,
+                accreditor_code: accreditorCode,
+                sources: activeTab === 'all' ? [] : [activeTab],
+                per_page: 30
             };
 
-            const response = await fetch(
-                `/api/institutions/${context.institution_id}/global-search`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }
-            );
+            const response = await fetch('/api/search/contextual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
             if (searchId !== currentSearchId) return;  // Stale result
 
+            if (!response.ok) {
+                throw new Error(`Search failed: ${response.status}`);
+            }
+
             const data = await response.json();
-            searchResults = data.results || [];
+
+            // Map response to expected format
+            searchResults = data.items || [];
             selectedIndex = 0;
             saveRecentSearch(query);
-            renderSearchResultsWithTabs(data);
+
+            // Render with facets from response
+            renderSearchResultsWithTabs({
+                results: searchResults,
+                grouped_counts: data.facets || {}
+            });
         } catch (error) {
             if (searchId !== currentSearchId) return;
+            console.error('Search error:', error);
             renderSearchError();
         }
     }
@@ -872,6 +928,15 @@ window.CommandPalette = (function() {
         }
 
         switch (e.key) {
+            case 'Tab':
+                // Tab cycles scope when in search mode (not command mode)
+                if (!e.shiftKey && currentMode === MODES.SEARCH && scopeBadge) {
+                    e.preventDefault();
+                    scopeBadge.cycle();
+                }
+                // Note: Let default Tab behavior happen in command mode or with Shift
+                break;
+
             case 'ArrowDown':
                 e.preventDefault();
                 const maxIndex = currentMode === MODES.COMMAND ? filteredCommands.length - 1 : searchResults.length - 1;
@@ -1450,7 +1515,10 @@ window.CommandPalette = (function() {
         applyPreset,
         deletePreset,
         showSavePresetModal,
-        showPresetDropdown
+        showPresetDropdown,
+        // Scope management
+        getCurrentScope: () => currentScope,
+        setScope: (scope) => scopeBadge && scopeBadge.setScope(scope)
     };
 })();
 
