@@ -306,7 +306,7 @@ Plans:
 ### Phases
 
 - [x] **Phase 25: Context Model & Service Layer** - SearchContext model, FTS5 migration, ContextualSearchService with semantic + structured scoping (completed 2026-03-26)
-- [ ] **Phase 26: API & Backend Integration** - API blueprint with contextual endpoints, i18n strings, template data attributes
+- [x] **Phase 26: API & Backend Integration** - API blueprint with contextual endpoints, i18n strings, template data attributes (completed 2026-03-26)
 - [ ] **Phase 27: Frontend & Visual Testing** - JS component, command palette integration, inline search bar, scope cycling, visual testing
 
 ## Phase Details
@@ -337,10 +337,10 @@ Plans:
   3. GET /api/search/contextual/suggest returns query suggestions based on context
   4. Templates include data-scope-* attributes for automatic context detection
   5. i18n strings for scope names, source names, and UI labels exist in en-US and es-PR
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 26-01-PLAN.md — Contextual search API blueprint + i18n strings (SRCH-01, SRCH-02, SRCH-03, INT-02)
+- [x] 26-01-PLAN.md — Contextual search API blueprint + i18n strings (SRCH-01, SRCH-02, SRCH-03, INT-02)
 - [x] 26-02-PLAN.md — Template data attributes for context detection (INT-01)
 
 ### Phase 27: Frontend & Visual Testing
@@ -387,7 +387,7 @@ Plans:
 | 23. Audit Reproducibility | 2/2 | Complete | 2026-Q3 |
 | 24. Standards Harvester MVP | 2/2 | Complete | 2026-Q3 |
 | 25. Context Model & Service Layer | 2/2 | Complete    | 2026-03-26 |
-| 26. API & Backend Integration | 1/2 | In Progress|  |
+| 26. API & Backend Integration | 2/2 | Complete   | 2026-03-26 |
 | 27. Frontend & Visual Testing | 0/TBD | Not started | - |
 
 ---

@@ -82,9 +82,9 @@ Requirements for v1.6 - Context-Sensitive Search milestone.
 
 ### Search API
 
-- [ ] **SRCH-01**: POST /api/search/contextual returns scoped results with facets
-- [ ] **SRCH-02**: GET /api/search/contextual/sources returns available sources for a scope
-- [ ] **SRCH-03**: GET /api/search/contextual/suggest returns query suggestions
+- [x] **SRCH-01**: POST /api/search/contextual returns scoped results with facets
+- [x] **SRCH-02**: GET /api/search/contextual/sources returns available sources for a scope
+- [x] **SRCH-03**: GET /api/search/contextual/suggest returns query suggestions
 
 ### Search Frontend
 
@@ -96,7 +96,7 @@ Requirements for v1.6 - Context-Sensitive Search milestone.
 ### Integration
 
 - [x] **INT-01**: Templates include data attributes for automatic context detection
-- [ ] **INT-02**: i18n strings for scope names, source names, and UI labels (en-US, es-PR)
+- [x] **INT-02**: i18n strings for scope names, source names, and UI labels (en-US, es-PR)
 
 ## Future Requirements
 
@@ -183,15 +183,15 @@ Deferred to future milestones.
 | SRC-02 | Phase 25 | Complete |
 | SRC-03 | Phase 25 | Complete |
 | SRC-04 | Phase 25 | Complete |
-| SRCH-01 | Phase 26 | Pending |
-| SRCH-02 | Phase 26 | Pending |
-| SRCH-03 | Phase 26 | Pending |
+| SRCH-01 | Phase 26 | Complete |
+| SRCH-02 | Phase 26 | Complete |
+| SRCH-03 | Phase 26 | Complete |
 | SRCHUI-01 | Phase 27 | Pending |
 | SRCHUI-02 | Phase 27 | Pending |
 | SRCHUI-03 | Phase 27 | Pending |
 | SRCHUI-04 | Phase 27 | Pending |
 | INT-01 | Phase 26 | Complete |
-| INT-02 | Phase 26 | Pending |
+| INT-02 | Phase 26 | Complete |
 
 **v1.6 Coverage:**
 - v1.6 requirements: 15 total
