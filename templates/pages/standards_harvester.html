@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
+{% block data_page %}standards{% endblock %}
+{% block data_accreditor %}{{ selected_accreditor if selected_accreditor else '' }}{% endblock %}
+
 {% block title %}{{ t('harvester.title') }} - AccreditAI{% endblock %}
 
 {% block extra_head %}
