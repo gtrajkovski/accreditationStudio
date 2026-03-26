@@ -89,7 +89,7 @@ Requirements for v1.6 - Context-Sensitive Search milestone.
 ### Search Frontend
 
 - [ ] **SRCHUI-01**: Command palette shows scope badge and allows scope cycling
-- [ ] **SRCHUI-02**: Inline search bar in page header shows scope as placeholder
+- [x] **SRCHUI-02**: Inline search bar in page header shows scope as placeholder
 - [ ] **SRCHUI-03**: Results panel has tabs for each source with counts
 - [ ] **SRCHUI-04**: Keyboard shortcuts work (/, Ctrl+K, Tab, Shift+Up/Down)
 
@@ -187,7 +187,7 @@ Deferred to future milestones.
 | SRCH-02 | Phase 26 | Complete |
 | SRCH-03 | Phase 26 | Complete |
 | SRCHUI-01 | Phase 27 | Pending |
-| SRCHUI-02 | Phase 27 | Pending |
+| SRCHUI-02 | Phase 27 | Complete |
 | SRCHUI-03 | Phase 27 | Pending |
 | SRCHUI-04 | Phase 27 | Pending |
 | INT-01 | Phase 26 | Complete |

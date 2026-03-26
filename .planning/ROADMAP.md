@@ -353,11 +353,11 @@ Plans:
   3. Results panel has tabs for each source with result counts
   4. Keyboard shortcuts work (/, Ctrl+K to open, Tab to cycle scope, Shift+Up/Down for navigation)
   5. User can manually widen/narrow search scope via visible UI controls
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 27-01-PLAN.md — ScopeBadge component + command palette integration (CTX-02, CTX-03, SRCHUI-01)
-- [ ] 27-02-PLAN.md — Inline search bar component for page header (SRCHUI-02)
+- [x] 27-02-PLAN.md — Inline search bar component for page header (SRCHUI-02)
 - [ ] 27-03-PLAN.md — Results panel source tabs + keyboard navigation (SRCHUI-03, SRCHUI-04)
 
 ---
@@ -392,7 +392,7 @@ Plans:
 | 24. Standards Harvester MVP | 2/2 | Complete | 2026-Q3 |
 | 25. Context Model & Service Layer | 2/2 | Complete    | 2026-03-26 |
 | 26. API & Backend Integration | 2/2 | Complete    | 2026-03-26 |
-| 27. Frontend & Visual Testing | 0/3 | Not started | - |
+| 27. Frontend & Visual Testing | 1/3 | In Progress|  |
 
 ---
 
