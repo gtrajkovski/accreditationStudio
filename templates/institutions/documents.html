@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% from 'macros/page_header.html' import page_header %}
 
+{% block data_page %}institution-documents{% endblock %}
+{% block data_institution_id %}{{ institution.id }}{% endblock %}
+
 {% block title %}Documents - {{ institution.name }} - AccreditAI{% endblock %}
 
 {% block content %}
