@@ -69,7 +69,7 @@ Requirements for v1.6 - Context-Sensitive Search milestone.
 
 ### Search Context & Scoping
 
-- [ ] **CTX-01**: User's search automatically scopes to their current page context (institution, program, document)
+- [x] **CTX-01**: User's search automatically scopes to their current page context (institution, program, document)
 - [ ] **CTX-02**: User can manually widen/narrow search scope via UI controls
 - [ ] **CTX-03**: Search scope is visually indicated with a badge showing current level
 
@@ -77,7 +77,7 @@ Requirements for v1.6 - Context-Sensitive Search milestone.
 
 - [ ] **SRC-01**: User can search across 8 data sources (documents, document_text, standards, findings, evidence, knowledge_graph, truth_index, agent_sessions)
 - [ ] **SRC-02**: Semantic search (ChromaDB) respects scope via metadata filtering
-- [ ] **SRC-03**: Structured search (FTS5) respects scope via WHERE clause filtering
+- [x] **SRC-03**: Structured search (FTS5) respects scope via WHERE clause filtering
 - [ ] **SRC-04**: Results merge semantic + structured matches, deduplicated by item ID
 
 ### Search API
@@ -176,12 +176,12 @@ Deferred to future milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CTX-01 | Phase 25 | Pending |
+| CTX-01 | Phase 25 | Complete |
 | CTX-02 | Phase 27 | Pending |
 | CTX-03 | Phase 27 | Pending |
 | SRC-01 | Phase 25 | Pending |
 | SRC-02 | Phase 25 | Pending |
-| SRC-03 | Phase 25 | Pending |
+| SRC-03 | Phase 25 | Complete |
 | SRC-04 | Phase 25 | Pending |
 | SRCH-01 | Phase 26 | Pending |
 | SRCH-02 | Phase 26 | Pending |
