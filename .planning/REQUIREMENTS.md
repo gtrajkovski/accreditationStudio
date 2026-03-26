@@ -95,7 +95,7 @@ Requirements for v1.6 - Context-Sensitive Search milestone.
 
 ### Integration
 
-- [ ] **INT-01**: Templates include data attributes for automatic context detection
+- [x] **INT-01**: Templates include data attributes for automatic context detection
 - [ ] **INT-02**: i18n strings for scope names, source names, and UI labels (en-US, es-PR)
 
 ## Future Requirements
@@ -190,7 +190,7 @@ Deferred to future milestones.
 | SRCHUI-02 | Phase 27 | Pending |
 | SRCHUI-03 | Phase 27 | Pending |
 | SRCHUI-04 | Phase 27 | Pending |
-| INT-01 | Phase 26 | Pending |
+| INT-01 | Phase 26 | Complete |
 | INT-02 | Phase 26 | Pending |
 
 **v1.6 Coverage:**
