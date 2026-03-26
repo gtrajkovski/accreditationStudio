@@ -620,5 +620,39 @@
     "web_scrape": "Extracción Web",
     "pdf_parse": "Análisis PDF",
     "manual_upload": "Carga Manual"
+  },
+  "search": {
+    "scope": {
+      "global": "Todas las Instituciones",
+      "institution": "Esta Institucion",
+      "program": "Este Programa",
+      "document": "Este Documento",
+      "standards": "Biblioteca de Estandares",
+      "compliance": "Datos de Cumplimiento"
+    },
+    "source": {
+      "documents": "Documentos",
+      "document_text": "Texto de Documentos",
+      "standards": "Estandares",
+      "findings": "Hallazgos",
+      "evidence": "Evidencia",
+      "knowledge_graph": "Grafo de Conocimiento",
+      "truth_index": "Indice de Verdad",
+      "agent_sessions": "Sesiones de Agentes"
+    },
+    "results": {
+      "showing": "Mostrando {count} resultados",
+      "no_results": "No se encontraron resultados",
+      "search_error": "La busqueda fallo. Intente de nuevo.",
+      "facet_count": "{count} {source}"
+    },
+    "placeholder": {
+      "global": "Buscar en todas las instituciones...",
+      "institution": "Buscar en esta institucion...",
+      "program": "Buscar en este programa...",
+      "document": "Buscar en este documento...",
+      "standards": "Buscar estandares...",
+      "compliance": "Buscar datos de cumplimiento..."
+    }
   }
 }

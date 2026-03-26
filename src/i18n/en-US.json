@@ -620,5 +620,39 @@
     "web_scrape": "Web Scrape",
     "pdf_parse": "PDF Parse",
     "manual_upload": "Manual Upload"
+  },
+  "search": {
+    "scope": {
+      "global": "All Institutions",
+      "institution": "This Institution",
+      "program": "This Program",
+      "document": "This Document",
+      "standards": "Standards Library",
+      "compliance": "Compliance Data"
+    },
+    "source": {
+      "documents": "Documents",
+      "document_text": "Document Text",
+      "standards": "Standards",
+      "findings": "Findings",
+      "evidence": "Evidence",
+      "knowledge_graph": "Knowledge Graph",
+      "truth_index": "Truth Index",
+      "agent_sessions": "Agent Sessions"
+    },
+    "results": {
+      "showing": "Showing {count} results",
+      "no_results": "No results found",
+      "search_error": "Search failed. Please try again.",
+      "facet_count": "{count} {source}"
+    },
+    "placeholder": {
+      "global": "Search across all institutions...",
+      "institution": "Search this institution...",
+      "program": "Search this program...",
+      "document": "Search this document...",
+      "standards": "Search standards...",
+      "compliance": "Search compliance data..."
+    }
   }
 }
