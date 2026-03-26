@@ -21,6 +21,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/keyboard-help.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/contextual-search.css') }}">
 
     <!-- Preload theme to prevent flash -->
     <script>
@@ -303,6 +304,11 @@
                 <div class="header-actions">
                     {% block header_actions %}{% endblock %}
 
+                    <!-- Inline Search Bar (Phase 27) -->
+                    <div class="inline-search-container" id="inline-search-container">
+                        <!-- Populated by InlineSearchBar.create() -->
+                    </div>
+
                     <!-- Command Palette Trigger -->
                     <button class="btn btn-ghost" data-command-palette-trigger title="{{ t('commands.open_palette') }} (Ctrl+K)">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -455,6 +461,8 @@
     <script src="{{ url_for('static', filename='js/utils/toast.js') }}"></script>
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/scope_badge.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/contextual_search.js') }}"></script>
     <script src="{{ url_for('static', filename='js/command_palette.js') }}"></script>
     <script src="{{ url_for('static', filename='js/fab.js') }}"></script>
     <script src="{{ url_for('static', filename='js/site_visit_mode.js') }}"></script>
@@ -487,6 +495,12 @@
                         CommandPalette.open();
                     }
                 });
+            }
+
+            // Initialize Inline Search Bar (Phase 27)
+            const inlineSearchContainer = document.getElementById('inline-search-container');
+            if (inlineSearchContainer && typeof InlineSearchBar !== 'undefined') {
+                window.inlineSearchBar = InlineSearchBar.create(inlineSearchContainer);
             }
 
             // Dashboard tooltips (only on first visit to dashboard)
