@@ -321,7 +321,11 @@ Plans:
   3. Semantic search (ChromaDB) respects scope via metadata filtering
   4. Structured search (FTS5) respects scope via WHERE clause filtering
   5. Results from semantic + structured search are merged and deduplicated by item ID
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 25-01-PLAN.md — SearchContext model + FTS5 migration (CTX-01, SRC-03)
+- [ ] 25-02-PLAN.md — ContextualSearchService with 8-source search and deduplication (SRC-01, SRC-02, SRC-04)
 
 ### Phase 26: API & Backend Integration
 **Goal:** Search API endpoints support contextual queries with proper internationalization
@@ -379,7 +383,7 @@ Plans:
 | 22. Change Detection | 3/3 | Complete | 2026-Q3 |
 | 23. Audit Reproducibility | 2/2 | Complete | 2026-Q3 |
 | 24. Standards Harvester MVP | 2/2 | Complete | 2026-Q3 |
-| 25. Context Model & Service Layer | 0/TBD | Not started | - |
+| 25. Context Model & Service Layer | 0/2 | Not started | - |
 | 26. API & Backend Integration | 0/TBD | Not started | - |
 | 27. Frontend & Visual Testing | 0/TBD | Not started | - |
 
