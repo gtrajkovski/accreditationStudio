@@ -44,7 +44,7 @@ Requirements for v1.5 - Operational Intelligence milestone.
 
 - [x] **EVID-01**: Packet export blocked unless all selected standards have evidence
 - [x] **EVID-02**: Critical findings must be resolved or explicitly waived before export
-- [ ] **EVID-03**: Coverage step in Packet Studio shows gaps visually
+- [x] **EVID-03**: Coverage step in Packet Studio shows gaps visually
 
 ### Change Detection
 
@@ -59,9 +59,44 @@ Requirements for v1.5 - Operational Intelligence milestone.
 
 ### Standards Harvester
 
-- [ ] **HARV-01**: System can fetch and parse ACCSC standards PDF from official URL
-- [ ] **HARV-02**: Fetched standards stored with version date and hash
-- [ ] **HARV-03**: User can trigger fetch and view diff against previous version
+- [x] **HARV-01**: System can fetch and parse ACCSC standards PDF from official URL
+- [x] **HARV-02**: Fetched standards stored with version date and hash
+- [x] **HARV-03**: User can trigger fetch and view diff against previous version
+
+## v1.6 Requirements
+
+Requirements for v1.6 - Context-Sensitive Search milestone.
+
+### Search Context & Scoping
+
+- [ ] **CTX-01**: User's search automatically scopes to their current page context (institution, program, document)
+- [ ] **CTX-02**: User can manually widen/narrow search scope via UI controls
+- [ ] **CTX-03**: Search scope is visually indicated with a badge showing current level
+
+### Search Sources
+
+- [ ] **SRC-01**: User can search across 8 data sources (documents, document_text, standards, findings, evidence, knowledge_graph, truth_index, agent_sessions)
+- [ ] **SRC-02**: Semantic search (ChromaDB) respects scope via metadata filtering
+- [ ] **SRC-03**: Structured search (FTS5) respects scope via WHERE clause filtering
+- [ ] **SRC-04**: Results merge semantic + structured matches, deduplicated by item ID
+
+### Search API
+
+- [ ] **SRCH-01**: POST /api/search/contextual returns scoped results with facets
+- [ ] **SRCH-02**: GET /api/search/contextual/sources returns available sources for a scope
+- [ ] **SRCH-03**: GET /api/search/contextual/suggest returns query suggestions
+
+### Search Frontend
+
+- [ ] **SRCHUI-01**: Command palette shows scope badge and allows scope cycling
+- [ ] **SRCHUI-02**: Inline search bar in page header shows scope as placeholder
+- [ ] **SRCHUI-03**: Results panel has tabs for each source with counts
+- [ ] **SRCHUI-04**: Keyboard shortcuts work (/, Ctrl+K, Tab, Shift+Up/Down)
+
+### Integration
+
+- [ ] **INT-01**: Templates include data attributes for automatic context detection
+- [ ] **INT-02**: i18n strings for scope names, source names, and UI labels (en-US, es-PR)
 
 ## Future Requirements
 
@@ -123,16 +158,21 @@ Deferred to future milestones.
 | AUTO-03 | Phase 20 | Complete (20-02) |
 | EVID-01 | Phase 21 | Complete (21-01) |
 | EVID-02 | Phase 21 | Complete (21-01) |
-| EVID-03 | Phase 21 | Pending |
+| EVID-03 | Phase 21 | Complete (21-02) |
 | CHG-01 | Phase 22 | Complete (22-01) |
 | CHG-02 | Phase 22 | Complete (22-02) |
 | CHG-03 | Phase 22 | Complete (22-03) |
 | REPRO-01 | Phase 23 | Complete (23-01) |
 | REPRO-02 | Phase 23 | Complete (23-02) |
-| HARV-01 | Phase 24 | Pending |
-| HARV-02 | Phase 24 | Pending |
-| HARV-03 | Phase 24 | Pending |
+| HARV-01 | Phase 24 | Complete (24-01) |
+| HARV-02 | Phase 24 | Complete (24-01) |
+| HARV-03 | Phase 24 | Complete (24-02) |
+
+**v1.6 Coverage:**
+- v1.6 requirements: 15 total
+- Mapped to phases: 0 (pending roadmap)
+- Unmapped: 15
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-22 after Phase 23 completion*
+*Last updated: 2026-03-26 after v1.6 requirements definition*
