@@ -14,8 +14,10 @@
                 placeholder="{{ t('commands.search_or_command') }}"
                 autocomplete="off"
                 spellcheck="false"
+                aria-keyshortcuts="Slash Control+K Tab"
             />
-            <kbd class="command-palette-kbd">esc</kbd>
+            <div id="command-palette-scope-badge" class="scope-badge-container" aria-label="{{ t('search.scope.global') }}"></div>
+            <kbd class="command-palette-kbd" title="{{ t('commands.close') }}">esc</kbd>
         </div>
 
         <!-- Filter bar -->
@@ -79,6 +81,9 @@
             </span>
             <span class="command-hint">
                 <kbd>></kbd> {{ t('commands.commands') }}
+            </span>
+            <span class="command-hint">
+                <kbd>Tab</kbd> cycle scope
             </span>
             <span class="command-hint">
                 <kbd>esc</kbd> {{ t('commands.close') }}
@@ -666,5 +671,48 @@
     background: var(--bg-secondary);
     padding: 0 4px;
     border-radius: 2px;
+}
+
+/* Scope badge container in header */
+.scope-badge-container {
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: var(--spacing-sm);
+}
+
+/* Scope Badge Styles */
+.scope-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: 1px solid var(--accent-primary);
+    border-radius: var(--radius-full);
+    background: transparent;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-caps);
+    color: var(--accent-primary);
+    cursor: default;
+    transition: background 0.15s, color 0.15s;
+}
+
+.scope-badge:hover {
+    background: var(--accent-muted);
+}
+
+.scope-badge--active,
+.scope-badge:focus-within {
+    background: var(--accent-primary);
+    color: var(--bg-base);
+}
+
+.scope-badge__chevron {
+    opacity: 0.7;
+}
+
+[data-theme="light"] .scope-badge {
+    background: var(--accent-muted);
 }
 </style>
