@@ -1,15 +1,34 @@
 """PDF Exporter for Compliance Reports.
 
 Uses WeasyPrint to generate PDFs from HTML templates.
+WeasyPrint import is lazy to allow app startup on systems without GTK.
 """
 
 import os
 from pathlib import Path
 from typing import Dict, Any
 from flask import render_template
-from weasyprint import HTML
 
 from src.exporters.chart_generator import ChartGenerator
+
+# Lazy import for WeasyPrint (requires GTK on Windows)
+_weasyprint_html = None
+
+
+def _get_weasyprint_html():
+    """Lazy load WeasyPrint HTML class."""
+    global _weasyprint_html
+    if _weasyprint_html is None:
+        try:
+            from weasyprint import HTML
+            _weasyprint_html = HTML
+        except OSError as e:
+            raise RuntimeError(
+                "WeasyPrint requires GTK libraries. On Windows, install GTK3: "
+                "https://github.com/nicholasbishop/install-gtk-on-windows "
+                "or use Docker for PDF generation."
+            ) from e
+    return _weasyprint_html
 
 
 class PDFExporter:
@@ -41,7 +60,8 @@ class PDFExporter:
             data=data,
         )
 
-        # Generate PDF
+        # Generate PDF (lazy load WeasyPrint)
+        HTML = _get_weasyprint_html()
         pdf_bytes = HTML(string=html_string).write_pdf()
 
         return pdf_bytes

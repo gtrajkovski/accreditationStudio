@@ -10,7 +10,7 @@ from flask import Blueprint, jsonify, request, send_file, current_app
 from datetime import datetime
 
 from src.services.report_service import ReportService
-from src.exporters.pdf_exporter import PDFExporter
+# PDFExporter imported lazily inside functions to avoid WeasyPrint/GTK at startup
 from src.services.scheduler_service import (
     schedule_report, pause_schedule, resume_schedule, remove_schedule,
     list_schedules, get_schedule, get_delivery_logs
@@ -41,6 +41,9 @@ def generate_compliance_report(institution_id: str):
     Returns:
         JSON with report_id, file_path, download_url
     """
+    # Lazy import to avoid WeasyPrint/GTK dependency at app startup
+    from src.exporters.pdf_exporter import PDFExporter
+
     try:
         # Generate report data
         report_data = ReportService.generate_compliance_report_data(institution_id)

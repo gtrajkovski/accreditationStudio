@@ -14,7 +14,7 @@ from src.config import Config
 from src.db.connection import get_conn
 from src.services.report_service import ReportService
 from src.services.email_service import EmailService
-from src.exporters.pdf_exporter import PDFExporter
+# PDFExporter imported lazily to avoid WeasyPrint/GTK at startup
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +130,9 @@ def _execute_scheduled_report(schedule_id, institution_id, report_type, recipien
         report_type: Type of report
         recipients: List of email addresses
     """
+    # Lazy import to avoid WeasyPrint/GTK dependency at app startup
+    from src.exporters.pdf_exporter import PDFExporter
+
     conn = get_conn()
 
     try:
