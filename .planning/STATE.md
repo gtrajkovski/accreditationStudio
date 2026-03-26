@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Context-Sensitive Search
-status: defining_requirements
-last_updated: "2026-03-26T13:00:00Z"
+status: ready_to_plan
+last_updated: "2026-03-26T14:00:00Z"
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -13,522 +13,79 @@ progress:
 
 # AccreditAI State
 
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-03-26)
+
+**Core value:** Institutions can achieve and maintain accreditation compliance with minimal manual effort
+**Current focus:** Phase 25 - Context Model & Service Layer
+
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-26 — Milestone v1.6 started
+Phase: 25 of 27 (Context Model & Service Layer)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-03-26 — v1.6 roadmap created
 
-**v1.6 - Context-Sensitive Search** ⏳ DEFINING REQUIREMENTS
+Progress: [------------------------] 0% (v1.6)
 
-## Next Session: Start Here
+## v1.6 Phases Overview
 
-**v1.4 - Enterprise & Polish** ✅ RELEASED
+| Phase | Goal | Requirements |
+|-------|------|--------------|
+| 25 | Context Model & Service Layer | CTX-01, SRC-01, SRC-02, SRC-03, SRC-04 |
+| 26 | API & Backend Integration | SRCH-01, SRCH-02, SRCH-03, INT-01, INT-02 |
+| 27 | Frontend & Visual Testing | CTX-02, CTX-03, SRCHUI-01, SRCHUI-02, SRCHUI-03, SRCHUI-04 |
 
-All 3 phases complete (8/8 plans). v1.4 released 2026-03-21.
+## Performance Metrics
 
-**v1.5 - Operational Intelligence** ⏳ ACTIVE
+**Velocity (v1.5):**
+- Total plans completed: 12
+- Average duration: 7.5 min
+- Total execution time: 1.5 hours
 
-### Foundation Fixes Completed
-- ✅ Migration numbering fixed (0026/0027 → 0030/0031)
-- ✅ Autopilot stub guard added (NotImplementedError for run_audit=True)
-- ✅ Session round-trip tests created (7 tests pass)
-- ⚠️ Silent exception handlers: sample fix applied (290 remain for future sweep)
+**By Phase (v1.5):**
 
-### Phase 20: Autopilot & Morning Brief (COMPLETE)
-**Goal:** Nightly autopilot runs with morning brief generation
-**Requirements:** AUTO-01, AUTO-02, AUTO-03
-**Success Criteria:**
-  1. ✅ Autopilot runs for enabled institutions (wired to ComplianceAuditAgent)
-  2. ✅ Morning brief generated with readiness delta
-  3. ✅ User can trigger "Run Now" manually (POST /run-now, SSE progress)
-  4. ✅ Document changes detected via SHA256
-  5. ✅ Dashboard shows autopilot status and morning brief
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 20 | 3 | 19 min | 6.3 min |
+| 21 | 2 | 17 min | 8.5 min |
+| 22 | 3 | 27 min | 9.0 min |
+| 23 | 2 | 16 min | 8.0 min |
+| 24 | 2 | 16 min | 8.0 min |
 
-**Completed:**
-- 20-01: AutopilotService Enhancement (4.5 min, 13 tests)
-- 20-02: Autopilot API + Run Now (7 min, 19 tests)
-- 20-03: Autopilot Dashboard UI (7.5 min, 6 commits)
+**Recent Trend:**
+- v1.5 completed in 5 phases, 12 plans
+- Trend: Stable
 
-**Next:** Phase 21-02 - Packet Studio Coverage UI
+## Accumulated Context
 
-### Phase 21: Evidence Coverage Contract (COMPLETE)
-**Goal:** Packet export gating based on evidence coverage
-**Requirements:** EVID-01, EVID-02, EVID-03
-**Success Criteria:**
-  1. ✅ Packet export blocked without evidence coverage
-  2. ✅ Critical findings must be resolved or waived
-  3. ✅ Coverage step in Packet Studio shows gaps
+### Decisions
 
-**Completed:**
-- 21-01: validate_packet() + Export Gating (8 min, 13 tests)
-  - ValidationResult dataclass with ok, missing_standards, blocking_findings
-  - validate_packet() service function
-  - Export endpoint gating with checkpoint override
-  - CheckpointType enum with FINALIZE_SUBMISSION
-  - Commits: 0de649b, c3ab3d3, fd34eea, e38bf98
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-- 21-02: Coverage Step UI in Packet Studio (9.2 min, 5 commits)
-  - Coverage partial component with stats, progress bar, blocking panel
-  - Standards coverage list with evidence count badges
-  - Force export modal with checkpoint creation
-  - Export button state management based on validation
-  - Separate CSS component file (370 lines)
-  - Full i18n support (36 strings)
-  - Commits: 35d98a0, 0fe747e, ed13d72, 2f33e0f, db1cd25
+- Phase 13: Global search uses FTS5 for structured + ChromaDB for semantic
+- v1.6: Context-sensitive search builds on Phase 13 foundation
 
-- Gap Fix: Checkpoint API Endpoints (f2c92ab)
-  - POST/PATCH/GET /api/institutions/<id>/checkpoints
-  - Wires force export modal to human_checkpoints table
-  - Verification now passes 3/3 must-haves
+### Pending Todos
 
-### Phase 22: Change Detection + Targeted Re-Audit
-**Goal:** Incremental re-audits for changed documents only
-**Requirements:** CHG-01, CHG-02, CHG-03
-**Success Criteria:**
-  1. ✅ SHA256 diff on document upload
-  2. Changed documents trigger re-audit recommendation
-  3. Targeted re-audit runs only impacted items
+None yet.
 
-**Completed:**
-- 22-01: Change Detection Service (4 min, 7 tests)
-  - ChangeDetectionService with compute_file_hash, detect_change, record_change
-  - 3 REST endpoints (pending, count, polling)
-  - Document upload integration with SHA256 computation
-  - TDD workflow (RED → GREEN phases)
-  - Commits: 7893761, 4660530, 29a6290, 49f3a81
+### Blockers/Concerns
 
-- 22-02: Change Detection Dashboard UI (5.4 min, 5 tests)
-  - Cascade scope calculation (ReauditScope, get_affected_standards, get_impacted_documents, calculate_reaudit_scope)
-  - 2 API endpoints (scope, scope/preview)
-  - Non-blocking badge component with pulse animation
-  - ChangeDetectionManager class with 30s polling
-  - Modal with checkbox selection and scope preview
-  - i18n strings (12 keys, en-US and es-PR)
-  - Commits: 2060724, fe50754, 9b5cea2, 3725c60, 4fe987f
+None yet.
 
-- 22-03: Targeted Re-Audit Execution (18 min, 20 tests total)
-  - Side-by-side diff viewer with difflib.HtmlDiff (context mode, 3 lines)
-  - Targeted re-audit via ComplianceAuditAgent with cascade scope filtering
-  - 3 API endpoints (diff, reaudit, dismiss)
-  - Dark theme diff styling (green additions, red removals)
-  - JavaScript controller integration (showDiff, triggerReaudit, dismissChange)
-  - CHG-03 verified: ONLY cascade scope documents are re-audited
-  - Commits: 0432638, 1851613, 88c5e84, d90aa84, 24f26a0, 62aee52
+## Session Continuity
 
-### Phase 23: Audit Reproducibility (COMPLETE)
-**Goal:** Every audit can be explained and reproduced
-**Requirements:** REPRO-01, REPRO-02
-**Success Criteria:**
-  1. ✅ Audit runs store reproducibility bundle
-  2. ✅ User can view "How this audit was produced"
+Last session: 2026-03-26 13:00
+Stopped at: v1.6 roadmap creation complete
+Resume file: None
 
-**Completed:**
-- 23-01: Audit Reproducibility Bundle (7.3 min, 11 tests)
-  - Snapshot capture in ComplianceAuditAgent (init/finalize/analyze)
-  - GET /audits/{id}/reproducibility with summary/technical sections
-  - GET /audits/{id}/findings/{id}/provenance for finding-level data
-  - TDD workflow (RED → GREEN phases)
-  - Commits: d6a28e9, 0a5260d, b0610ab
+## Next Steps
 
-- 23-02: Reproducibility UI (8.9 min, 4 commits)
-  - Full reproducibility viewer page at /institutions/{id}/audits/{id}/reproducibility
-  - Executive summary with 5-card grid (model, date, accreditor, documents, threshold)
-  - Technical details toggle (system prompt, document hashes, tool definitions, truth index)
-  - Verification banner with pass/fail status
-  - Client-side JSON export functionality
-  - Full i18n support (30 keys en-US/es-PR)
-  - Human verification approved
-  - Commits: 60d6977, 6f02e7d, 37d2571, 11fc5b7
-
-### Phase 24: Standards Harvester MVP (COMPLETE)
-**Goal:** Fetch standards from accreditor websites
-**Requirements:** HARV-01, HARV-02, HARV-03
-**Success Criteria:**
-  1. ✅ Fetch ACCSC standards from official URL
-  2. ✅ Store with version date and hash
-  3. ✅ User can view diff against previous version
-
-**Completed:**
-- 24-01: Standards Harvester Backend (8 min, 13 tests)
-  - 3 harvester types (web/PDF/manual)
-  - Versioning service with SHA256 + diff generation
-  - 6 REST API endpoints
-  - Migration 0032_standards_harvester.sql
-  - Commits: c6e51c0, 8c57012, 3e98354
-
-- 24-02: Standards Harvester UI (8 min, 5 files)
-  - Tabbed source selection (Web Scrape, Upload PDF, Manual Entry)
-  - Version history table with source badges
-  - Side-by-side diff viewer modal
-  - Navigation link in sidebar
-  - Commit: d3e6a58
-
----
-
-## Progress Bar
-
-```
-v1.5: [████████████████████] 12/12 plans (100%) ✅ COMPLETE
-  Phase 20: [████████████████████] 3/3 plans (COMPLETE)
-  Phase 21: [████████████████████] 2/2 plans (COMPLETE)
-  Phase 22: [████████████████████] 3/3 plans (COMPLETE)
-  Phase 23: [████████████████████] 2/2 plans (COMPLETE)
-  Phase 24: [████████████████████] 2/2 plans (COMPLETE)
-```
-
----
-
-## Phase 19 - Audit Trail Export (COMPLETE)
-
-**Goal:** Users can export compliance audit trails for regulatory evidence
-
-### Plans (2/2 complete)
-
-1. **19-01: Audit Trail Export API** - Complete (5.1 min)
-   - AuditTrailService with query_sessions, get_session, get_agent_types
-   - 4 REST endpoints (list, get, agent-types, export)
-   - ISO8601 date range filtering (start_date, end_date)
-   - Agent type and operation filters
-   - JSON export with tool_calls, timestamps, confidence
-   - 11 service tests pass, 10 API tests written (blocked by pre-existing WeasyPrint issue)
-   - Commits: a45ace8, 2e4eefb, e8c2236, f8564f3
-
-2. **19-02: Audit Trail UI & ZIP Export** - Complete (5.2 min)
-   - ZIP packaging with manifest.json and optional compliance report
-   - Audit trails UI page with date/agent filters
-   - Dual-format export (JSON/ZIP) with report inclusion option
-   - Session detail modal with tool calls and metadata
-   - AuditTrailManager JavaScript class (880 lines)
-   - Full i18n support (27 keys en-US/es-PR)
-   - Commits: 86f9e14, 0c8ffea, 5b0463c, 35e7b2e
-
----
-
-## Phase 18 - API Documentation (COMPLETE)
-
-**Goal:** Developers can explore and integrate via interactive documentation
-
-### Plans (2/2 complete)
-
-1. **18-01: APIFlask Infrastructure** - Complete (7 min)
-   - APIFlask drop-in replacement for Flask with OpenAPI
-   - Swagger UI at /api/docs
-   - OpenAPI 3.0.3 spec at /api/spec.json
-   - 37 blueprint tags configured
-   - Marshmallow schema foundation (ErrorSchema, SuccessSchema, ValidationErrorSchema)
-   - Commits: 262b068, fa6c257, ccf8eb8
-
-2. **18-02: Endpoint Schema Annotations** - Complete (7 min)
-   - 22 Marshmallow schemas with examples for Swagger UI
-   - InstitutionSchema, DocumentSchema, AgentSessionSchema, StandardsLibrarySchema
-   - All fields have metadata examples for request form prefill
-   - Commits: b95f91b, fda7bd7, 655e8c9
-
----
-
-## Phase 17 - Report Enhancements (COMPLETE)
-
-**Goal:** Users can customize and compare compliance reports over time
-
-### Plans (4/4 complete)
-
-1. **17-01: Report Templates CRUD** - Complete (11.3 minutes)
-   - Database migration 0029_report_templates.sql
-   - 5 template CRUD methods in ReportService
-   - 5 REST endpoints in reports API
-   - JSON section storage with is_default enforcement
-   - Commits: c49b529, 9e70cd2
-
-2. **17-02: Report Comparison** ✅ Complete (16.5 minutes)
-   - ReportService.compare_reports method with delta calculation
-   - POST /api/reports/compare endpoint
-   - Side-by-side comparison UI with dropdowns
-   - Color-coded deltas (green/red/neutral)
-   - Severity-level breakdown deltas
-   - 8 new i18n keys (en-US, es-PR)
-   - Commits: ec42d7a, 3bd992a, ce99063
-
-3. **17-03: Trend Charts & Metric Customization** ✅ Complete (14.4 minutes)
-   - ReportService.get_readiness_trend method with date range filtering
-   - GET /api/reports/institutions/:id/trend endpoint (days parameter, max 365)
-   - Chart.js line chart with 30/60/90 day time range buttons
-   - Metric customization modal with localStorage persistence
-   - Per-institution preferences (metric-prefs-{institution_id})
-   - 9 new i18n keys (en-US, es-PR)
-   - Commits: 94612eb, a38067a, 40e3779
-
-4. **17-04: Gap Closure - Template Management UI** ✅ Complete (10.4 minutes)
-   - Template management section with table and empty state
-   - Create/edit template modal with section checkboxes
-   - 5 CRUD methods in ReportsManager (loadTemplates, renderTemplateList, openEditTemplate, createOrUpdateTemplate, deleteTemplate)
-   - Template list with edit/delete actions, default badge
-   - CSS styles for template section and modal
-   - 17 i18n keys (en-US, es-PR)
-   - Closes all 5 verification gaps (RPT-01, RPT-05 now fully satisfied)
-   - Commits: dde8e73, a3d5fd6, 29637f0, da433e9
-
----
-
-## v1.3 Complete ✅
-
-**Phase 15: AI Explainers** ✅
-**Phase 16: Reporting** ✅
-
----
-
-## v1.2 Complete ✅
-
-**Phase 14 Complete: Polish & UX** ✅
-
-All 3 plans complete:
-
-1. **14-01: Skeleton Loaders** ✅
-   - Synchronized skeleton CSS with background-attachment: fixed
-   - 7 skeleton variants (text, title, card, avatar, button, badge, etc.)
-   - Applied to dashboard, compliance, and work queue pages
-   - Theme-aware using CSS variables
-   - Window load listener swaps skeleton for real content
-   - Duration: 10 minutes
-
-2. **14-02: Keyboard Shortcuts Help Modal** ✅
-   - Accessible modal with ARIA attributes and focus trap
-   - 13 shortcuts grouped in 3 categories (Navigation, Actions, General)
-   - ? key global trigger, ESC to close
-   - Focus restoration to previous element
-   - Full i18n support (en-US, es-PR)
-   - WCAG 2.1 Level AA compliant
-   - Duration: 6 minutes
-
-3. **14-03: Onboarding Tooltips** ✅
-   - OnboardingManager class with per-institution localStorage state
-   - Tooltip CSS with arrow indicators (4 positions)
-   - Dashboard integration with 2 tooltips (work queue, command palette)
-   - Auto-dismiss (15s timeout) + interaction-based completion
-   - Added command palette trigger button in header
-   - Full i18n support (en-US, es-PR)
-   - Duration: 10.5 minutes
-
-**Commits (Plan 14-01):**
-- `335f22a` - feat(14-01): create synchronized skeleton loader CSS
-- `a9124e1` - feat(14-01): add skeleton loaders to dashboard
-- `a241b4b` - feat(14-01): add skeleton loaders to compliance and work queue pages
-
-**Commits (Plan 14-02):**
-- `93a6e64` - feat(14-02): create keyboard shortcuts modal HTML template
-- `396f611` - feat(14-02): create keyboard shortcuts modal JavaScript controller
-- `938ac0d` - feat(14-02): integrate keyboard shortcuts modal into base template
-
-**Commits (Plan 14-03):**
-- `66dd8e6` - feat(14-03): create OnboardingManager with localStorage state management
-- `1b32d30` - feat(14-03): create onboarding tooltip CSS with arrow indicators
-- `41a79c7` - feat(14-03): integrate onboarding system with dashboard tooltips
-
-**Key Decisions (14-01):**
-- Use background-attachment: fixed for synchronized shimmer across all skeleton elements
-- Window load event (not DOMContentLoaded) to ensure full page render before removing skeletons
-- Skeleton dimensions match real content to prevent cumulative layout shift
-- All skeleton styles use CSS variables for automatic theme adaptation
-
----
-
-## Post-MVP: Production Prep ✅ Complete & Verified
-
-**Essential Docker Compose Production Deployment:**
-- Added gunicorn WSGI server (replaces Flask dev server)
-- Created wsgi.py entry point
-- Environment-aware TEMPLATES_AUTO_RELOAD (False in production)
-- Updated Dockerfile CMD to use gunicorn (2 workers, 120s timeout)
-- Updated docker-compose.yml with ENVIRONMENT=production
-- Documented in .env.example
-
-**Docker Verification (2026-03-17):**
-- Image built: accreditai:latest (4.65GB)
-- Container health: UP (healthy)
-- Health endpoint: `{"ai_enabled":true,"status":"healthy"}`
-- Dashboard: 200 OK (81KB)
-- Gunicorn logs active with 30s health checks
-
-**Files Modified:**
-- `requirements.txt` - Added gunicorn>=21.0.0
-- `wsgi.py` - New WSGI entry point
-- `src/config.py` - Added ENVIRONMENT variable
-- `app.py` - Environment-aware template reload
-- `Dockerfile` - CMD now uses gunicorn
-- `docker-compose.yml` - ENVIRONMENT=production
-- `.env.example` - Production docs
-
----
-
-## Current Phase
-**Phase 16: Reporting** ✅ Complete (3/3 plans)
-
-## Session Date
-2026-03-21
-
-## Just Completed (This Session)
-1. **Phase 16-03** - Scheduled Report Delivery ✅
-   - EmailService with Flask-Mail (SMTP integration)
-   - SchedulerService with Flask-APScheduler (cron jobs)
-   - Database migration 0027_scheduled_reports.sql
-   - 8 scheduling API endpoints (create, list, get, patch, pause, resume, delete, logs)
-   - Schedule management UI with modal and table
-   - Daily, weekly, monthly schedules with email delivery
-   - Email delivery logging for audit trail
-   - Full i18n support (29 keys)
-   - Duration: 9.4 minutes
-   - Commits: fab34c1, cca033c, 227da60
-
-## Previously Completed (This Session)
-1. **Phase 16-02** - Executive Dashboard UI ✅
-   - Executive dashboard page template with hero metrics section
-   - Chart.js doughnut chart (readiness breakdown)
-   - Chart.js horizontal bar chart (findings by severity)
-   - ReportsManager JavaScript class (485 lines)
-   - Dashboard CSS with responsive design (370 lines)
-   - Navigation link in Analysis section
-   - i18n strings (en-US, es-PR)
-   - Duration: 9.4 minutes
-   - Commits: 75cf963, 35ac33d, 1fba648
-
-2. **Phase 16-01** - PDF Compliance Reports ✅
-   - ReportService with data aggregation (readiness, findings, documents, top standards)
-   - ChartGenerator with matplotlib (ring chart, bar chart)
-   - PDFExporter with WeasyPrint (HTML → PDF)
-   - Reports API blueprint (5 endpoints: generate, list, get, download, delete)
-   - Database migration 0026_reports.sql
-   - HTML templates with PDF CSS (@page rules, print-optimized)
-   - Duration: 11.3 minutes
-   - Commits: c2cce69, 3303ed7, e6f9d8e
-1. **Phase 15-01** - Explain Standard ✅
-   - StandardExplainerService with AI-powered plain-English generation
-   - Evidence checklists, common mistakes, regulatory context
-   - Version-based caching with SHA256 hash
-   - REST API endpoints (explain, refresh)
-   - Frontend JavaScript class with client-side caching
-   - Expandable inline UI with skeleton loaders
-   - Full i18n support (en-US, es-PR)
-   - 11 tests (100% pass rate)
-   - Duration: 8 minutes
-   - Commits: 65118d4, 6ff46f3
-
-2. **Phase 15-02** - Evidence Assistant ✅
-   - EvidenceAssistantService with context-aware search
-   - 1.5x weighting for required evidence types
-   - AI-generated follow-up suggestions
-   - REST API endpoints (/search, /suggestions)
-   - Dedicated UI with relevance badges (Required/Relevant/Related)
-   - Full i18n support (en-US, es-PR)
-   - 7 tests (100% pass rate)
-   - Duration: 11.5 minutes
-   - Commits: d41fe8c, 6d26e4c
-
-## Previously Completed (This Session)
-1. **Phase 15-03** - Persistent Chat ✅
-   - Database migration 0028_chat_persistence.sql (conversations + messages tables)
-   - ChatContextService for conversation management
-   - Auto-title generation from first user message
-   - 5 new API endpoints (create/list/get/delete conversations, suggestions)
-   - Enhanced chat UI with conversation sidebar
-   - Suggested follow-up prompts after AI responses
-   - SSE streaming with conversation context
-   - Full i18n support (en-US, es-PR)
-   - 8 tests (100% pass rate)
-   - Duration: 11 minutes
-   - Commits: 778ffa8, 84b2715, 0657c3f
-
-## Previously Completed
-1. **Phase 12-01** - Batch Operations Foundation
-   - Database migration (0025_bulk_operations.sql)
-   - BatchOperation and BatchItem models
-   - BatchService with cost estimation
-   - 11 tests (100% pass rate)
-   - Duration: 8 minutes
-
-2. **Phase 12-02** - Batch API Endpoints
-   - Batch audit endpoints (estimate, start, stream, cancel, retry)
-   - Batch remediation endpoints (same pattern)
-   - Batch history blueprint (CRUD + stats)
-   - SSE streaming for progress updates
-   - Duration: ~15 minutes
-
-3. **Phase 12-03** - Batch Operations UI
-   - JavaScript batch module (selection, modals, SSE)
-   - CSS styles (Gmail-style action bar, dark theme)
-   - Compliance page integration
-   - Human verification approved
-   - Duration: 13 minutes
-
-4. **Phase 12-04** - Batch History + Workbench Integration
-   - Batch history page with stats dashboard
-   - Detail modal for item results
-   - Workbench batch remediation selection
-   - Navigation integration
-   - Duration: 10 minutes
-
-5. **Phase 13-01** - Global Search API Foundation
-   - Global search service with 6 data sources
-   - Filter presets (save/load/delete)
-   - 6 API endpoints
-   - Duration: 15 minutes
-
-6. **Phase 13-02** - Command Palette UI
-   - Dual-mode detection (search/command)
-   - Live search with debounce
-   - Recent searches persistence
-   - Duration: 10 minutes
-
-7. **Phase 13-03** - Search Enhancements
-   - Filter chips with session persistence
-   - Result tabs with counts
-   - Filter preset management UI
-   - F2 deprecation redirect
-   - Duration: 12 minutes
-
-8. **Phase 14-01** - Skeleton Loaders
-   - Synchronized skeleton CSS with background-attachment: fixed
-   - 7 skeleton variants
-   - Applied to dashboard, compliance, work queue pages
-   - Theme-aware using CSS variables
-   - Duration: 10 minutes
-
-9. **Phase 14-02** - Keyboard Shortcuts Help Modal
-   - Accessible modal with ARIA and focus trap
-   - 13 shortcuts in 3 categories
-   - ? key trigger, ESC to close
-   - Focus restoration
-   - Duration: 6 minutes
-
-10. **Phase 14-03** - Onboarding Tooltips
-   - OnboardingManager class (274 lines) with per-institution localStorage
-   - Tooltip CSS (184 lines) with 4-position arrow indicators
-   - Dashboard tooltips: work queue badge, command palette trigger
-   - Command palette trigger button added to header
-   - Auto-dismiss + interaction tracking
-   - Duration: 10.5 minutes
-
-## Current Blueprints (35 total)
-```
-chat_bp, agents_bp, institutions_bp, standards_bp, settings_bp
-readiness_bp, work_queue_bp, autopilot_bp, audits_bp, remediation_bp
-checklists_bp, packets_bp, action_plans_bp, faculty_bp, catalog_bp
-exhibits_bp, achievements_bp, interview_prep_bp, ser_bp, team_reports_bp
-compliance_calendar_bp, document_reviews_bp, documents_bp
-impact_analysis_bp, knowledge_graph_bp, timeline_planner_bp, site_visit_bp
-coverage_map_bp, simulation_bp, portfolios_bp, evidence_highlighting_bp
-compliance_heatmap_bp, standard_explainer_bp, evidence_assistant_bp, reports_bp
-```
-
-## v1.4 Roadmap (Current Milestone)
-
-| Phase | Requirements | Features |
-|-------|--------------|----------|
-| 17 | RPT-01 to RPT-05 | Report Enhancements (custom templates, comparison, trends) |
-| 18 | API-01 to API-04 | API Documentation (OpenAPI/Swagger, interactive docs) |
-| 19 | AUD-01 to AUD-05 | Audit Trail Export (session logs, activity history, packaging) |
-
-## Repository
-- Remote: https://github.com/gtrajkovski/accreditationStudio
-- Branch: master
-- Latest tag: v1.3.0 (pending)
+1. Run `/gsd:plan-phase 25` to create detailed plans for Context Model & Service Layer
+2. Plans should cover:
+   - SearchContext model with 6 scope levels
+   - FTS5 migration for scope-aware indexes
+   - ContextualSearchService with semantic + structured scoping

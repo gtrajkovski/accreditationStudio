@@ -124,6 +124,8 @@ Deferred to future milestones.
 
 ## Traceability
 
+### v1.4 Traceability
+
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | RPT-01 | Phase 17 | Pending |
@@ -146,10 +148,7 @@ Deferred to future milestones.
 - Mapped to phases: 14
 - Unmapped: 0
 
-**v1.5 Coverage:**
-- v1.5 requirements: 14 total
-- Mapped to phases: 14
-- Unmapped: 0
+### v1.5 Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
@@ -168,11 +167,37 @@ Deferred to future milestones.
 | HARV-02 | Phase 24 | Complete (24-01) |
 | HARV-03 | Phase 24 | Complete (24-02) |
 
+**v1.5 Coverage:**
+- v1.5 requirements: 14 total
+- Mapped to phases: 14
+- Unmapped: 0
+
+### v1.6 Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CTX-01 | Phase 25 | Pending |
+| CTX-02 | Phase 27 | Pending |
+| CTX-03 | Phase 27 | Pending |
+| SRC-01 | Phase 25 | Pending |
+| SRC-02 | Phase 25 | Pending |
+| SRC-03 | Phase 25 | Pending |
+| SRC-04 | Phase 25 | Pending |
+| SRCH-01 | Phase 26 | Pending |
+| SRCH-02 | Phase 26 | Pending |
+| SRCH-03 | Phase 26 | Pending |
+| SRCHUI-01 | Phase 27 | Pending |
+| SRCHUI-02 | Phase 27 | Pending |
+| SRCHUI-03 | Phase 27 | Pending |
+| SRCHUI-04 | Phase 27 | Pending |
+| INT-01 | Phase 26 | Pending |
+| INT-02 | Phase 26 | Pending |
+
 **v1.6 Coverage:**
 - v1.6 requirements: 15 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 15
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-26 after v1.6 requirements definition*
+*Last updated: 2026-03-26 after v1.6 roadmap creation*

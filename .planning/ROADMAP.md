@@ -282,20 +282,72 @@ Plans:
 - [x] 23-01-PLAN.md — Wire reproducibility capture into ComplianceAuditAgent, add API endpoint (REPRO-01) ✅ **COMPLETE** (d6a28e9, 0a5260d, b0610ab)
 - [x] 23-02-PLAN.md — Reproducibility viewer UI at /audits/{id}/reproducibility (REPRO-02) ✅ **COMPLETE** (60d6977, 6f02e7d, 37d2571, 11fc5b7)
 
-### Phase 24: Standards Harvester MVP
+### Phase 24: Standards Harvester MVP ✅ COMPLETE
 **Goal:** Fetch standards from accreditor websites and track version changes
 **Depends on:** Nothing (new feature)
 **Requirements:** HARV-01, HARV-02, HARV-03
 **Success Criteria** (what must be TRUE):
-  1. Fetch ACCSC standards from official URL
-  2. Store with version date and hash
-  3. User can view diff against previous version
+  1. ✅ Fetch ACCSC standards from official URL
+  2. ✅ Store with version date and hash
+  3. ✅ User can view diff against previous version
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 24-01-PLAN.md — Harvesters (web/PDF/manual) + versioning service + migration + API + tests (HARV-01, HARV-02, HARV-03)
-- [ ] 24-02-PLAN.md — Standards Harvester UI page with tabbed fetch, version list, diff viewer (HARV-01, HARV-03)
+- [x] 24-01-PLAN.md — Harvesters (web/PDF/manual) + versioning service + migration + API + tests (HARV-01, HARV-02, HARV-03) ✅ **COMPLETE**
+- [x] 24-02-PLAN.md — Standards Harvester UI page with tabbed fetch, version list, diff viewer (HARV-01, HARV-03) ✅ **COMPLETE**
+
+---
+
+## Milestone: v1.6 - Context-Sensitive Search
+
+**Milestone Goal:** Upgrade global search to automatically scope results based on where the user is in the application hierarchy. Search becomes context-aware with 6 scope levels and 8 search sources.
+
+### Phases
+
+- [ ] **Phase 25: Context Model & Service Layer** - SearchContext model, FTS5 migration, ContextualSearchService with semantic + structured scoping
+- [ ] **Phase 26: API & Backend Integration** - API blueprint with contextual endpoints, i18n strings, template data attributes
+- [ ] **Phase 27: Frontend & Visual Testing** - JS component, command palette integration, inline search bar, scope cycling, visual testing
+
+## Phase Details
+
+### Phase 25: Context Model & Service Layer
+**Goal:** Users' search queries are automatically scoped based on their current location in the application
+**Depends on:** Phase 24 (continues from v1.5)
+**Requirements:** CTX-01, SRC-01, SRC-02, SRC-03, SRC-04
+**Success Criteria** (what must be TRUE):
+  1. SearchContext model defines 6 scope levels (Global, Institution, Program, Document, Standards, Compliance)
+  2. FTS5 indexes exist for all 8 search sources with proper scope columns
+  3. Semantic search (ChromaDB) respects scope via metadata filtering
+  4. Structured search (FTS5) respects scope via WHERE clause filtering
+  5. Results from semantic + structured search are merged and deduplicated by item ID
+**Plans**: TBD
+
+### Phase 26: API & Backend Integration
+**Goal:** Search API endpoints support contextual queries with proper internationalization
+**Depends on:** Phase 25
+**Requirements:** SRCH-01, SRCH-02, SRCH-03, INT-01, INT-02
+**Success Criteria** (what must be TRUE):
+  1. POST /api/search/contextual returns scoped results with facets
+  2. GET /api/search/contextual/sources returns available sources for a given scope
+  3. GET /api/search/contextual/suggest returns query suggestions based on context
+  4. Templates include data-scope-* attributes for automatic context detection
+  5. i18n strings for scope names, source names, and UI labels exist in en-US and es-PR
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 27: Frontend & Visual Testing
+**Goal:** Users can interact with context-sensitive search through the command palette and inline search bar
+**Depends on:** Phase 26
+**Requirements:** CTX-02, CTX-03, SRCHUI-01, SRCHUI-02, SRCHUI-03, SRCHUI-04
+**Success Criteria** (what must be TRUE):
+  1. Command palette shows current scope badge and allows manual scope cycling
+  2. Inline search bar in page header shows scope as placeholder text
+  3. Results panel has tabs for each source with result counts
+  4. Keyboard shortcuts work (/, Ctrl+K to open, Tab to cycle scope, Shift+Up/Down for navigation)
+  5. User can manually widen/narrow search scope via visible UI controls
+**Plans**: TBD
+**UI hint**: yes
 
 ---
 
@@ -326,7 +378,10 @@ Plans:
 | 21. Evidence Coverage Contract | 2/2 | Complete | 2026-Q3 |
 | 22. Change Detection | 3/3 | Complete | 2026-Q3 |
 | 23. Audit Reproducibility | 2/2 | Complete | 2026-Q3 |
-| 24. Standards Harvester MVP | 0/2 | Planning | - |
+| 24. Standards Harvester MVP | 2/2 | Complete | 2026-Q3 |
+| 25. Context Model & Service Layer | 0/TBD | Not started | - |
+| 26. API & Backend Integration | 0/TBD | Not started | - |
+| 27. Frontend & Visual Testing | 0/TBD | Not started | - |
 
 ---
 
@@ -359,9 +414,3 @@ Plans:
 - `institutions.py` - Institution CRUD
 - `documents.py` - Document upload and management
 - `standards.py` - Standards library CRUD with 10 endpoints
-
-### Frontend
-- Dashboard with compliance metrics
-- Institution management
-- Program CRUD (modal-based)
-- Chat panel with SSE streaming
