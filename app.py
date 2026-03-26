@@ -840,6 +840,12 @@ def evidence_assistant():
     return render_template('evidence_assistant.html')
 
 
+@app.route('/standards-harvester')
+def standards_harvester_page():
+    """Standards Harvester page."""
+    return render_template('pages/standards_harvester.html')
+
+
 @app.route('/agent-sessions')
 def agent_sessions():
     """Agent sessions management page."""

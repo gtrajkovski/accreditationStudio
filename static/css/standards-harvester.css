@@ -1,0 +1,512 @@
+/* Standards Harvester Page Styles */
+
+.harvester-page {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.harvester-header {
+    margin-bottom: 24px;
+}
+
+.harvester-header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.harvester-subtitle {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.harvester-card {
+    margin-bottom: 24px;
+}
+
+.harvester-card .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+/* Source Tabs */
+.source-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0;
+}
+
+.source-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    margin-bottom: -1px;
+}
+
+.source-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+.source-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.source-tab svg {
+    opacity: 0.7;
+}
+
+.source-tab.active svg {
+    opacity: 1;
+}
+
+/* Source Panels */
+.source-panels {
+    min-height: 200px;
+}
+
+.source-panel {
+    display: none;
+}
+
+.source-panel.active {
+    display: block;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    font-family: 'Courier New', monospace;
+    line-height: 1.5;
+}
+
+.form-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding: 8px 12px;
+    background: var(--bg-info);
+    border-radius: 6px;
+}
+
+/* Result Banner */
+.result-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    animation: slideIn 0.3s ease;
+}
+
+.result-banner.success {
+    background: rgba(74, 222, 128, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.result-banner.error {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.result-banner.info {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.banner-close {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.7;
+    padding: 0 4px;
+}
+
+.banner-close:hover {
+    opacity: 1;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Version Table */
+.version-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.version-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+}
+
+.version-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+}
+
+.version-table tr:last-child td {
+    border-bottom: none;
+}
+
+.version-table tr:hover td {
+    background: var(--bg-hover);
+}
+
+/* Source Type Badges */
+.source-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.source-badge.web_scrape {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.source-badge.pdf_parse {
+    background: rgba(167, 139, 250, 0.2);
+    color: #a78bfa;
+}
+
+.source-badge.manual_upload {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+
+/* Hash Display */
+.hash-display {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--bg-input);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* Empty and Loading States */
+.empty-state,
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.empty-state svg {
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.loading-state {
+    flex-direction: row;
+    gap: 12px;
+    padding: 24px;
+}
+
+/* Diff Modal */
+.diff-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.diff-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.diff-modal-content {
+    position: relative;
+    width: 95%;
+    max-width: 1200px;
+    max-height: 90vh;
+    background: var(--bg-card);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.diff-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.diff-modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.diff-modal-meta {
+    display: flex;
+    gap: 24px;
+    padding: 12px 24px;
+    background: var(--bg-secondary);
+    font-size: 0.85rem;
+}
+
+.diff-meta-item {
+    display: flex;
+    gap: 8px;
+}
+
+.diff-meta-item strong {
+    color: var(--text-secondary);
+}
+
+.diff-modal-body {
+    flex: 1;
+    overflow: auto;
+    padding: 16px 24px;
+}
+
+.diff-container {
+    min-height: 200px;
+}
+
+.diff-container .diff-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    color: var(--text-secondary);
+}
+
+/* Diff Table Styling (from difflib.HtmlDiff) */
+.diff-container table {
+    width: 100%;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    border-collapse: collapse;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.diff-container table td,
+.diff-container table th {
+    padding: 4px 8px;
+    vertical-align: top;
+}
+
+/* Line numbers */
+.diff-container table td:nth-child(1),
+.diff-container table td:nth-child(3) {
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    text-align: right;
+    width: 40px;
+    user-select: none;
+}
+
+/* Content columns */
+.diff-container table td:nth-child(2),
+.diff-container table td:nth-child(4) {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Addition highlighting */
+.diff-container .diff_add {
+    background: rgba(22, 101, 52, 0.4) !important;
+    color: #86efac;
+}
+
+/* Removal highlighting */
+.diff-container .diff_sub {
+    background: rgba(153, 27, 27, 0.4) !important;
+    color: #fca5a5;
+}
+
+/* Changed highlighting */
+.diff-container .diff_chg {
+    background: rgba(180, 83, 9, 0.3) !important;
+    color: #fcd34d;
+}
+
+/* First version info box */
+.diff-info {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-secondary);
+    background: var(--bg-info);
+    border-radius: 8px;
+}
+
+.diff-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Loading Overlay */
+.harvester-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1100;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.harvester-loading .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: white;
+    font-size: 1rem;
+}
+
+.spinner-lg {
+    width: 48px;
+    height: 48px;
+}
+
+/* Button adjustments */
+.source-panel .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .harvester-page {
+        padding: 16px;
+    }
+
+    .source-tabs {
+        flex-wrap: wrap;
+    }
+
+    .source-tab {
+        flex: 1;
+        justify-content: center;
+        min-width: 100px;
+    }
+
+    .diff-modal-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .version-table {
+        display: block;
+        overflow-x: auto;
+    }
+}

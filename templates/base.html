@@ -273,6 +273,13 @@
                         </svg>
                         Evidence Finder
                     </a>
+                    <a href="{{ url_for('standards_harvester_page') }}" class="nav-item {% if request.endpoint == 'standards_harvester_page' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                            <line x1="4" y1="22" x2="4" y2="15"/>
+                        </svg>
+                        {{ t('harvester.title') }}
+                    </a>
                     <a href="{{ url_for('agent_sessions') }}" class="nav-item {% if request.endpoint == 'agent_sessions' %}active{% endif %}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3"/>

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('harvester.title') }} - AccreditAI{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/standards-harvester.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="harvester-page">
+    <!-- Header -->
+    <div class="harvester-header">
+        <div>
+            <h1>{{ t('harvester.title') }}</h1>
+            <p class="harvester-subtitle">{{ t('harvester.subtitle') }}</p>
+        </div>
+    </div>
+
+    <!-- Fetch Form Section -->
+    <div class="harvester-card card">
+        <h2 class="card-title">{{ t('harvester.fetch_standards') }}</h2>
+
+        <!-- Shared Accreditor Select -->
+        <div class="form-group">
+            <label for="accreditor-select">{{ t('harvester.accreditor') }}</label>
+            <select id="accreditor-select" class="form-select">
+                <option value="ACCSC">ACCSC</option>
+                <option value="SACSCOC">SACSCOC</option>
+                <option value="HLC">HLC</option>
+                <option value="ABHES">ABHES</option>
+                <option value="COE">COE</option>
+            </select>
+        </div>
+
+        <!-- Source Tabs -->
+        <div class="source-tabs">
+            <button class="source-tab active" data-tab="web_scrape">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="2" y1="12" x2="22" y2="12"/>
+                    <path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+                </svg>
+                {{ t('harvester.web_scrape') }}
+            </button>
+            <button class="source-tab" data-tab="pdf_parse">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                {{ t('harvester.pdf_parse') }}
+            </button>
+            <button class="source-tab" data-tab="manual_upload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                {{ t('harvester.manual_upload') }}
+            </button>
+        </div>
+
+        <!-- Tab Panels -->
+        <div class="source-panels">
+            <!-- Web Scrape Panel -->
+            <div class="source-panel active" id="panel-web_scrape">
+                <div class="form-group">
+                    <label for="source-url">{{ t('harvester.source_url') }}</label>
+                    <input type="url" id="source-url" class="form-input" placeholder="https://www.accsc.org/standards/...">
+                </div>
+                <div class="form-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                    Web scraping has a 12-second rate limit delay per request.
+                </div>
+                <button id="fetch-web-btn" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    {{ t('harvester.fetch_standards') }}
+                </button>
+            </div>
+
+            <!-- PDF Upload Panel -->
+            <div class="source-panel" id="panel-pdf_parse">
+                <div class="form-group">
+                    <label for="pdf-file">{{ t('harvester.upload_pdf') }}</label>
+                    <input type="file" id="pdf-file" class="form-input" accept=".pdf">
+                </div>
+                <button id="upload-pdf-btn" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    {{ t('harvester.upload_pdf') }}
+                </button>
+            </div>
+
+            <!-- Manual Entry Panel -->
+            <div class="source-panel" id="panel-manual_upload">
+                <div class="form-group">
+                    <label for="manual-text">{{ t('harvester.manual_entry') }}</label>
+                    <textarea id="manual-text" class="form-textarea" rows="10" placeholder="Paste standards text here..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="manual-version-date">{{ t('harvester.version_date') }} (Optional)</label>
+                    <input type="date" id="manual-version-date" class="form-input">
+                </div>
+                <button id="submit-manual-btn" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    {{ t('common.save') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Banner (hidden by default) -->
+    <div id="result-banner" class="result-banner" style="display: none;">
+        <span id="result-message"></span>
+        <button class="banner-close" onclick="document.getElementById('result-banner').style.display='none'">&times;</button>
+    </div>
+
+    <!-- Version History Section -->
+    <div class="harvester-card card">
+        <h2 class="card-title">{{ t('harvester.versions') }}</h2>
+
+        <div id="versions-loading" class="loading-state">
+            <div class="spinner"></div>
+            <span>{{ t('common.loading') }}</span>
+        </div>
+
+        <div id="versions-empty" class="empty-state" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                <path d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <p>{{ t('harvester.no_versions') }}</p>
+        </div>
+
+        <table id="versions-table" class="version-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>{{ t('harvester.version_date') }}</th>
+                    <th>{{ t('harvester.source_type') }}</th>
+                    <th>{{ t('harvester.content_hash') }}</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="versions-tbody">
+                <!-- Rows populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Diff Viewer Modal -->
+<div class="diff-modal" id="diff-modal" style="display: none;">
+    <div class="diff-modal-backdrop" onclick="window.harvesterManager.hideDiffModal()"></div>
+    <div class="diff-modal-content">
+        <div class="diff-modal-header">
+            <h3>{{ t('harvester.diff_title') }}</h3>
+            <button class="modal-close" onclick="window.harvesterManager.hideDiffModal()" aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="diff-modal-meta" id="diff-meta">
+            <span class="diff-meta-item">
+                <strong>{{ t('harvester.previous_version') }}:</strong>
+                <span id="diff-old-date">-</span>
+            </span>
+            <span class="diff-meta-item">
+                <strong>{{ t('harvester.current_version') }}:</strong>
+                <span id="diff-new-date">-</span>
+            </span>
+        </div>
+        <div class="diff-modal-body">
+            <div class="diff-container" id="diff-container">
+                <div class="diff-loading">{{ t('common.loading') }}</div>
+            </div>
+        </div>
+        <div class="diff-modal-footer">
+            <button class="btn btn-secondary" onclick="window.harvesterManager.hideDiffModal()">
+                {{ t('common.close') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="harvester-loading" class="harvester-loading" style="display: none;">
+    <div class="loading-content">
+        <div class="spinner spinner-lg"></div>
+        <span id="loading-message">{{ t('common.loading') }}</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/standards-harvester.js') }}"></script>
+{% endblock %}
