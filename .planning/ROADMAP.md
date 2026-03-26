@@ -387,7 +387,7 @@ Plans:
 | 23. Audit Reproducibility | 2/2 | Complete | 2026-Q3 |
 | 24. Standards Harvester MVP | 2/2 | Complete | 2026-Q3 |
 | 25. Context Model & Service Layer | 2/2 | Complete    | 2026-03-26 |
-| 26. API & Backend Integration | 2/2 | Complete   | 2026-03-26 |
+| 26. API & Backend Integration | 2/2 | Complete    | 2026-03-26 |
 | 27. Frontend & Visual Testing | 0/TBD | Not started | - |
 
 ---
