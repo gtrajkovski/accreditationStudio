@@ -73,6 +73,8 @@ class VectorStore:
                 "page_number": c.page_number,
                 "section_header": c.section_header or "",
                 "doc_type": c.metadata.get("doc_type", ""),
+                "institution_id": c.metadata.get("institution_id", ""),
+                "program_id": c.metadata.get("program_id", ""),
             }
             for c in valid_chunks
         ]
@@ -109,6 +111,65 @@ class VectorStore:
             where["doc_type"] = filter_doc_type
         if filter_document_id:
             where["document_id"] = filter_document_id
+
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=n_results,
+            where=where if where else None,
+            include=["documents", "metadatas", "distances"],
+        )
+
+        search_results = []
+        if results["ids"] and results["ids"][0]:
+            for i, chunk_id in enumerate(results["ids"][0]):
+                distance = results["distances"][0][i] if results["distances"] else 0
+                # Convert cosine distance to similarity score
+                score = 1 - distance
+
+                chunk = DocumentChunk(
+                    id=chunk_id,
+                    document_id=results["metadatas"][0][i].get("document_id", ""),
+                    chunk_index=results["metadatas"][0][i].get("chunk_index", 0),
+                    page_number=results["metadatas"][0][i].get("page_number", 1),
+                    section_header=results["metadatas"][0][i].get("section_header", ""),
+                    text_anonymized=results["documents"][0][i] if results["documents"] else "",
+                )
+
+                search_results.append(SearchResult(
+                    chunk=chunk,
+                    score=score,
+                    distance=distance,
+                ))
+
+        return search_results
+
+    def search_with_scope(
+        self,
+        query_embedding: List[float],
+        n_results: int = 10,
+        scope_where: Optional[Dict[str, Any]] = None,
+        filter_doc_type: Optional[str] = None,
+    ) -> List[SearchResult]:
+        """Search with scope filtering via metadata where clause.
+
+        Args:
+            query_embedding: Query embedding vector.
+            n_results: Maximum results to return.
+            scope_where: Scope filter dict from SearchContext.to_chromadb_where().
+            filter_doc_type: Optional document type filter.
+
+        Returns:
+            List of SearchResult ordered by relevance.
+        """
+        where = {}
+
+        # Add scope filters
+        if scope_where:
+            where.update(scope_where)
+
+        # Add type filter
+        if filter_doc_type:
+            where["doc_type"] = filter_doc_type
 
         results = self.collection.query(
             query_embeddings=[query_embedding],
