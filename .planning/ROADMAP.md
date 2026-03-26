@@ -337,8 +337,11 @@ Plans:
   3. GET /api/search/contextual/suggest returns query suggestions based on context
   4. Templates include data-scope-* attributes for automatic context detection
   5. i18n strings for scope names, source names, and UI labels exist in en-US and es-PR
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 2 plans
+
+Plans:
+- [ ] 26-01-PLAN.md — Contextual search API blueprint + i18n strings (SRCH-01, SRCH-02, SRCH-03, INT-02)
+- [ ] 26-02-PLAN.md — Template data attributes for context detection (INT-01)
 
 ### Phase 27: Frontend & Visual Testing
 **Goal:** Users can interact with context-sensitive search through the command palette and inline search bar
@@ -384,7 +387,7 @@ Plans:
 | 23. Audit Reproducibility | 2/2 | Complete | 2026-Q3 |
 | 24. Standards Harvester MVP | 2/2 | Complete | 2026-Q3 |
 | 25. Context Model & Service Layer | 2/2 | Complete    | 2026-03-26 |
-| 26. API & Backend Integration | 0/TBD | Not started | - |
+| 26. API & Backend Integration | 0/2 | Not started | - |
 | 27. Frontend & Visual Testing | 0/TBD | Not started | - |
 
 ---
