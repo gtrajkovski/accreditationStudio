@@ -12,6 +12,7 @@ from src.api.work_queue import work_queue_bp, init_work_queue_bp
 from src.api.autopilot import autopilot_bp, init_autopilot_bp
 from src.api.reports import reports_bp, init_reports_bp
 from src.api.audit_trails import audit_trails_bp, init_audit_trails_bp
+from src.api.contextual_search import contextual_search_bp, init_contextual_search_bp
 
 __all__ = [
     "chat_bp",
@@ -32,4 +33,6 @@ __all__ = [
     "init_reports_bp",
     "audit_trails_bp",
     "init_audit_trails_bp",
+    "contextual_search_bp",
+    "init_contextual_search_bp",
 ]

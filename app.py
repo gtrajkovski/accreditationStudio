@@ -66,6 +66,7 @@ from src.api.standard_explainer import standard_explainer_bp, init_standard_expl
 from src.api.evidence_assistant import evidence_assistant_bp, init_evidence_assistant_bp
 from src.api.change_detection import change_detection_bp, init_change_detection_bp
 from src.api.standards_harvester import standards_harvester_bp, init_standards_harvester_bp
+from src.api.contextual_search import contextual_search_bp, init_contextual_search_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 from src.services.chat_context_service import ChatContextService
@@ -170,6 +171,7 @@ app.config["TAGS"] = [
     {"name": "Work Queue", "description": "Task queue management"},
     {"name": "Autopilot", "description": "Autopilot settings"},
     {"name": "Action Plans", "description": "Action plan tracking"},
+    {"name": "Contextual Search", "description": "Context-aware search API"},
 ]
 
 # Import schemas before blueprint registration (required for apispec)
@@ -237,6 +239,7 @@ init_reports_bp(workspace_manager)
 init_audit_trails_bp(workspace_manager)
 init_change_detection_bp(workspace_manager)
 init_standards_harvester_bp(workspace_manager)
+init_contextual_search_bp(workspace_manager, standards_store)
 
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
@@ -278,6 +281,7 @@ app.register_blueprint(reports_bp)
 app.register_blueprint(audit_trails_bp)
 app.register_blueprint(change_detection_bp)
 app.register_blueprint(standards_harvester_bp)
+app.register_blueprint(contextual_search_bp)
 
 
 # =============================================================================
