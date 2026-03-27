@@ -911,6 +911,21 @@ def institution_document_reviews(id):
     )
 
 
+@app.route('/institutions/<id>/state-regulations')
+def institution_state_regulations(id):
+    """State regulations compliance page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/state_regulations.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
 @app.route('/chat')
 def chat():
     """AI chat interface page."""

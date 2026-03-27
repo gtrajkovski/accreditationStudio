@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+{% block title %}State Regulations - {{ institution.name }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/state-regulations.css') }}">
+{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="showLoadPresetModal()">Load State Preset</button>
+<button class="btn btn-primary" onclick="showAddStateModal()">Add State</button>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='State Regulations',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('State Regulations', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<!-- Summary Cards -->
+<div class="dashboard-grid mb-lg">
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Total States</h3>
+        <div style="font-size:2rem;font-weight:700;" id="totalStatesCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Authorized</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-success" id="authorizedCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Pending</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-warning" id="pendingCount">-</div>
+    </div>
+    <div class="card" style="text-align:center;padding:var(--spacing-lg);">
+        <h3 class="card-title mb-md">Expiring Soon</h3>
+        <div style="font-size:2rem;font-weight:700;" class="text-danger" id="expiringCount">-</div>
+    </div>
+</div>
+
+<!-- Main Layout -->
+<div class="state-regulations-layout">
+    <!-- State List Panel -->
+    <div class="state-list-panel">
+        <h3 class="card-title mb-md">States</h3>
+        <div id="statesList">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                </div>
+                <div class="empty-state-title">No states added yet</div>
+                <p>Add state authorizations to track compliance.</p>
+                <div class="empty-state-action">
+                    <button class="btn btn-primary" onclick="showAddStateModal()">Add State</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State Details Panel -->
+    <div class="state-details-panel" id="stateDetailsPanel" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-md);">
+            <h3 id="selectedStateName" style="margin:0;"></h3>
+            <div style="display:flex;gap:var(--spacing-sm);">
+                <button class="btn btn-secondary btn-sm" onclick="showEditAuthModal()">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteCurrentState()">Delete</button>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="state-tabs">
+            <button class="state-tab active" onclick="switchTab('authorization')">Authorization</button>
+            <button class="state-tab" onclick="switchTab('catalog')">Catalog Requirements</button>
+            <button class="state-tab" onclick="switchTab('programs')">Program Approvals</button>
+        </div>
+
+        <!-- Authorization Tab -->
+        <div id="tab-authorization" class="tab-content active">
+            <div id="authorizationContent"></div>
+        </div>
+
+        <!-- Catalog Requirements Tab -->
+        <div id="tab-catalog" class="tab-content">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-md);">
+                <span class="text-muted" id="catalogCount"></span>
+                <button class="btn btn-secondary btn-sm" onclick="loadPresetForState()">Load Preset</button>
+            </div>
+            <div id="catalogContent"></div>
+        </div>
+
+        <!-- Program Approvals Tab -->
+        <div id="tab-programs" class="tab-content">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-md);">
+                <span class="text-muted" id="programsCount"></span>
+                <button class="btn btn-primary btn-sm" onclick="showAddProgramModal()">Add Program</button>
+            </div>
+            <div id="programsContent"></div>
+        </div>
+
+        <!-- State Readiness Panel -->
+        <div class="state-readiness-panel mt-lg">
+            <div class="state-readiness-title">State Compliance Score</div>
+            <div id="stateReadinessRing"></div>
+            <div class="state-readiness-breakdown" id="readinessBreakdown"></div>
+        </div>
+    </div>
+
+    <!-- Empty State for Details -->
+    <div class="state-details-panel" id="noStateSelected">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+                    <path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                </svg>
+            </div>
+            <div class="empty-state-title">Select a state</div>
+            <p>Choose a state from the list to view details.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Add State Modal -->
+<div id="addStateModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideAddStateModal()"></div>
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3>Add State Authorization</h3>
+            <button class="btn btn-ghost" onclick="hideAddStateModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addStateForm" onsubmit="handleAddStateSubmit(event)">
+                <div class="form-group mb-md">
+                    <label class="form-label">State</label>
+                    <select id="addStateCode" class="form-select" required>
+                        <option value="">Select a state...</option>
+                    </select>
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Authorization Status</label>
+                    <select id="addAuthStatus" class="form-select" required>
+                        <option value="authorized">Authorized</option>
+                        <option value="pending">Pending</option>
+                        <option value="restricted">Restricted</option>
+                        <option value="denied">Denied</option>
+                    </select>
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">
+                        <input type="checkbox" id="addSaraMember"> SARA Member
+                    </label>
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Effective Date</label>
+                    <input type="date" id="addEffectiveDate" class="form-input">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Renewal Date</label>
+                    <input type="date" id="addRenewalDate" class="form-input">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Contact Agency</label>
+                    <input type="text" id="addContactAgency" class="form-input" placeholder="State Higher Ed Board">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Contact URL</label>
+                    <input type="url" id="addContactUrl" class="form-input" placeholder="https://...">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Notes</label>
+                    <textarea id="addNotes" class="form-textarea" rows="3"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideAddStateModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add State</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Authorization Modal -->
+<div id="editAuthModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideEditAuthModal()"></div>
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3>Edit Authorization</h3>
+            <button class="btn btn-ghost" onclick="hideEditAuthModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editAuthForm" onsubmit="handleEditAuthSubmit(event)">
+                <div class="form-group mb-md">
+                    <label class="form-label">Authorization Status</label>
+                    <select id="editAuthStatus" class="form-select" required>
+                        <option value="authorized">Authorized</option>
+                        <option value="pending">Pending</option>
+                        <option value="restricted">Restricted</option>
+                        <option value="denied">Denied</option>
+                    </select>
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">
+                        <input type="checkbox" id="editSaraMember"> SARA Member
+                    </label>
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Effective Date</label>
+                    <input type="date" id="editEffectiveDate" class="form-input">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Renewal Date</label>
+                    <input type="date" id="editRenewalDate" class="form-input">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Contact Agency</label>
+                    <input type="text" id="editContactAgency" class="form-input">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Contact URL</label>
+                    <input type="url" id="editContactUrl" class="form-input">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Notes</label>
+                    <textarea id="editNotes" class="form-textarea" rows="3"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideEditAuthModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Load Preset Modal -->
+<div id="loadPresetModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideLoadPresetModal()"></div>
+    <div class="modal-content" style="max-width:400px;">
+        <div class="modal-header">
+            <h3>Load State Preset</h3>
+            <button class="btn btn-ghost" onclick="hideLoadPresetModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="mb-md">Load predefined catalog requirements for a state. Available presets:</p>
+            <div class="form-group mb-md">
+                <select id="presetStateCode" class="form-select">
+                    <option value="CA">California (CA)</option>
+                    <option value="TX">Texas (TX)</option>
+                    <option value="NY">New York (NY)</option>
+                    <option value="FL">Florida (FL)</option>
+                    <option value="IL">Illinois (IL)</option>
+                </select>
+            </div>
+            <p class="text-muted text-sm">This will load catalog disclosure requirements specific to the selected state.</p>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideLoadPresetModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="loadPreset()">Load Preset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Program Approval Modal -->
+<div id="addProgramModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="hideAddProgramModal()"></div>
+    <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header">
+            <h3>Add Program Approval</h3>
+            <button class="btn btn-ghost" onclick="hideAddProgramModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addProgramForm" onsubmit="handleAddProgramSubmit(event)">
+                <div class="form-group mb-md">
+                    <label class="form-label">Program</label>
+                    <select id="addProgramId" class="form-select" required>
+                        <option value="">Select a program...</option>
+                    </select>
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Licensing Board</label>
+                    <input type="text" id="addBoardName" class="form-input" required placeholder="State Board of Nursing">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Board URL</label>
+                    <input type="url" id="addBoardUrl" class="form-input" placeholder="https://...">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">
+                        <input type="checkbox" id="addApproved" checked> Approved
+                    </label>
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Approval Date</label>
+                    <input type="date" id="addApprovalDate" class="form-input">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Expiration Date</label>
+                    <input type="date" id="addExpirationDate" class="form-input">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">License Exam</label>
+                    <input type="text" id="addLicenseExam" class="form-input" placeholder="NCLEX-RN">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Minimum Pass Rate (%)</label>
+                    <input type="number" id="addMinPassRate" class="form-input" min="0" max="100" step="0.1" placeholder="80">
+                </div>
+                <div class="form-group mb-md">
+                    <label class="form-label">Current Pass Rate (%)</label>
+                    <input type="number" id="addCurrentPassRate" class="form-input" min="0" max="100" step="0.1" placeholder="85">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideAddProgramModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Approval</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.body.dataset.institutionId = '{{ institution.id }}';
+</script>
+<script src="{{ url_for('static', filename='js/state-regulations.js') }}"></script>
+{% endblock %}
