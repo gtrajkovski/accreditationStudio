@@ -1,34 +1,44 @@
 {
   "version": "1.0",
-  "timestamp": "2026-03-27T14:35:00.000Z",
-  "phase": "tech-debt",
-  "phase_name": "Tech Debt Cleanup",
+  "timestamp": "2026-03-27T18:30:00.000Z",
+  "phase": "9-01",
+  "phase_name": "Advertising Scanner",
   "phase_dir": ".planning",
   "plan": 1,
-  "task": 4,
-  "total_tasks": 4,
+  "task": 7,
+  "total_tasks": 9,
   "status": "in_progress",
-  "milestone": "tech-debt",
-  "milestone_name": "Tech Debt + Phase 9",
+  "milestone": "phase-9-advanced",
+  "milestone_name": "Phase 9 Advanced Features",
   "completed_tasks": [
-    {"id": 1, "name": "TD-1: Split models.py into domain modules", "status": "done", "commit": "4bce6f0"},
-    {"id": 2, "name": "TD-2: Silent exception handler sweep", "status": "done", "commit": "d53d413"},
-    {"id": 3, "name": "TD-3: AgentType enum cleanup", "status": "done", "commit": "7384f22"}
+    {"id": 1, "name": "Database migration (0037_advertising_scanner.sql)", "status": "done"},
+    {"id": 2, "name": "AgentType enum update (ADVERTISING_SCANNER)", "status": "done"},
+    {"id": 3, "name": "Agent implementation (advertising_scanner_agent.py)", "status": "done"},
+    {"id": 4, "name": "Registry import (registry.py)", "status": "done"},
+    {"id": 5, "name": "API blueprint (advertising.py)", "status": "done"},
+    {"id": 6, "name": "Blueprint registration (app.py)", "status": "done"}
   ],
   "remaining_tasks": [
-    {"id": 4, "name": "TD-4: Workspace file I/O caching", "status": "not_started"}
+    {"id": 7, "name": "UI template (advertising.html)", "status": "not_started"},
+    {"id": 8, "name": "i18n strings (en-US.json, es-PR.json)", "status": "not_started"},
+    {"id": 9, "name": "Navigation link in sidebar", "status": "not_started"}
   ],
   "blockers": [],
   "human_actions_pending": [],
   "decisions": [
-    {"decision": "Keep models_backup.py as backup", "rationale": "Safe rollback if issues arise", "phase": "TD-1"},
-    {"decision": "__init__.py re-exports everything", "rationale": "Backward compatibility - no import changes needed", "phase": "TD-1"},
-    {"decision": "Use logger.debug for expected failures", "rationale": "Avoids log noise while preserving debuggability", "phase": "TD-2"},
-    {"decision": "Keep re-raise handlers unchanged", "rationale": "ai/client.py cleanup-then-raise pattern is correct", "phase": "TD-2"},
-    {"decision": "Remove 15 unused AgentType values", "rationale": "Never implemented, reduces enum clutter", "phase": "TD-3"},
-    {"decision": "Add missing registry imports", "rationale": "packet_agent and findings_agent were not auto-discovered", "phase": "TD-3"}
+    {"decision": "Use hybrid storage (DB for scans/findings, workspace JSON for audit trail)", "rationale": "Enables querying while preserving evidence", "phase": "9-01"},
+    {"decision": "2% tolerance for rate claim verification", "rationale": "Prevents false positives from rounding", "phase": "9-01"},
+    {"decision": "Add ADVERTISING_SCANNER to Tier 3 (Compliance Analysis)", "rationale": "Audits against advertising standards", "phase": "9-01"}
   ],
   "uncommitted_files": [],
-  "next_action": "Start TD-4: Add caching to WorkspaceManager file I/O operations",
-  "context_notes": "Tech debt 3/4 complete. TD-1 split models.py. TD-2 added logging to 38 exception handlers. TD-3 cleaned AgentType enum from 44 to 29 values. TD-4 workspace caching is the final task. After tech debt: Phase 9 features (advertising scanner, cross-program matrix, etc)."
+  "next_action": "Create UI template at templates/institutions/advertising.html with URL scanner, document upload, and findings display",
+  "context_notes": "Phase 9-01 core backend complete (commit c76e77d). Agent has 7 tools for URL/document scanning, claim extraction via regex patterns, verification against achievement data, and compliance scoring. API supports SSE streaming for progress. After finishing 9-01 UI, continue with 9-02 through 9-06 in sequence.",
+  "full_sequence": [
+    "9-01: Advertising Scanner (in progress - UI remaining)",
+    "9-02: Cross-Program Comparison Matrix",
+    "9-03: Universal Standards Importer",
+    "9-04: State Regulatory Modules",
+    "9-05: Enhanced Batch Processing",
+    "9-06: Full Observability Dashboard"
+  ]
 }
