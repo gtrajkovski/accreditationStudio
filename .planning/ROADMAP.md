@@ -358,7 +358,56 @@ Plans:
 Plans:
 - [x] 27-01-PLAN.md — ScopeBadge component + command palette integration (CTX-02, CTX-03, SRCHUI-01)
 - [x] 27-02-PLAN.md — Inline search bar component for page header (SRCHUI-02)
-- [ ] 27-03-PLAN.md — Results panel source tabs + keyboard navigation (SRCHUI-03, SRCHUI-04)
+- [x] 27-03-PLAN.md — Results panel source tabs + keyboard navigation (SRCHUI-03, SRCHUI-04)
+
+---
+
+## Milestone: v1.7 - Performance & Efficiency
+
+**Milestone Goal:** Achieve 2-3x faster page loads, reduce AI costs by 70-90% on routine operations, and improve accessibility compliance.
+
+### Phases
+
+- [ ] **Phase 28: Performance Quick Wins** - HTTP caching, gzip compression, N+1 query fixes, database indexes
+- [ ] **Phase 29: AI Cost Optimization** - Multi-model routing, cost tracking dashboard, batch API integration
+- [ ] **Phase 30: Accessibility & Polish** - Skip-to-main link, ARIA live regions, form validation ARIA, toast improvements
+
+## Phase Details
+
+### Phase 28: Performance Quick Wins
+**Goal:** 2-3x faster page loads and API responses with minimal code changes
+**Depends on:** Nothing (independent infrastructure)
+**Requirements:** PERF-01, PERF-02, PERF-03, PERF-04
+**Success Criteria** (what must be TRUE):
+  1. Static assets return Cache-Control headers for 1-year caching
+  2. Flask responses are gzip compressed
+  3. Portfolio readiness for 20 institutions loads in <2 seconds
+  4. Common query patterns use composite indexes
+**Plans:** 0/1 plans complete
+
+Plans:
+- [ ] 28-01-PLAN.md — Cache headers, gzip, N+1 fix, database indexes (PERF-01, PERF-02, PERF-03, PERF-04)
+
+### Phase 29: AI Cost Optimization
+**Goal:** Reduce AI costs by 70-90% on routine operations
+**Depends on:** Nothing (independent)
+**Requirements:** COST-01, COST-02, COST-03
+**Success Criteria** (what must be TRUE):
+  1. Simple tasks (PII detection, language detection) route to Claude 3.5 Haiku
+  2. Real-time cost tracking dashboard shows per-institution and per-agent costs
+  3. Bulk audit operations use Anthropic Batch API for 50% discount
+**Plans:** 0/2 plans (estimated)
+
+### Phase 30: Accessibility & Polish
+**Goal:** WCAG 2.1 AA quick wins for accessibility compliance
+**Depends on:** Nothing (independent)
+**Requirements:** A11Y-01, A11Y-02, A11Y-03, A11Y-04
+**Success Criteria** (what must be TRUE):
+  1. Skip-to-main link present on all pages
+  2. ARIA live regions announce status updates to screen readers
+  3. Form validation errors are associated with fields via aria-describedby
+  4. Toast notifications have stacking limit and dismiss-all button
+**Plans:** 0/1 plans (estimated)
 
 ---
 
@@ -392,7 +441,8 @@ Plans:
 | 24. Standards Harvester MVP | 2/2 | Complete | 2026-Q3 |
 | 25. Context Model & Service Layer | 2/2 | Complete    | 2026-03-26 |
 | 26. API & Backend Integration | 2/2 | Complete    | 2026-03-26 |
-| 27. Frontend & Visual Testing | 2/3 | In Progress|  |
+| 27. Frontend & Visual Testing | 3/3 | Complete    | 2026-03-26 |
+| 28. Performance Quick Wins | 0/1 | In Progress |  |
 
 ---
 
