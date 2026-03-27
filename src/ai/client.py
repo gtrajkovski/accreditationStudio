@@ -3,7 +3,7 @@
 Wraps Anthropic SDK for interactive workflows with streaming support.
 """
 
-from typing import Dict, List, Generator, Optional
+from typing import Dict, List, Generator, Optional, Any
 import anthropic
 
 from src.config import Config
@@ -264,3 +264,79 @@ class AIClient:
     def clear_history(self) -> None:
         """Reset conversation history to empty state."""
         self.conversation_history = []
+
+    def submit_batch(
+        self,
+        requests: List[Dict[str, Any]],
+        track_cost: bool = True
+    ) -> Dict[str, Any]:
+        """Submit a batch of requests to Anthropic Batch API.
+
+        Args:
+            requests: List of dicts with 'custom_id' and 'params' keys.
+                      params contains model, max_tokens, messages, system.
+            track_cost: Whether to log estimated cost (actual logged on completion)
+
+        Returns:
+            Dict with batch_id, processing_status, request_counts, expires_at
+        """
+        from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
+        from anthropic.types.messages.batch_create_params import Request
+
+        # Convert to Anthropic format
+        batch_requests = []
+        for req in requests:
+            batch_requests.append(
+                Request(
+                    custom_id=req["custom_id"],
+                    params=MessageCreateParamsNonStreaming(**req["params"])
+                )
+            )
+
+        batch = self.client.messages.batches.create(requests=batch_requests)
+
+        return {
+            "batch_id": batch.id,
+            "processing_status": batch.processing_status,
+            "request_counts": {
+                "processing": batch.request_counts.processing,
+                "succeeded": batch.request_counts.succeeded,
+                "errored": batch.request_counts.errored,
+                "canceled": batch.request_counts.canceled,
+                "expired": batch.request_counts.expired,
+            },
+            "created_at": batch.created_at,
+            "expires_at": batch.expires_at,
+            "results_url": batch.results_url,
+        }
+
+    def get_batch_status(self, batch_id: str) -> Dict[str, Any]:
+        """Get status of an Anthropic batch job."""
+        batch = self.client.messages.batches.retrieve(batch_id)
+        return {
+            "batch_id": batch.id,
+            "processing_status": batch.processing_status,
+            "request_counts": {
+                "processing": batch.request_counts.processing,
+                "succeeded": batch.request_counts.succeeded,
+                "errored": batch.request_counts.errored,
+                "canceled": batch.request_counts.canceled,
+                "expired": batch.request_counts.expired,
+            },
+            "ended_at": batch.ended_at,
+            "results_url": batch.results_url,
+        }
+
+    def get_batch_results(self, batch_id: str) -> Generator[Dict[str, Any], None, None]:
+        """Stream results from a completed Anthropic batch.
+
+        Yields:
+            Dict with custom_id, result_type, message (if succeeded), error (if errored)
+        """
+        for result in self.client.messages.batches.results(batch_id):
+            yield {
+                "custom_id": result.custom_id,
+                "result_type": result.result.type,
+                "message": result.result.message if result.result.type == "succeeded" else None,
+                "error": result.result.error if result.result.type == "errored" else None,
+            }
