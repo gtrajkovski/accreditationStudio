@@ -1,0 +1,71 @@
+{
+  "state_code": "NY",
+  "state_name": "New York",
+  "regulatory_agency": "New York State Education Department (NYSED)",
+  "agency_url": "http://www.nysed.gov/",
+  "requirements": [
+    {
+      "requirement_key": "program_registration",
+      "requirement_name": "Program Registration",
+      "requirement_text": "All degree programs must be registered with NYSED",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "consumer_information",
+      "requirement_name": "Consumer Information Disclosure",
+      "requirement_text": "Required consumer information per 8 NYCRR 126.6",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "foreign_student_auth",
+      "requirement_name": "Foreign Student Authorization",
+      "requirement_text": "Authorization to enroll foreign students (if applicable)",
+      "category": "disclosure",
+      "required": false
+    },
+    {
+      "requirement_key": "complaint_process",
+      "requirement_name": "Student Complaint Process",
+      "requirement_text": "Published process for student complaints with NYSED contact",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "refund_policy_ny",
+      "requirement_name": "New York Refund Policy",
+      "requirement_text": "State-mandated refund policy per Education Law",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "admission_requirements",
+      "requirement_name": "Admission Requirements",
+      "requirement_text": "Clear statement of admission requirements and prerequisites",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "graduation_requirements",
+      "requirement_name": "Graduation Requirements",
+      "requirement_text": "Clear statement of graduation requirements for each program",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "transfer_credit_policy",
+      "requirement_name": "Transfer Credit Policy",
+      "requirement_text": "Policy for accepting transfer credits from other institutions",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "licensure_disclosure",
+      "requirement_name": "Professional Licensure Disclosure",
+      "requirement_text": "For programs leading to licensure, disclosure of requirements and pass rates",
+      "category": "consumer_info",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "state_code": "CA",
+  "state_name": "California",
+  "regulatory_agency": "Bureau for Private Postsecondary Education (BPPE)",
+  "agency_url": "https://bppe.ca.gov/",
+  "requirements": [
+    {
+      "requirement_key": "school_performance_fact_sheet",
+      "requirement_name": "School Performance Fact Sheet (SPFS)",
+      "requirement_text": "Must provide SPFS to prospective students before enrollment agreement is signed",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "completion_rate",
+      "requirement_name": "Completion Rate Disclosure",
+      "requirement_text": "Program completion rates must be disclosed in catalog and SPFS",
+      "category": "completion_rates",
+      "required": true
+    },
+    {
+      "requirement_key": "placement_rate",
+      "requirement_name": "Placement Rate Disclosure",
+      "requirement_text": "Job placement rates for graduates must be disclosed",
+      "category": "completion_rates",
+      "required": true
+    },
+    {
+      "requirement_key": "salary_info",
+      "requirement_name": "Salary and Wage Information",
+      "requirement_text": "Expected salary ranges for program graduates",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "refund_policy",
+      "requirement_name": "Refund Policy",
+      "requirement_text": "Pro-rata refund policy per California Education Code",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "strf_disclosure",
+      "requirement_name": "STRF Disclosure",
+      "requirement_text": "Student Tuition Recovery Fund disclosure and assessment",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "catalog_requirements",
+      "requirement_name": "Catalog Content Requirements",
+      "requirement_text": "Catalog must include all items per 5 CCR 71810",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "total_program_cost",
+      "requirement_name": "Total Program Cost Disclosure",
+      "requirement_text": "Total cost including tuition, fees, books, supplies, and equipment",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "cancellation_rights",
+      "requirement_name": "Right to Cancel Notice",
+      "requirement_text": "Student's right to cancel enrollment agreement within 7 days",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "student_loan_info",
+      "requirement_name": "Student Loan Information",
+      "requirement_text": "If student is taking loans, disclosure of total amount, repayment terms, and default consequences",
+      "category": "consumer_info",
+      "required": false
+    }
+  ]
+}

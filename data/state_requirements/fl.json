@@ -1,0 +1,71 @@
+{
+  "state_code": "FL",
+  "state_name": "Florida",
+  "regulatory_agency": "Commission for Independent Education (CIE)",
+  "agency_url": "https://www.fldoe.org/policy/cie/",
+  "requirements": [
+    {
+      "requirement_key": "surety_bond",
+      "requirement_name": "Surety Bond",
+      "requirement_text": "Maintain surety bond per Florida statute",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "agent_registration",
+      "requirement_name": "Agent Registration",
+      "requirement_text": "All enrollment agents must be registered with CIE",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "completion_thresholds",
+      "requirement_name": "Completion Rate Thresholds",
+      "requirement_text": "Maintain minimum completion rate thresholds",
+      "category": "completion_rates",
+      "required": true
+    },
+    {
+      "requirement_key": "refund_policy_fl",
+      "requirement_name": "Florida Refund Policy",
+      "requirement_text": "State-mandated refund policy per Rule 6E-1.0032",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "catalog_fl",
+      "requirement_name": "Florida Catalog Requirements",
+      "requirement_text": "Catalog content per Rule 6E-2.004",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "placement_rates_fl",
+      "requirement_name": "Placement Rate Disclosure",
+      "requirement_text": "Job placement rates for each program",
+      "category": "completion_rates",
+      "required": true
+    },
+    {
+      "requirement_key": "tuition_fees_fl",
+      "requirement_name": "Tuition and Fees Disclosure",
+      "requirement_text": "Complete disclosure of all tuition and fees",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "student_complaint_fl",
+      "requirement_name": "Student Complaint Procedure",
+      "requirement_text": "Published procedure for student complaints with CIE contact",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "distance_education_fl",
+      "requirement_name": "Distance Education Disclosure",
+      "requirement_text": "If offering distance education, disclosure of technical requirements and support",
+      "category": "disclosure",
+      "required": false
+    }
+  ]
+}

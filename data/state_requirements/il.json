@@ -1,0 +1,71 @@
+{
+  "state_code": "IL",
+  "state_name": "Illinois",
+  "regulatory_agency": "Illinois Board of Higher Education (IBHE)",
+  "agency_url": "https://www.ibhe.org/",
+  "requirements": [
+    {
+      "requirement_key": "ibhe_authorization",
+      "requirement_name": "IBHE Authorization",
+      "requirement_text": "Authorization to operate in Illinois",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "pbvs_act",
+      "requirement_name": "Private Business and Vocational Schools Act",
+      "requirement_text": "Compliance with 105 ILCS 426",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "complaint_disclosure",
+      "requirement_name": "Student Complaint Disclosure",
+      "requirement_text": "Published student complaint process with IBHE contact",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "refund_calculation",
+      "requirement_name": "Refund Calculation Method",
+      "requirement_text": "State-mandated refund calculation method",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "completion_disclosure",
+      "requirement_name": "Completion Rate Disclosure",
+      "requirement_text": "Program completion rates in catalog",
+      "category": "completion_rates",
+      "required": true
+    },
+    {
+      "requirement_key": "enrollment_agreement_il",
+      "requirement_name": "Enrollment Agreement Requirements",
+      "requirement_text": "Required content in enrollment agreements per state law",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "program_outline",
+      "requirement_name": "Program Outline",
+      "requirement_text": "Detailed outline of program content and objectives",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "faculty_qualifications",
+      "requirement_name": "Faculty Qualifications",
+      "requirement_text": "Disclosure of faculty qualifications and credentials",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "career_services",
+      "requirement_name": "Career Services Disclosure",
+      "requirement_text": "Description of career services available to students",
+      "category": "consumer_info",
+      "required": false
+    }
+  ]
+}

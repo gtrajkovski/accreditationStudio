@@ -1,0 +1,64 @@
+{
+  "state_code": "TX",
+  "state_name": "Texas",
+  "regulatory_agency": "Texas Workforce Commission (TWC)",
+  "agency_url": "https://www.twc.texas.gov/",
+  "requirements": [
+    {
+      "requirement_key": "student_protection_fund",
+      "requirement_name": "Student Protection Fund",
+      "requirement_text": "Participation in Texas Student Protection Fund",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "refund_policy_twc",
+      "requirement_name": "TWC Refund Policy",
+      "requirement_text": "State-mandated refund calculation per TAC 807.241",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "completion_reporting",
+      "requirement_name": "Completion Rate Reporting",
+      "requirement_text": "Annual reporting of completion rates to TWC",
+      "category": "completion_rates",
+      "required": true
+    },
+    {
+      "requirement_key": "placement_reporting",
+      "requirement_name": "Placement Rate Reporting",
+      "requirement_text": "Annual reporting of placement rates to TWC",
+      "category": "completion_rates",
+      "required": true
+    },
+    {
+      "requirement_key": "enrollment_agreement",
+      "requirement_name": "Enrollment Agreement Requirements",
+      "requirement_text": "State-mandated enrollment agreement content per TAC 807.171",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "catalog_tx",
+      "requirement_name": "Texas Catalog Requirements",
+      "requirement_text": "Catalog must contain all elements per TAC 807.161",
+      "category": "disclosure",
+      "required": true
+    },
+    {
+      "requirement_key": "student_rights",
+      "requirement_name": "Student Rights and Responsibilities",
+      "requirement_text": "Disclosure of student rights, grievance procedures, and appeal processes",
+      "category": "consumer_info",
+      "required": true
+    },
+    {
+      "requirement_key": "program_length",
+      "requirement_name": "Program Length Disclosure",
+      "requirement_text": "Clock hours or credit hours required for program completion",
+      "category": "consumer_info",
+      "required": true
+    }
+  ]
+}
