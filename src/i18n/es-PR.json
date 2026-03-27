@@ -3,6 +3,11 @@
     "name": "AccreditAI",
     "tagline": "Gestión de Acreditación con IA"
   },
+  "a11y": {
+    "skip_to_main": "Saltar al contenido principal",
+    "status_update": "Actualización de estado",
+    "dismiss_all_notifications": "Descartar todas las notificaciones"
+  },
   "nav": {
     "dashboard": "Panel Principal",
     "institutions": "Instituciones",

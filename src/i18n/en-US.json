@@ -3,6 +3,11 @@
     "name": "AccreditAI",
     "tagline": "AI-Powered Accreditation Management"
   },
+  "a11y": {
+    "skip_to_main": "Skip to main content",
+    "status_update": "Status update",
+    "dismiss_all_notifications": "Dismiss all notifications"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "institutions": "Institutions",

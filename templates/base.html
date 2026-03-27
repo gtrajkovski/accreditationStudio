@@ -40,6 +40,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <a href="#main-content" class="skip-to-main">{{ t('a11y.skip_to_main') }}</a>
     <div class="app-layout">
         <!-- Sidebar Navigation -->
         <aside class="sidebar" id="sidebar">
@@ -378,7 +379,7 @@
                 </div>
             </header>
 
-            <main class="main-content">
+            <main class="main-content" id="main-content">
                 {% block content %}{% endblock %}
             </main>
         </div>
