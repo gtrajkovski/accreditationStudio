@@ -108,6 +108,7 @@ class AgentRegistry:
                 policy_consistency,
                 risk_scorer,
                 findings_agent,  # GAP_FINDER
+                advertising_scanner_agent,
                 # Tier 4 - Remediation & Authoring
                 remediation_agent,
                 truth_index_curator,

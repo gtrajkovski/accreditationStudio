@@ -27,7 +27,7 @@ from src.core.models import (
 
 
 class AgentType(Enum):
-    """Types of specialized agents in the system (29 registered).
+    """Types of specialized agents in the system (30 registered).
 
     Organized by functional tier:
 
@@ -38,7 +38,7 @@ class AgentType(Enum):
     Tier 2 - Standards Management:
         STANDARDS_LIBRARIAN
     Tier 3 - Compliance Analysis:
-        COMPLIANCE_AUDIT, POLICY_CONSISTENCY, RISK_SCORER, GAP_FINDER
+        COMPLIANCE_AUDIT, POLICY_CONSISTENCY, RISK_SCORER, GAP_FINDER, ADVERTISING_SCANNER
     Tier 4 - Remediation & Authoring:
         REMEDIATION, TRUTH_INDEX_CURATOR, SUBSTANTIVE_CHANGE
     Tier 5 - Submission Preparation:
@@ -69,6 +69,7 @@ class AgentType(Enum):
     POLICY_CONSISTENCY = "policy_consistency"
     RISK_SCORER = "risk_scorer"
     GAP_FINDER = "gap_finder"
+    ADVERTISING_SCANNER = "advertising_scanner"
 
     # Tier 4 - Remediation & Authoring
     REMEDIATION = "remediation"

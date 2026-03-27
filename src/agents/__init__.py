@@ -25,6 +25,7 @@ from src.agents.truth_index_curator import TruthIndexCuratorAgent
 from src.agents.compliance_audit import ComplianceAuditAgent
 from src.agents.risk_scorer import RiskScorerAgent
 from src.agents.substantive_change import SubstantiveChangeAgent
+from src.agents.advertising_scanner_agent import AdvertisingScannerAgent
 from src.agents.remediation_agent import RemediationAgent
 from src.agents.narrative_agent import NarrativeAgent
 from src.agents.packet_assembler import PacketAssemblerAgent
@@ -51,6 +52,7 @@ __all__ = [
     "ComplianceAuditAgent",
     "RiskScorerAgent",
     "SubstantiveChangeAgent",
+    "AdvertisingScannerAgent",
     # Output Generation Layer
     "RemediationAgent",
     "NarrativeAgent",
