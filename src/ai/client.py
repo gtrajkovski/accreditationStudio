@@ -39,13 +39,15 @@ class AIClient:
     def chat(
         self,
         user_message: str,
-        system_prompt: Optional[str] = None
+        system_prompt: Optional[str] = None,
+        model: Optional[str] = None
     ) -> str:
         """Send a message and get response, maintaining conversation history.
 
         Args:
             user_message: The user's message to send.
             system_prompt: Optional system prompt (defaults to accreditation assistant).
+            model: Optional model override (defaults to self.model).
 
         Returns:
             The assistant's response text.
@@ -60,7 +62,7 @@ class AIClient:
 
         try:
             response = self.client.messages.create(
-                model=self.model,
+                model=model or self.model,
                 max_tokens=self.max_tokens,
                 system=system_prompt or self.DEFAULT_SYSTEM_PROMPT,
                 messages=self.conversation_history
@@ -82,13 +84,15 @@ class AIClient:
     def chat_stream(
         self,
         user_message: str,
-        system_prompt: Optional[str] = None
+        system_prompt: Optional[str] = None,
+        model: Optional[str] = None
     ) -> Generator[str, None, None]:
         """Send a message and stream response chunks, maintaining history.
 
         Args:
             user_message: The user's message to send.
             system_prompt: Optional system prompt.
+            model: Optional model override (defaults to self.model).
 
         Yields:
             Text chunks as they arrive from the API.
@@ -102,7 +106,7 @@ class AIClient:
 
         try:
             with self.client.messages.stream(
-                model=self.model,
+                model=model or self.model,
                 max_tokens=self.max_tokens,
                 system=system_prompt or self.DEFAULT_SYSTEM_PROMPT,
                 messages=self.conversation_history
@@ -124,7 +128,8 @@ class AIClient:
         self,
         system_prompt: str,
         user_prompt: str,
-        max_tokens: Optional[int] = None
+        max_tokens: Optional[int] = None,
+        model: Optional[str] = None
     ) -> str:
         """Generate a one-shot response without polluting conversation history.
 
@@ -134,12 +139,13 @@ class AIClient:
             system_prompt: System instructions for the AI.
             user_prompt: The user's prompt.
             max_tokens: Optional token limit.
+            model: Optional model override (defaults to self.model).
 
         Returns:
             The assistant's response text.
         """
         response = self.client.messages.create(
-            model=self.model,
+            model=model or self.model,
             max_tokens=max_tokens or self.max_tokens,
             system=system_prompt,
             messages=[{
@@ -149,6 +155,56 @@ class AIClient:
         )
 
         return response.content[0].text
+
+    def generate_fast(
+        self,
+        system_prompt: str,
+        user_prompt: str
+    ) -> str:
+        """Generate using fast model (Haiku) for simple tasks.
+
+        Optimized for simple pattern recognition, classification, and extraction
+        tasks with 90% cost savings compared to Sonnet.
+
+        Args:
+            system_prompt: System instructions for the AI.
+            user_prompt: The user's prompt.
+
+        Returns:
+            The assistant's response text.
+        """
+        return self.generate(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            model=Config.MODEL_FAST,
+            max_tokens=Config.MAX_TOKENS_FAST
+        )
+
+    def generate_reasoning(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        max_tokens: Optional[int] = None
+    ) -> str:
+        """Generate using reasoning model (Sonnet) for complex tasks.
+
+        Use for tasks requiring deep analysis, multi-step reasoning,
+        or complex decision making.
+
+        Args:
+            system_prompt: System instructions for the AI.
+            user_prompt: The user's prompt.
+            max_tokens: Optional token limit.
+
+        Returns:
+            The assistant's response text.
+        """
+        return self.generate(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            model=Config.MODEL_REASONING,
+            max_tokens=max_tokens
+        )
 
     def clear_history(self) -> None:
         """Reset conversation history to empty state."""
