@@ -21,9 +21,12 @@ class Config:
     # API Keys
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
-    # AI Model Settings
+    # AI Model Settings - Multi-tier (Phase 29)
     MODEL = os.getenv("MODEL", "claude-sonnet-4-20250514")
+    MODEL_FAST = os.getenv("MODEL_FAST", "claude-3-5-haiku-20241022")
+    MODEL_REASONING = os.getenv("MODEL_REASONING", "claude-sonnet-4-20250514")
     MAX_TOKENS = int(os.getenv("MAX_TOKENS", "8192"))
+    MAX_TOKENS_FAST = int(os.getenv("MAX_TOKENS_FAST", "4096"))
 
     # Embedding Settings
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
