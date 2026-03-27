@@ -113,6 +113,20 @@
             </div>
         </div>
 
+        <div class="card">
+            <div class="stat-card">
+                <div class="stat-icon" style="background-color: var(--accent);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value" id="ai-cost">$0.00</div>
+                    <div class="stat-label">AI Costs (30d)</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Change Detection Badge (per D-01, D-02, D-03) -->
         {% include 'partials/change_badge.html' %}
     </div>
@@ -1138,6 +1152,22 @@ function downloadBrief() {
 }
 
 document.addEventListener('DOMContentLoaded', initAutopilotSection);
+
+// Load AI Cost Summary (Phase 29)
+async function loadCostSummary() {
+    try {
+        const resp = await fetch('/api/costs/summary?days=30');
+        const data = await resp.json();
+        const costEl = document.getElementById('ai-cost');
+        if (costEl) {
+            costEl.textContent = `$${data.total_cost.toFixed(2)}`;
+        }
+    } catch (e) {
+        console.error('Failed to load cost summary:', e);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadCostSummary);
 
 // Hide skeleton loaders and show real content on window load
 window.addEventListener('load', () => {
