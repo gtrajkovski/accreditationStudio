@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block title %}Standards Importer - AccreditAI{% endblock %}
+
+{% block header_title %}Universal Standards Importer{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/static/css/standards-importer.css">
+{% endblock %}
+
+{% block content %}
+<div class="standards-importer-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="page-icon">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Universal Standards Importer
+        </h1>
+        <p class="subtitle">Import accreditation standards from any source</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" data-tab="upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Upload
+        </button>
+        <button class="tab-btn" data-tab="preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Preview
+        </button>
+        <button class="tab-btn" data-tab="mapping">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="6" y1="3" x2="6" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 01-9 9"/>
+            </svg>
+            Mapping
+        </button>
+        <button class="tab-btn" data-tab="history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            History
+        </button>
+    </div>
+
+    <!-- Upload Tab -->
+    <div class="tab-content active" id="tab-upload">
+        <div class="upload-section">
+            <div class="upload-card">
+                <h2>Upload Standards Document</h2>
+
+                <!-- File Drop Zone -->
+                <div class="drop-zone" id="dropZone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="drop-icon">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p>Drag & drop a file here, or click to browse</p>
+                    <span class="file-types">PDF, Excel, CSV, or Text</span>
+                    <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv,.txt,.md" hidden>
+                </div>
+
+                <!-- Or Paste Text -->
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+
+                <div class="text-input-section">
+                    <label for="rawText">Paste Standards Text</label>
+                    <textarea id="rawText" rows="8" placeholder="Paste standards text here..."></textarea>
+                </div>
+
+                <!-- Import Options -->
+                <div class="import-options">
+                    <div class="form-group">
+                        <label for="accreditorSelect">Accrediting Body</label>
+                        <select id="accreditorSelect">
+                            <option value="CUSTOM">Custom / Other</option>
+                            <option value="ACCSC">ACCSC</option>
+                            <option value="SACSCOC">SACSCOC</option>
+                            <option value="HLC">HLC</option>
+                            <option value="ABHES">ABHES</option>
+                            <option value="COE">COE</option>
+                            <option value="DEAC">DEAC</option>
+                            <option value="WASC">WASC</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="libraryName">Library Name</label>
+                        <input type="text" id="libraryName" placeholder="e.g., ACCSC 2024 Standards">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="versionInput">Version</label>
+                        <input type="text" id="versionInput" placeholder="e.g., 2024">
+                    </div>
+
+                    <div class="form-group checkbox">
+                        <label>
+                            <input type="checkbox" id="useAI" checked>
+                            Use AI-Enhanced Parsing
+                        </label>
+                        <span class="help-text">Better accuracy for complex documents</span>
+                    </div>
+                </div>
+
+                <!-- Parse Button -->
+                <button class="btn btn-primary btn-lg" id="parseBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    Parse Document
+                </button>
+
+                <!-- Progress Indicator -->
+                <div class="progress-section hidden" id="progressSection">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-message" id="progressMessage">Initializing...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Tab -->
+    <div class="tab-content" id="tab-preview">
+        <div class="preview-section">
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="12" x2="21" y2="12"/>
+                            <line x1="8" y1="18" x2="21" y2="18"/>
+                            <line x1="3" y1="6" x2="3.01" y2="6"/>
+                            <line x1="3" y1="12" x2="3.01" y2="12"/>
+                            <line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                    </div>
+                    <div class="card-value" id="sectionsCount">0</div>
+                    <div class="card-label">Sections</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                        </svg>
+                    </div>
+                    <div class="card-value" id="itemsCount">0</div>
+                    <div class="card-label">Checklist Items</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                    </div>
+                    <div class="card-value" id="qualityScore">0</div>
+                    <div class="card-label">Quality Score</div>
+                </div>
+                <div class="summary-card" id="validationCard">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                    <div class="card-value" id="validationStatus">Pending</div>
+                    <div class="card-label">Validation</div>
+                </div>
+            </div>
+
+            <!-- Section Tree -->
+            <div class="preview-panel">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 01-9 9"/>
+                    </svg>
+                    Section Hierarchy
+                </h3>
+                <div class="section-tree" id="sectionTree">
+                    <p class="empty-state">Parse a document to see the section hierarchy</p>
+                </div>
+            </div>
+
+            <!-- Checklist Preview -->
+            <div class="preview-panel">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                    </svg>
+                    Checklist Items
+                </h3>
+                <div class="checklist-preview" id="checklistPreview">
+                    <p class="empty-state">Parse a document to see checklist items</p>
+                </div>
+            </div>
+
+            <!-- Validation Issues -->
+            <div class="preview-panel hidden" id="issuesPanel">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    Validation Issues
+                </h3>
+                <div class="issues-list" id="issuesList">
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="preview-actions">
+                <button class="btn btn-secondary" id="backToUploadBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"/>
+                        <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                    Back
+                </button>
+                <button class="btn btn-primary" id="proceedToMappingBtn" disabled>
+                    Proceed to Mapping
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapping Tab -->
+    <div class="tab-content" id="tab-mapping">
+        <div class="mapping-section">
+            <h2>Adjust Mappings</h2>
+            <p>Fine-tune the detected structure before importing</p>
+
+            <!-- Section Adjustments -->
+            <div class="mapping-panel">
+                <h3>Section Adjustments</h3>
+                <table class="mapping-table" id="sectionMappingTable">
+                    <thead>
+                        <tr>
+                            <th>Number</th>
+                            <th>Title</th>
+                            <th>Parent</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Category Adjustments -->
+            <div class="mapping-panel">
+                <h3>Checklist Categories</h3>
+                <table class="mapping-table" id="categoryMappingTable">
+                    <thead>
+                        <tr>
+                            <th>Item Number</th>
+                            <th>Category</th>
+                            <th>Applies To</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Actions -->
+            <div class="mapping-actions">
+                <button class="btn btn-secondary" id="backToPreviewBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"/>
+                        <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                    Back to Preview
+                </button>
+                <button class="btn btn-success" id="importBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Import Standards
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Tab -->
+    <div class="tab-content" id="tab-history">
+        <div class="history-section">
+            <h2>Import History</h2>
+
+            <div class="history-filters">
+                <select id="historyStatusFilter">
+                    <option value="">All Statuses</option>
+                    <option value="imported">Imported</option>
+                    <option value="ready">Ready</option>
+                    <option value="failed">Failed</option>
+                </select>
+                <button class="btn btn-sm" id="refreshHistoryBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+
+            <table class="history-table" id="historyTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Source</th>
+                        <th>Accreditor</th>
+                        <th>Sections</th>
+                        <th>Items</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+
+            <div class="empty-state" id="historyEmpty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-icon">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <p>No import history yet</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal" id="editModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="editModalTitle">Edit Item</h3>
+            <button class="modal-close" id="closeEditModal">&times;</button>
+        </div>
+        <div class="modal-body" id="editModalBody">
+            <!-- Dynamic form content -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+            <button class="btn btn-primary" id="saveEditBtn">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal" id="successModal">
+    <div class="modal-content modal-success">
+        <div class="modal-header">
+            <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="success-icon">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                Import Successful
+            </h3>
+        </div>
+        <div class="modal-body">
+            <p>Standards library has been created successfully!</p>
+            <div class="success-details" id="successDetails">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="/standards" class="btn btn-primary">View Standards Library</a>
+            <button class="btn btn-secondary" id="importAnotherBtn">Import Another</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/standards-importer.js"></script>
+{% endblock %}
