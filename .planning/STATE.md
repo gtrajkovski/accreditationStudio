@@ -1,71 +1,70 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: - MVP
-status: verifying
-stopped_at: Completed 30-01-PLAN.md (WCAG 2.1 AA Quick Wins)
-last_updated: "2026-03-27T02:52:55.253Z"
+milestone: v1.7
+milestone_name: Performance & Efficiency
+status: complete
+stopped_at: v1.7 milestone completed and archived
+last_updated: "2026-03-27T12:45:47.783Z"
 last_activity: 2026-03-27
 progress:
-  total_phases: 8
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 25
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
+  percent: 100
 ---
 
 # AccreditAI State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-26)
+See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** Institutions can achieve and maintain accreditation compliance with minimal manual effort
-**Current focus:** Phase 30 — accessibility-polish
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 30
-Plan: Not started
-Status: Phase complete — ready for verification
+Milestone: v1.7 (COMPLETE)
+Phase: All phases complete
+Status: Milestone archived
 Last activity: 2026-03-27
 
-Progress: [██████░░░░░░░░░░░░░░░░░░] 25% (v1.7)
+Progress: [████████████████████████] 100% (v1.7)
 
-## v1.7 Phases Overview
+## v1.7 Completion Summary
 
-| Phase | Goal | Requirements |
-|-------|------|--------------|
-| 28 | Performance Quick Wins | PERF-01, PERF-02, PERF-03, PERF-04 |
-| 29 | AI Cost Optimization | COST-01, COST-02, COST-03 |
-| 30 | Accessibility & Polish | A11Y-01, A11Y-02, A11Y-03, A11Y-04 |
+**Performance & Efficiency** — Shipped 2026-03-27
 
-## Phase 28 Summary
+All 3 phases (28, 29, 30) and 5 plans completed:
 
-**Performance Quick Wins** — 2-3x faster page loads with minimal changes
+- Phase 28: Performance Quick Wins (1 plan) — HTTP caching, gzip, N+1 fix, indexes
+- Phase 29: AI Cost Optimization (3 plans) — Haiku routing, cost tracking, Batch API
+- Phase 30: Accessibility & Polish (1 plan) — WCAG 2.1 AA quick wins
 
-Tasks:
+**Key accomplishments:**
+- 2-3x faster page loads via HTTP caching and gzip compression
+- 73-90% AI cost savings via multi-model routing (Haiku for simple tasks)
+- Real-time cost tracking dashboard with budget alerts
+- 50% discount on bulk operations via Anthropic Batch API
+- WCAG 2.1 AA accessibility improvements
 
-1. HTTP cache headers for static assets (Cache-Control: 1 year)
-2. Gzip compression via flask-compress
-3. Fix portfolio N+1 query (batch snapshot loading)
-4. Add composite database indexes
-
-Estimated effort: ~4.5 hours
+**Archived to:**
+- .planning/milestones/v1.7-ROADMAP.md
+- .planning/milestones/v1.7-REQUIREMENTS.md
+- .planning/milestones/v1.7-MILESTONE-AUDIT.md
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+Key v1.7 decisions:
 
-- v1.7: Hybrid milestone combining performance, AI cost optimization, and accessibility
-- Phase 28: Use flask-compress for gzip (simpler than manual middleware)
-- Phase 28: Batch load readiness snapshots to fix N+1 (1 query instead of 20)
-- [Phase 29]: Use Haiku for simple pattern recognition tasks (PII, language detection)
-- [Phase 29]: Keep Sonnet for complex reasoning tasks requiring deep analysis
-- [Phase 29]: Use Anthropic Batch API for 50% cost savings on bulk operations
+- Use Haiku for simple pattern recognition tasks (73% cost savings)
+- Use flask-compress for gzip (simpler than manual middleware)
+- Use Anthropic Batch API for 50% discount on bulk operations
+- Toast stacking limit of 5 (prevents viewport overflow)
 
 ### Pending Todos
 
@@ -77,22 +76,13 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-27T02:44:13.775Z
-Stopped at: Completed 30-01-PLAN.md (WCAG 2.1 AA Quick Wins)
+Last session: 2026-03-27
+Stopped at: v1.7 milestone completed and archived
 Resume file: None
-
-## v1.6 Completion Summary (Previous Milestone)
-
-All 3 phases (25, 26, 27) and 7 plans completed:
-
-- Phase 25: SearchContext model, FTS5 scope indexes, ContextualSearchService
-- Phase 26: Contextual search API blueprint, 8-source unified search endpoint
-- Phase 27: ScopeBadge, inline search bar, source tabs with counts, keyboard navigation
-
-Committed: c569afd feat(v1.6): complete Context-Sensitive Search milestone
 
 ## Next Steps
 
-1. Execute Phase 28 Plan 01 (`/gsd:execute-phase 28`)
-2. Plan Phase 29 (AI Cost Optimization)
-3. Plan Phase 30 (Accessibility & Polish)
+1. Run `/gsd:new-milestone` to start next milestone
+2. Or address remaining items:
+   - Tech Debt (4 tasks): models.py split, exception sweep, AgentType cleanup, workspace caching
+   - Phase 9 Advanced (6 tasks): advertising scanner, cross-program matrix, standards importer, state modules

@@ -8,28 +8,16 @@ AI-powered platform for managing the entire accreditation lifecycle of post-seco
 
 Institutions can achieve and maintain accreditation compliance with minimal manual effort through autonomous AI agents that audit, remediate, and prepare submission materials.
 
-## Current Milestone: v1.6 - Context-Sensitive Search
+## Current State: v1.7.0 - Performance & Efficiency
 
-**Goal:** Upgrade global search to automatically scope results based on where the user is in the application hierarchy.
-
-**Target features:**
-- SearchContext model with 6 scope levels (Global → Institution → Program → Document → Standards → Compliance)
-- ContextualSearchService with automatic scoping across 8 search sources
-- API blueprint with contextual search, sources list, and suggestions endpoints
-- Frontend integration with scope badge, manual scope cycling, inline search bar
-- Template data attributes for automatic context detection
-- ChromaDB + FTS5 scoping for semantic and structured search
-
-## Previous Version: v1.5.0 - Operational Intelligence ✅
-
-**Released:** 2026-03-26
+**Released:** 2026-03-27
 
 **Delivered:**
-- Autopilot with nightly runs and morning briefs
-- Evidence coverage contracts for packet export gating
-- Change detection with targeted re-audits
-- Audit reproducibility bundles
-- Standards harvester MVP
+- 2-3x faster page loads via HTTP caching and gzip compression
+- 73-90% AI cost savings via multi-model routing (Haiku for simple tasks)
+- Real-time cost tracking dashboard with budget alerts
+- 50% discount on bulk operations via Anthropic Batch API
+- WCAG 2.1 AA accessibility improvements (skip-to-main, ARIA live, toast management)
 
 ## Requirements
 
@@ -41,10 +29,12 @@ Institutions can achieve and maintain accreditation compliance with minimal manu
 - v1.3: AI & reporting (explainers, evidence assistant, PDF reports, scheduling)
 - v1.4: Enterprise & polish (report enhancements, API docs, audit trails)
 - v1.5: Operational intelligence (autopilot, evidence contracts, change detection, reproducibility, standards harvester)
+- v1.6: Context-sensitive search (scoped search, 8 sources, scope badge UI)
+- v1.7: Performance & efficiency (caching, gzip, multi-model routing, cost tracking, accessibility)
 
 ### Active
 
-v1.6 requirements defined in REQUIREMENTS.md.
+Next milestone requirements to be defined via `/gsd:new-milestone`.
 
 ### Out of Scope
 
@@ -57,10 +47,12 @@ v1.6 requirements defined in REQUIREMENTS.md.
 - Flask + Jinja2 + vanilla JS + Anthropic SDK
 - 24-agent tiered architecture with registry pattern
 - 35+ API blueprints registered
-- SQLite database with 32 migrations
+- SQLite database with 36 migrations
 - ChromaDB for semantic search + FTS5 for full-text
 - Docker deployment with gunicorn
-- Phase 13 global search provides foundation for v1.6
+- 102,399 lines of code
+- Multi-model support: Claude Sonnet (reasoning) + Haiku (fast tasks)
+- Anthropic Batch API integration for bulk operations
 
 ## Constraints
 
@@ -76,6 +68,9 @@ v1.6 requirements defined in REQUIREMENTS.md.
 | APScheduler for scheduling | Lightweight, no broker required | ✓ Good |
 | Flask-Mail for email | Simple SMTP integration | ✓ Good |
 | ChromaDB for vectors | Easy setup, good performance | ✓ Good |
+| Haiku for simple tasks | 73% cost savings on PII/language detection | ✓ Good |
+| flask-compress for gzip | Simpler than manual middleware | ✓ Good |
+| Batch API for bulk ops | 50% discount on bulk audits/remediation | ✓ Good |
 
 ## Evolution
 
@@ -95,4 +90,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 after v1.6 milestone start*
+*Last updated: 2026-03-27 after v1.7 milestone completion*
