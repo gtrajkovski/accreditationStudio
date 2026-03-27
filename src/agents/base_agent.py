@@ -27,7 +27,7 @@ from src.core.models import (
 
 
 class AgentType(Enum):
-    """Types of specialized agents in the system (30 registered).
+    """Types of specialized agents in the system (31 registered).
 
     Organized by functional tier:
 
@@ -63,6 +63,7 @@ class AgentType(Enum):
 
     # Tier 2 - Standards Management
     STANDARDS_LIBRARIAN = "standards_librarian"
+    STANDARDS_IMPORTER = "standards_importer"
 
     # Tier 3 - Compliance Analysis
     COMPLIANCE_AUDIT = "compliance_audit"
