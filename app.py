@@ -8,6 +8,7 @@ educational institutions.
 import atexit
 import click
 from flask import render_template, redirect, url_for, request
+from flask_compress import Compress
 from apiflask import APIFlask
 
 from src.config import Config
@@ -82,6 +83,18 @@ app = APIFlask(
 )
 app.secret_key = Config.SECRET_KEY
 app.config["TEMPLATES_AUTO_RELOAD"] = Config.ENVIRONMENT != "production"
+
+# =========================================================================
+# Response Compression (Phase 28 - Performance)
+# =========================================================================
+
+app.config["COMPRESS_MIMETYPES"] = [
+    "text/html", "text/css", "text/javascript",
+    "application/javascript", "application/json"
+]
+app.config["COMPRESS_LEVEL"] = 6  # Balance speed vs compression
+app.config["COMPRESS_MIN_SIZE"] = 500  # Don't compress tiny responses
+Compress(app)
 
 # =========================================================================
 # OpenAPI Configuration (per Phase 18 requirements)
@@ -290,11 +303,24 @@ app.register_blueprint(contextual_search_bp)
 
 @app.after_request
 def add_security_headers(response):
-    """Add security headers to all responses."""
+    """Add security and cache headers to all responses."""
+    # Security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    # Cache headers for static assets (Phase 28 - Performance)
+    if request.path.startswith("/static/"):
+        # Cache static assets for 1 year (immutable with versioning)
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif not request.path.startswith("/api/"):
+        # HTML pages: allow caching but revalidate
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    else:
+        # API responses: no store for dynamic data
+        response.headers["Cache-Control"] = "no-store, must-revalidate"
+
     return response
 
 

@@ -7,12 +7,12 @@ and recent institution tracking for quick navigation.
 
 import json
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from uuid import uuid4
 
 from src.db.connection import get_conn
-from src.services.readiness_service import get_or_compute_readiness
+from src.services.readiness_service import get_or_compute_readiness, CACHE_WINDOW_MINUTES
 
 
 # =============================================================================
@@ -302,6 +302,56 @@ def reorder_portfolio_institutions(portfolio_id: str, institution_ids: List[str]
 # Portfolio Readiness Aggregation
 # =============================================================================
 
+def get_batch_readiness_snapshots(
+    institution_ids: List[str],
+    cache_window_minutes: int = CACHE_WINDOW_MINUTES
+) -> Dict[str, Dict[str, Any]]:
+    """Batch load recent readiness snapshots for multiple institutions.
+
+    Returns dict mapping institution_id -> readiness dict (or None if stale/missing).
+    This avoids N+1 queries when computing portfolio readiness.
+
+    Args:
+        institution_ids: List of institution IDs to fetch
+        cache_window_minutes: Only return snapshots newer than this
+
+    Returns:
+        Dict mapping institution_id to readiness scores dict
+    """
+    if not institution_ids:
+        return {}
+
+    conn = get_conn()
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=cache_window_minutes)).isoformat()
+
+    # Single query for all institutions
+    placeholders = ",".join("?" * len(institution_ids))
+    cursor = conn.execute(f"""
+        SELECT institution_id, score_total, score_documents, score_compliance,
+               score_evidence, score_consistency, created_at
+        FROM institution_readiness_snapshots
+        WHERE institution_id IN ({placeholders})
+          AND created_at > ?
+        ORDER BY created_at DESC
+    """, (*institution_ids, cutoff))
+
+    results = {}
+    seen = set()
+    for row in cursor:
+        inst_id = row["institution_id"]
+        if inst_id not in seen:  # Take most recent per institution
+            seen.add(inst_id)
+            results[inst_id] = {
+                "total": row["score_total"],
+                "documents": row["score_documents"],
+                "compliance": row["score_compliance"],
+                "evidence": row["score_evidence"],
+                "consistency": row["score_consistency"],
+            }
+
+    return results
+
+
 def compute_portfolio_readiness(
     portfolio_id: str,
     workspace_manager,
@@ -341,6 +391,9 @@ def compute_portfolio_readiness(
     all_insts = workspace_manager.list_institutions()
     inst_map = {inst["id"]: inst for inst in all_insts}
 
+    # Batch load cached snapshots (1 query instead of N) - Phase 28 optimization
+    cached_snapshots = {} if force_recompute else get_batch_readiness_snapshots(institution_ids)
+
     # Compute readiness for each institution
     institutions = []
     scores = []
@@ -353,13 +406,18 @@ def compute_portfolio_readiness(
         if not inst_info:
             continue
 
-        # Get readiness score
-        try:
-            readiness = get_or_compute_readiness(inst_id, force_recompute=force_recompute)
+        # Use cached snapshot if available, else compute (avoids N+1 queries)
+        if inst_id in cached_snapshots:
+            readiness = cached_snapshots[inst_id]
             score = readiness.get("total", 0)
-        except Exception:
-            score = 0
-            readiness = {"total": 0, "documents": 0, "compliance": 0, "evidence": 0, "consistency": 0}
+        else:
+            # Only compute for institutions without cached snapshot
+            try:
+                readiness = get_or_compute_readiness(inst_id, force_recompute=force_recompute)
+                score = readiness.get("total", 0)
+            except Exception:
+                score = 0
+                readiness = {"total": 0, "documents": 0, "compliance": 0, "evidence": 0, "consistency": 0}
 
         scores.append(score)
 
