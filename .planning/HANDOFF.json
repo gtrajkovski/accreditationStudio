@@ -1,30 +1,50 @@
 {
   "version": "1.0",
-  "timestamp": "2026-03-26T23:15:00.000Z",
+  "timestamp": "2026-03-27T00:09:18.137Z",
   "phase": "27",
   "phase_name": "frontend-visual-testing",
   "phase_dir": ".planning/phases/27-frontend-visual-testing",
   "plan": 3,
-  "task": 1,
-  "total_tasks": 3,
-  "status": "wave_1_complete",
+  "task": 4,
+  "total_tasks": 4,
+  "status": "complete",
   "milestone": "v1.6",
   "milestone_name": "Context-Sensitive Search",
+  "milestone_status": "complete",
   "completed_phases": [
     {"phase": 25, "name": "context-model-service-layer", "plans": 2, "status": "complete"},
-    {"phase": 26, "name": "api-backend-integration", "plans": 2, "status": "complete"}
+    {"phase": 26, "name": "api-backend-integration", "plans": 2, "status": "complete"},
+    {"phase": 27, "name": "frontend-visual-testing", "plans": 3, "status": "complete"}
   ],
   "remaining_phases": [],
   "completed_plans": [
     {"plan": "27-01", "status": "complete", "commits": ["7c4452b", "c413c5c", "5225af1", "ccd39fd"]},
-    {"plan": "27-02", "status": "complete", "commits": ["7aa30d1", "ebb2151", "d13f021", "cc89b93"]}
+    {"plan": "27-02", "status": "complete", "commits": ["7aa30d1", "ebb2151", "d13f021", "cc89b93"]},
+    {"plan": "27-03", "status": "complete", "tasks": 4}
   ],
-  "remaining_plans": [
-    {"plan": "27-03", "wave": 2, "status": "pending", "objective": "Results panel source tabs + Shift+Up/Down keyboard navigation"}
+  "remaining_plans": [],
+  "completed_tasks": [
+    {"id": 1, "name": "Update SOURCE_TABS to include all 8 contextual sources with i18n", "status": "done"},
+    {"id": 2, "name": "Update groupResultsBySource and calculateCounts for all sources", "status": "done"},
+    {"id": 3, "name": "Implement Shift+Up/Down keyboard navigation", "status": "done"},
+    {"id": 4, "name": "Add missing i18n strings and update footer", "status": "done"}
   ],
-  "next_action": "Run /gsd:execute-phase 27 to execute Wave 2 (Plan 27-03)",
-  "context_notes": "Wave 1 complete: ScopeBadge component created, command palette integrated with Tab cycling, inline search bar added to header. Wave 2 will add source tabs and keyboard navigation to results panel.",
+  "remaining_tasks": [],
   "blockers": [],
   "human_actions_pending": [],
-  "uncommitted_files": []
+  "decisions": [
+    {"decision": "SOURCE_TABS_CONTEXTUAL has 9 entries (All + 8 sources) with label_key for i18n", "rationale": "All 8 contextual search sources need to be shown with localized labels", "phase": "27"},
+    {"decision": "navigateResults() and updateResultsSelection() provide unified keyboard navigation", "rationale": "Single function handles both command mode and search mode navigation", "phase": "27"},
+    {"decision": "Result items have ARIA role='option' and aria-selected for accessibility", "rationale": "Screen reader support for result navigation", "phase": "27"}
+  ],
+  "uncommitted_files": [
+    ".planning/STATE.md",
+    "src/i18n/en-US.json",
+    "src/i18n/es-PR.json",
+    "static/js/command_palette.js",
+    "templates/partials/command_palette.html",
+    ".planning/phases/27-frontend-visual-testing/27-03-SUMMARY.md"
+  ],
+  "next_action": "Commit v1.6 changes and decide on next milestone (v1.7)",
+  "context_notes": "v1.6 Context-Sensitive Search milestone is 100% complete. All 3 phases (25, 26, 27) and 7 plans executed. User was presented with options: (1) commit v1.6, (2) update roadmap, (3) start v1.7, or (4) review backlog. All 20 core features from FEATURE_PRIORITIES.md appear to be implemented."
 }
