@@ -5,15 +5,28 @@ Creates and maintains the workspace directory hierarchy, handles
 file versioning, and manages the truth index.
 """
 
+import copy
 import json
+import logging
 import shutil
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 
 from src.config import Config
 from src.core.models import Institution, Program
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class CacheEntry:
+    """Entry in the JSON file cache."""
+    data: Dict[str, Any]
+    cached_at: float
+    file_mtime: float
 
 
 class WorkspaceManager:
@@ -42,6 +55,10 @@ class WorkspaceManager:
     └── agent_sessions/
     """
 
+    # Cache configuration
+    CACHE_TTL_SECONDS = 60  # Entries expire after 60 seconds
+    CACHE_MAX_ENTRIES = 100  # Maximum number of cached files
+
     def __init__(self, base_dir: Optional[Path] = None):
         """Initialize workspace manager.
 
@@ -50,6 +67,11 @@ class WorkspaceManager:
         """
         self.base_dir = base_dir or Config.WORKSPACE_DIR
         self.base_dir.mkdir(parents=True, exist_ok=True)
+
+        # In-memory JSON file cache: path_str -> CacheEntry
+        self._json_cache: Dict[str, CacheEntry] = {}
+        self._cache_hits = 0
+        self._cache_misses = 0
 
     @staticmethod
     def _slugify(name: str) -> str:
@@ -118,8 +140,123 @@ class WorkspaceManager:
         except FileNotFoundError:
             pass
 
+    # ===========================
+    # Cache Operations
+    # ===========================
+
+    def _get_from_cache(self, path: Path) -> Optional[Dict[str, Any]]:
+        """Get JSON data from cache if valid.
+
+        Cache entry is valid if:
+        - Entry exists
+        - TTL has not expired
+        - File modification time matches cached mtime
+
+        Args:
+            path: Path to the JSON file.
+
+        Returns:
+            Deep copy of cached data if valid, None otherwise.
+        """
+        path_str = str(path)
+        if path_str not in self._json_cache:
+            return None
+
+        entry = self._json_cache[path_str]
+        now = time.time()
+
+        # Check TTL expiration
+        if now - entry.cached_at > self.CACHE_TTL_SECONDS:
+            del self._json_cache[path_str]
+            logger.debug("Cache expired for %s", path_str)
+            return None
+
+        # Verify file hasn't changed on disk
+        try:
+            current_mtime = path.stat().st_mtime
+            if current_mtime != entry.file_mtime:
+                del self._json_cache[path_str]
+                logger.debug("Cache invalidated (mtime changed) for %s", path_str)
+                return None
+        except FileNotFoundError:
+            del self._json_cache[path_str]
+            return None
+
+        self._cache_hits += 1
+        # Return deep copy to prevent mutation of cached data
+        return copy.deepcopy(entry.data)
+
+    def _add_to_cache(self, path: Path, data: Dict[str, Any]) -> None:
+        """Add JSON data to cache.
+
+        Evicts oldest entries if cache exceeds max size.
+
+        Args:
+            path: Path to the JSON file.
+            data: Parsed JSON data to cache.
+        """
+        # Enforce max cache size by evicting oldest entries
+        if len(self._json_cache) >= self.CACHE_MAX_ENTRIES:
+            # Find and remove oldest entry
+            oldest_path = min(
+                self._json_cache.keys(),
+                key=lambda p: self._json_cache[p].cached_at
+            )
+            del self._json_cache[oldest_path]
+            logger.debug("Cache evicted oldest entry: %s", oldest_path)
+
+        try:
+            mtime = path.stat().st_mtime
+            # Store deep copy to prevent external mutation
+            self._json_cache[str(path)] = CacheEntry(
+                data=copy.deepcopy(data),
+                cached_at=time.time(),
+                file_mtime=mtime
+            )
+        except FileNotFoundError:
+            pass
+
+    def _invalidate_cache(self, path: Path) -> None:
+        """Remove a file from the cache.
+
+        Args:
+            path: Path to the JSON file.
+        """
+        path_str = str(path)
+        if path_str in self._json_cache:
+            del self._json_cache[path_str]
+            logger.debug("Cache invalidated for %s", path_str)
+
+    def clear_cache(self) -> None:
+        """Clear the entire JSON file cache."""
+        self._json_cache.clear()
+        logger.debug("Cache cleared")
+
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache statistics.
+
+        Returns:
+            Dict with hits, misses, size, and hit rate.
+        """
+        total = self._cache_hits + self._cache_misses
+        hit_rate = (self._cache_hits / total * 100) if total > 0 else 0.0
+        return {
+            "hits": self._cache_hits,
+            "misses": self._cache_misses,
+            "size": len(self._json_cache),
+            "max_size": self.CACHE_MAX_ENTRIES,
+            "hit_rate_percent": round(hit_rate, 1),
+        }
+
+    # ===========================
+    # JSON I/O with Caching
+    # ===========================
+
     def _write_json(self, path: Path, data: Dict[str, Any]) -> None:
-        """Write JSON data with file locking."""
+        """Write JSON data with file locking and cache invalidation."""
+        # Invalidate cache before writing to ensure consistency
+        self._invalidate_cache(path)
+
         lock_path = path.with_suffix(path.suffix + ".lock")
         self._acquire_lock(lock_path)
 
@@ -130,13 +267,28 @@ class WorkspaceManager:
             self._release_lock(lock_path)
 
     def _read_json(self, path: Path) -> Dict[str, Any]:
-        """Read JSON data with file locking."""
+        """Read JSON data with caching and file locking.
+
+        Checks in-memory cache first. On cache miss, reads from disk
+        and populates the cache for future reads.
+        """
+        # Check cache first (no lock needed for cache check)
+        cached_data = self._get_from_cache(path)
+        if cached_data is not None:
+            return cached_data
+
+        self._cache_misses += 1
+
+        # Cache miss - read from disk with locking
         lock_path = path.with_suffix(path.suffix + ".lock")
         self._acquire_lock(lock_path)
 
         try:
             with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+            # Add to cache after successful read
+            self._add_to_cache(path, data)
+            return data
         finally:
             self._release_lock(lock_path)
 
