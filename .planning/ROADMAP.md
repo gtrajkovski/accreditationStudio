@@ -369,7 +369,7 @@ Plans:
 ### Phases
 
 - [x] **Phase 28: Performance Quick Wins** - HTTP caching, gzip compression, N+1 query fixes, database indexes (completed 2026-03-27)
-- [x] **Phase 29: AI Cost Optimization** - Multi-model routing, cost tracking dashboard, batch API integration (completed 2026-03-27)
+- [ ] **Phase 29: AI Cost Optimization** - Multi-model routing, cost tracking dashboard, batch API integration (2/3 complete, gap closure in progress)
 - [ ] **Phase 30: Accessibility & Polish** - Skip-to-main link, ARIA live regions, form validation ARIA, toast improvements
 
 ## Phase Details
@@ -396,11 +396,12 @@ Plans:
   1. Simple tasks (PII detection, language detection) route to Claude 3.5 Haiku
   2. Real-time cost tracking dashboard shows per-institution and per-agent costs
   3. Bulk audit operations use Anthropic Batch API for 50% discount
-**Plans:** 2/2 plans complete
+**Plans:** 2/3 plans (gap closure plan added for Batch API)
 
 Plans:
 - [x] 29-01-PLAN.md — Multi-model routing (Haiku for simple tasks) (COST-01)
 - [x] 29-02-PLAN.md — Cost tracking dashboard with budget alerts (COST-02, COST-03)
+- [ ] 29-03-PLAN.md — **Gap Closure:** Anthropic Batch API integration for 50% discount (COST-03)
 
 ### Phase 30: Accessibility & Polish
 **Goal:** WCAG 2.1 AA quick wins for accessibility compliance
@@ -447,7 +448,7 @@ Plans:
 | 26. API & Backend Integration | 2/2 | Complete    | 2026-03-26 |
 | 27. Frontend & Visual Testing | 3/3 | Complete    | 2026-03-26 |
 | 28. Performance Quick Wins | 1/1 | Complete | 2026-03-27 |
-| 29. AI Cost Optimization | 2/2 | Complete   | 2026-03-27 |
+| 29. AI Cost Optimization | 2/3 | Gap Closure | 2026-03-27 |
 
 ---
 
