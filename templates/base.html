@@ -141,6 +141,14 @@
                         </svg>
                         Programs
                     </a>
+                    <a href="{{ url_for('institution_program_comparison', id=current_institution.id) }}" class="nav-item {% if request.endpoint == 'institution_program_comparison' %}active{% endif %}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
+                            <rect x="8" y="2" width="8" height="4" rx="1"/>
+                            <path d="M9 14l2 2 4-4"/>
+                        </svg>
+                        {{ t('program_comparison.title') }}
+                    </a>
                 </div>
 
                 <!-- 4. Compliance Hub (collapsible) -->

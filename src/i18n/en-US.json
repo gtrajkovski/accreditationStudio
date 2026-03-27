@@ -663,6 +663,21 @@
       "compliance": "Search compliance data..."
     }
   },
+  "program_comparison": {
+    "title": "Program Comparison",
+    "programs": "Programs",
+    "avg_readiness": "Avg Readiness",
+    "avg_evidence": "Avg Evidence",
+    "total_findings": "Total Findings",
+    "radar_chart": "Program Metrics Radar",
+    "matrix": "Comparison Matrix",
+    "program": "Program",
+    "readiness": "Readiness",
+    "findings": "Findings",
+    "evidence": "Evidence",
+    "faculty": "Faculty",
+    "documents": "Documents"
+  },
   "advertising": {
     "title": "Advertising Compliance",
     "subtitle": "Scan marketing materials for FTC and accreditor compliance",

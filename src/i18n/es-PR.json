@@ -663,6 +663,21 @@
       "compliance": "Buscar datos de cumplimiento..."
     }
   },
+  "program_comparison": {
+    "title": "Comparación de Programas",
+    "programs": "Programas",
+    "avg_readiness": "Preparación Prom.",
+    "avg_evidence": "Evidencia Prom.",
+    "total_findings": "Hallazgos Totales",
+    "radar_chart": "Radar de Métricas",
+    "matrix": "Matriz de Comparación",
+    "program": "Programa",
+    "readiness": "Preparación",
+    "findings": "Hallazgos",
+    "evidence": "Evidencia",
+    "faculty": "Facultad",
+    "documents": "Documentos"
+  },
   "advertising": {
     "title": "Cumplimiento Publicitario",
     "subtitle": "Escanear materiales de marketing para cumplimiento con FTC y acreditadores",

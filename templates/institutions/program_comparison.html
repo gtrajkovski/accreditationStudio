@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}{{ t('program_comparison.title') }} - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title=t('program_comparison.title'),
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), (t('program_comparison.title'), none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<!-- Summary Cards -->
+<div class="summary-cards">
+    <div class="summary-card">
+        <div class="summary-value" id="programCount">--</div>
+        <div class="summary-label">{{ t('program_comparison.programs') }}</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-value" id="avgReadiness">--</div>
+        <div class="summary-label">{{ t('program_comparison.avg_readiness') }}</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-value" id="avgEvidence">--</div>
+        <div class="summary-label">{{ t('program_comparison.avg_evidence') }}</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-value" id="totalFindings">--</div>
+        <div class="summary-label">{{ t('program_comparison.total_findings') }}</div>
+    </div>
+</div>
+
+<!-- Radar Chart -->
+<div class="card mt-lg">
+    <div class="card-header"><h3 class="card-title">{{ t('program_comparison.radar_chart') }}</h3></div>
+    <div class="chart-container"><canvas id="radarChart"></canvas></div>
+</div>
+
+<!-- Comparison Table -->
+<div class="card mt-lg">
+    <div class="card-header"><h3 class="card-title">{{ t('program_comparison.matrix') }}</h3></div>
+    <div class="table-container">
+        <table class="comparison-table" id="comparisonTable">
+            <thead>
+                <tr>
+                    <th>{{ t('program_comparison.program') }}</th>
+                    <th>{{ t('program_comparison.readiness') }}</th>
+                    <th>{{ t('program_comparison.findings') }}</th>
+                    <th>{{ t('program_comparison.evidence') }}</th>
+                    <th>{{ t('program_comparison.faculty') }}</th>
+                    <th>{{ t('program_comparison.documents') }}</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="6" class="empty-state">{{ t('common.loading') }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--spacing-md); }
+@media (max-width: 800px) { .summary-cards { grid-template-columns: repeat(2, 1fr); } }
+.summary-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--spacing-lg); text-align: center; }
+.summary-value { font-size: 2rem; font-weight: 700; color: var(--accent); }
+.summary-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-top: var(--spacing-xs); }
+
+.chart-container { padding: var(--spacing-lg); max-width: 600px; margin: 0 auto; }
+.table-container { overflow-x: auto; }
+.comparison-table { width: 100%; border-collapse: collapse; }
+.comparison-table th, .comparison-table td { padding: var(--spacing-md); text-align: left; border-bottom: 1px solid var(--border-color); }
+.comparison-table th { background: var(--bg-secondary); font-weight: 600; font-size: 0.875rem; text-transform: uppercase; }
+.comparison-table tr:hover { background: var(--bg-secondary); }
+
+.score-cell { font-weight: 600; }
+.score-cell.high { color: var(--success); }
+.score-cell.medium { color: var(--warning); }
+.score-cell.low { color: var(--danger); }
+.findings-cell.has-critical { color: var(--danger); font-weight: 600; }
+.empty-state { text-align: center; padding: var(--spacing-xl); color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = '{{ institution.id }}';
+let radarChart = null;
+
+document.addEventListener('DOMContentLoaded', loadData);
+
+async function loadData() {
+    try {
+        const [matrixRes, radarRes] = await Promise.all([
+            fetch(`/api/institutions/${institutionId}/programs/comparison`),
+            fetch(`/api/institutions/${institutionId}/programs/radar`)
+        ]);
+        const matrix = await matrixRes.json();
+        const radar = await radarRes.json();
+
+        if (matrix.success) renderMatrix(matrix);
+        if (radar.success) renderRadar(radar);
+    } catch (err) {
+        console.error('Failed to load data:', err);
+    }
+}
+
+function renderMatrix(data) {
+    document.getElementById('programCount').textContent = data.program_count;
+    document.getElementById('avgReadiness').textContent = data.avg_readiness + '%';
+    document.getElementById('avgEvidence').textContent = data.avg_evidence_coverage + '%';
+    document.getElementById('totalFindings').textContent = data.total_findings;
+
+    const tbody = document.getElementById('tableBody');
+    if (!data.programs || !data.programs.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No programs found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.programs.map(p => `
+        <tr>
+            <td><strong>${escapeHtml(p.program_name)}</strong><br><small class="text-muted">${p.credential_level || ''}</small></td>
+            <td class="score-cell ${getScoreClass(p.readiness_score)}">${p.readiness_score}%</td>
+            <td class="${p.critical_findings > 0 ? 'findings-cell has-critical' : ''}">${p.finding_count}${p.critical_findings > 0 ? ` (${p.critical_findings} critical)` : ''}</td>
+            <td class="score-cell ${getScoreClass(p.evidence_coverage)}">${p.evidence_coverage}%</td>
+            <td class="score-cell ${getScoreClass(p.faculty_compliance)}">${p.faculty_compliance}%</td>
+            <td>${p.document_count}</td>
+        </tr>
+    `).join('');
+}
+
+function renderRadar(data) {
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    if (radarChart) radarChart.destroy();
+    if (!data.datasets || !data.datasets.length) return;
+
+    radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: { labels: data.labels, datasets: data.datasets },
+        options: {
+            responsive: true,
+            scales: { r: { beginAtZero: true, max: 100 } },
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+function getScoreClass(score) {
+    if (score >= 80) return 'high';
+    if (score >= 50) return 'medium';
+    return 'low';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}
