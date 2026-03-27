@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-03-27T13:43:23.274Z",
+  "phase": "tech-debt",
+  "phase_name": "Tech Debt Cleanup",
+  "phase_dir": ".planning",
+  "plan": 1,
+  "task": 2,
+  "total_tasks": 4,
+  "status": "paused",
+  "milestone": "tech-debt",
+  "milestone_name": "Tech Debt + Phase 9",
+  "completed_tasks": [
+    {"id": 1, "name": "TD-1: Split models.py into domain modules", "status": "done", "commit": "4bce6f0"}
+  ],
+  "remaining_tasks": [
+    {"id": 2, "name": "TD-2: Silent exception handler sweep", "status": "not_started"},
+    {"id": 3, "name": "TD-3: AgentType enum cleanup", "status": "not_started"},
+    {"id": 4, "name": "TD-4: Workspace file I/O caching", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "Keep models_backup.py as backup", "rationale": "Safe rollback if issues arise", "phase": "TD-1"},
+    {"decision": "__init__.py re-exports everything", "rationale": "Backward compatibility - no import changes needed", "phase": "TD-1"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Start TD-2: Search for bare except handlers and add proper logging",
+  "context_notes": "v1.7 milestone completed and archived. Now working through tech debt before Phase 9 features. TD-1 split models.py (2706 lines) into 15 domain modules under src/core/models/. After tech debt: advertising scanner, cross-program matrix, standards importer, state modules, batch processing, observability."
+}
