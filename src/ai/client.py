@@ -7,6 +7,7 @@ from typing import Dict, List, Generator, Optional
 import anthropic
 
 from src.config import Config
+from src.services.cost_tracking_service import log_api_call
 
 
 class AIClient:
@@ -40,7 +41,10 @@ class AIClient:
         self,
         user_message: str,
         system_prompt: Optional[str] = None,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        track_cost: bool = True,
+        institution_id: Optional[str] = None,
+        operation: Optional[str] = None
     ) -> str:
         """Send a message and get response, maintaining conversation history.
 
@@ -48,6 +52,9 @@ class AIClient:
             user_message: The user's message to send.
             system_prompt: Optional system prompt (defaults to accreditation assistant).
             model: Optional model override (defaults to self.model).
+            track_cost: Whether to log cost (default True).
+            institution_id: Institution ID for cost tracking.
+            operation: Operation type for cost tracking (e.g., 'chat').
 
         Returns:
             The assistant's response text.
@@ -75,6 +82,16 @@ class AIClient:
                 "content": assistant_message
             })
 
+            # Log cost (Phase 29)
+            if track_cost:
+                log_api_call(
+                    model=model or self.model,
+                    input_tokens=response.usage.input_tokens,
+                    output_tokens=response.usage.output_tokens,
+                    institution_id=institution_id,
+                    operation=operation or "chat"
+                )
+
             return assistant_message
 
         except Exception:
@@ -85,7 +102,10 @@ class AIClient:
         self,
         user_message: str,
         system_prompt: Optional[str] = None,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        track_cost: bool = True,
+        institution_id: Optional[str] = None,
+        operation: Optional[str] = None
     ) -> Generator[str, None, None]:
         """Send a message and stream response chunks, maintaining history.
 
@@ -93,6 +113,9 @@ class AIClient:
             user_message: The user's message to send.
             system_prompt: Optional system prompt.
             model: Optional model override (defaults to self.model).
+            track_cost: Whether to log cost (default True).
+            institution_id: Institution ID for cost tracking.
+            operation: Operation type for cost tracking (e.g., 'chat').
 
         Yields:
             Text chunks as they arrive from the API.
@@ -115,10 +138,23 @@ class AIClient:
                     full_response.append(text)
                     yield text
 
+                # Get usage from stream after completion
+                final_message = stream.get_final_message()
+
             self.conversation_history.append({
                 "role": "assistant",
                 "content": "".join(full_response)
             })
+
+            # Log cost (Phase 29)
+            if track_cost:
+                log_api_call(
+                    model=model or self.model,
+                    input_tokens=final_message.usage.input_tokens,
+                    output_tokens=final_message.usage.output_tokens,
+                    institution_id=institution_id,
+                    operation=operation or "chat"
+                )
 
         except Exception:
             self.conversation_history.pop()
@@ -129,7 +165,11 @@ class AIClient:
         system_prompt: str,
         user_prompt: str,
         max_tokens: Optional[int] = None,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        track_cost: bool = True,
+        institution_id: Optional[str] = None,
+        agent_type: Optional[str] = None,
+        operation: Optional[str] = None
     ) -> str:
         """Generate a one-shot response without polluting conversation history.
 
@@ -140,6 +180,10 @@ class AIClient:
             user_prompt: The user's prompt.
             max_tokens: Optional token limit.
             model: Optional model override (defaults to self.model).
+            track_cost: Whether to log cost (default True).
+            institution_id: Institution ID for cost tracking.
+            agent_type: Agent type for cost tracking.
+            operation: Operation type for cost tracking.
 
         Returns:
             The assistant's response text.
@@ -153,6 +197,17 @@ class AIClient:
                 "content": user_prompt
             }]
         )
+
+        # Log cost (Phase 29)
+        if track_cost:
+            log_api_call(
+                model=model or self.model,
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
+                institution_id=institution_id,
+                agent_type=agent_type,
+                operation=operation
+            )
 
         return response.content[0].text
 
