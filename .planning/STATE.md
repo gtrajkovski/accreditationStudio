@@ -83,17 +83,27 @@ All 4 tech debt tasks completed 2026-03-27:
 - ✅ TD-3: Clean up AgentType enum and registry (commit 7384f22)
 - ✅ TD-4: Add in-memory caching to WorkspaceManager (commit e5d9e5d)
 
+## Phase 9 Advanced Features (In Progress)
+
+**Phase 9-01: Advertising Scanner** — ✅ Complete (commit 2559ba5)
+- Agent implementation with 7 tools
+- API blueprint with SSE streaming
+- UI template with URL/document scan, findings display, history
+
+**Remaining phases:**
+- 9-02: Cross-Program Comparison Matrix
+- 9-03: Universal Standards Importer
+- 9-04: State Regulatory Modules
+- 9-05: Enhanced Batch Processing
+- 9-06: Full Observability Dashboard
+
 ## Session Continuity
 
 Last session: 2026-03-27
-Stopped at: Tech debt cleanup complete
+Stopped at: Phase 9-01 complete
 Resume file: None
 
 ## Next Steps
 
-1. Run `/gsd:new-milestone` to start next milestone
-2. Or address Phase 9 Advanced features:
-   - Advertising scanner
-   - Cross-program matrix
-   - Standards importer
-   - State modules
+1. Continue with Phase 9-02: Cross-Program Comparison Matrix
+2. Or run `/gsd:new-milestone` to start a formal milestone
