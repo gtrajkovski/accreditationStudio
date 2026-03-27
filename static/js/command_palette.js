@@ -912,6 +912,43 @@ window.CommandPalette = (function() {
     }
 
     /**
+     * Navigate through results list by delta (+1 or -1)
+     * Handles both command mode and search mode
+     */
+    function navigateResults(delta) {
+        const maxIndex = currentMode === MODES.COMMAND
+            ? filteredCommands.length - 1
+            : searchResults.length - 1;
+
+        if (maxIndex < 0) return;
+
+        selectedIndex = Math.max(0, Math.min(selectedIndex + delta, maxIndex));
+
+        // Update visual selection
+        updateResultsSelection();
+    }
+
+    /**
+     * Update visual selection state in results list
+     */
+    function updateResultsSelection() {
+        // Remove previous selection
+        const prevSelected = resultsEl.querySelector('.command-item.selected, .search-result.selected');
+        if (prevSelected) {
+            prevSelected.classList.remove('selected');
+            prevSelected.setAttribute('aria-selected', 'false');
+        }
+
+        // Apply new selection
+        const items = resultsEl.querySelectorAll('.command-item, .search-result');
+        if (items[selectedIndex]) {
+            items[selectedIndex].classList.add('selected');
+            items[selectedIndex].setAttribute('aria-selected', 'true');
+            items[selectedIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }
+
+    /**
      * Handle keyboard navigation in palette
      */
     function handleKeydown(e) {
@@ -938,32 +975,15 @@ window.CommandPalette = (function() {
                 break;
 
             case 'ArrowDown':
+                // ArrowDown OR Shift+ArrowDown navigates results
                 e.preventDefault();
-                const maxIndex = currentMode === MODES.COMMAND ? filteredCommands.length - 1 : searchResults.length - 1;
-                selectedIndex = Math.min(selectedIndex + 1, maxIndex);
-                if (currentMode === MODES.COMMAND) {
-                    render();
-                } else {
-                    // Re-render search results with new selection
-                    const recent = getRecentSearches();
-                    if (searchResults.length > 0 && searchResults[0].type === 'recent') {
-                        renderRecentSearches();
-                    }
-                }
+                navigateResults(1);
                 break;
 
             case 'ArrowUp':
+                // ArrowUp OR Shift+ArrowUp navigates results
                 e.preventDefault();
-                selectedIndex = Math.max(selectedIndex - 1, 0);
-                if (currentMode === MODES.COMMAND) {
-                    render();
-                } else {
-                    // Re-render search results with new selection
-                    const recent = getRecentSearches();
-                    if (searchResults.length > 0 && searchResults[0].type === 'recent') {
-                        renderRecentSearches();
-                    }
-                }
+                navigateResults(-1);
                 break;
 
             case 'Enter':
@@ -990,6 +1010,14 @@ window.CommandPalette = (function() {
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
             e.preventDefault();
             toggle();
+            return;
+        }
+
+        // Shift+Up/Down for result navigation when palette is open
+        if (isOpen && e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+            e.preventDefault();
+            const delta = e.key === 'ArrowDown' ? 1 : -1;
+            navigateResults(delta);
             return;
         }
 
@@ -1331,17 +1359,23 @@ window.CommandPalette = (function() {
     }
 
     /**
-     * Source tabs configuration
+     * Source tabs configuration - all 8 contextual search sources
+     * Uses i18n keys for labels
      */
-    const SOURCE_TABS = [
-        { key: 'all', label: 'All' },
-        { key: 'documents', label: 'Documents' },
-        { key: 'standards', label: 'Standards' },
-        { key: 'findings', label: 'Findings' },
-        { key: 'faculty', label: 'Faculty' },
-        { key: 'truth_index', label: 'Facts' },
-        { key: 'knowledge_graph', label: 'Knowledge' }
+    const SOURCE_TABS_CONTEXTUAL = [
+        { key: 'all', label_key: 'commands.all' },
+        { key: 'documents', label_key: 'search.source.documents' },
+        { key: 'document_text', label_key: 'search.source.document_text' },
+        { key: 'standards', label_key: 'search.source.standards' },
+        { key: 'findings', label_key: 'search.source.findings' },
+        { key: 'evidence', label_key: 'search.source.evidence' },
+        { key: 'knowledge_graph', label_key: 'search.source.knowledge_graph' },
+        { key: 'truth_index', label_key: 'search.source.truth_index' },
+        { key: 'agent_sessions', label_key: 'search.source.agent_sessions' }
     ];
+
+    // Backwards compatibility alias
+    const SOURCE_TABS = SOURCE_TABS_CONTEXTUAL;
 
     /**
      * Render search results with tabs
@@ -1382,6 +1416,8 @@ window.CommandPalette = (function() {
             html += `
                 <div class="command-item search-result ${isSelected ? 'selected' : ''}"
                      data-index="${idx}"
+                     role="option"
+                     aria-selected="${isSelected}"
                      onclick="CommandPalette.execute(${idx})">
                     <svg class="command-item-icon source-${item.source_type}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         ${sourceIcon}
@@ -1403,25 +1439,36 @@ window.CommandPalette = (function() {
         html += '</div>';
         resultsEl.innerHTML = html;
 
+        // Add ARIA attributes to results container
+        resultsEl.setAttribute('role', 'listbox');
+        resultsEl.setAttribute('aria-label', t('commands.results'));
+
         // Update searchResults for execute()
         searchResults = displayResults;
     }
 
     /**
-     * Group results by source type
+     * Group results by source type for all 8 contextual sources
      */
     function groupResultsBySource(results) {
         const grouped = {};
-        SOURCE_TABS.forEach(tab => {
+
+        // Initialize all source buckets
+        SOURCE_TABS_CONTEXTUAL.forEach(tab => {
             if (tab.key !== 'all') {
                 grouped[tab.key] = [];
             }
         });
 
+        // Distribute results
         results.forEach(r => {
-            const key = r.source_type === 'document' ? 'documents' : r.source_type;
-            if (grouped[key]) {
+            const key = r.source_type;
+            if (grouped[key] !== undefined) {
                 grouped[key].push(r);
+            } else {
+                // Fallback: put in documents if unknown source
+                grouped['documents'] = grouped['documents'] || [];
+                grouped['documents'].push(r);
             }
         });
 
@@ -1433,38 +1480,48 @@ window.CommandPalette = (function() {
      */
     function calculateCounts(grouped) {
         const counts = { all: 0 };
-        Object.entries(grouped).forEach(([key, results]) => {
-            counts[key] = results.length;
-            counts.all += results.length;
+
+        SOURCE_TABS_CONTEXTUAL.forEach(tab => {
+            if (tab.key !== 'all') {
+                const sourceResults = grouped[tab.key] || [];
+                counts[tab.key] = sourceResults.length;
+                counts.all += sourceResults.length;
+            }
         });
+
         return counts;
     }
 
     /**
-     * Render result tabs
+     * Render result tabs with counts from API facets
      */
     function renderTabs(counts) {
         const tabsEl = document.getElementById('search-result-tabs');
         if (!tabsEl) return;
 
         let html = '';
-        SOURCE_TABS.forEach(tab => {
+        SOURCE_TABS_CONTEXTUAL.forEach(tab => {
             const count = counts[tab.key] || 0;
             const isActive = tab.key === activeTab;
             const isDisabled = tab.key !== 'all' && count === 0;
+            const label = t(tab.label_key);
 
             html += `
                 <button class="result-tab ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}"
                         data-source="${tab.key}"
                         ${isDisabled ? 'disabled' : ''}
-                        onclick="CommandPalette.switchTab('${tab.key}')">
-                    ${tab.label}
-                    ${tab.key === 'all' || count > 0 ? `<span class="tab-count">${count}</span>` : ''}
+                        onclick="CommandPalette.switchTab('${tab.key}')"
+                        role="tab"
+                        aria-selected="${isActive}"
+                        aria-controls="command-palette-results">
+                    <span class="result-tab__label">${escapeHtml(label)}</span>
+                    <span class="tab-count ${count === 0 ? 'tab-count--zero' : ''}">${count}</span>
                 </button>
             `;
         });
 
         tabsEl.innerHTML = html;
+        tabsEl.setAttribute('role', 'tablist');
     }
 
     /**

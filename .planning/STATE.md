@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: - MVP
-status: executing
-stopped_at: Completed 27-01-PLAN.md
-last_updated: "2026-03-26T23:53:09.907Z"
+milestone: v1.6
+milestone_name: Context-Sensitive Search
+status: completed
+stopped_at: Completed Phase 27 (all 3 plans)
+last_updated: "2026-03-26T23:59:00.000Z"
 last_activity: 2026-03-26
 progress:
-  total_phases: 8
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 7
+  completed_plans: 7
+  percent: 100
 ---
 
 # AccreditAI State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Institutions can achieve and maintain accreditation compliance with minimal manual effort
-**Current focus:** Phase 27 — frontend-visual-testing
+**Current focus:** v1.6 COMPLETE - Context-Sensitive Search
 
 ## Current Position
 
-Phase: 27 (frontend-visual-testing) — EXECUTING
+Phase: 27 (frontend-visual-testing) — COMPLETE
 Plan: 3 of 3
-Status: Ready to execute
+Status: All plans executed
 Last activity: 2026-03-26
 
-Progress: [------------------------] 0% (v1.6)
+Progress: [########################] 100% (v1.6)
 
 ## v1.6 Phases Overview
 
@@ -67,6 +67,7 @@ Progress: [------------------------] 0% (v1.6)
 | Phase 25 P02 | 11 | 2 tasks | 3 files |
 | Phase 26 P02 | 4 | 3 tasks | 5 files |
 | Phase 26 P01 | 14 | 2 tasks | 6 files |
+| Phase 27 P03 | 12 | 4 tasks | 4 files |
 | Phase 27 P02 | 10 | 3 tasks | 3 files |
 | Phase 27 P01 | 12 | 3 tasks | 4 files |
 
@@ -88,25 +89,32 @@ Recent decisions affecting current work:
 - [Phase 27]: Inline search uses 250ms debounce and sequential searchId for race prevention
 - [Phase 27]: Tab key cycles scope only in SEARCH mode to avoid conflicts
 - [Phase 27]: Contextual search API with scope parameter replaces global-search endpoint
+- [Phase 27-03]: SOURCE_TABS_CONTEXTUAL has 9 entries (All + 8 sources) with label_key for i18n
+- [Phase 27-03]: navigateResults() and updateResultsSelection() provide unified keyboard navigation
+- [Phase 27-03]: Result items have ARIA role="option" and aria-selected for accessibility
 
 ### Pending Todos
 
-None yet.
+None - v1.6 milestone complete.
 
 ### Blockers/Concerns
 
-None yet.
+None.
 
 ## Session Continuity
 
-Last session: 2026-03-26T23:52:56.026Z
-Stopped at: Completed 27-01-PLAN.md
+Last session: 2026-03-26T23:59:00.000Z
+Stopped at: Completed Phase 27 Plan 03
 Resume file: None
+
+## v1.6 Completion Summary
+
+All 3 phases (25, 26, 27) and 7 plans completed:
+- Phase 25: SearchContext model, FTS5 scope indexes, ContextualSearchService
+- Phase 26: Contextual search API blueprint, 8-source unified search endpoint
+- Phase 27: ScopeBadge, inline search bar, source tabs with counts, keyboard navigation
 
 ## Next Steps
 
-1. Run `/gsd:plan-phase 25` to create detailed plans for Context Model & Service Layer
-2. Plans should cover:
-   - SearchContext model with 6 scope levels
-   - FTS5 migration for scope-aware indexes
-   - ContextualSearchService with semantic + structured scoping
+1. Commit v1.6 changes
+2. Plan next milestone (v1.7) or select from backlog
