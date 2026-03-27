@@ -71,6 +71,8 @@ from src.api.contextual_search import contextual_search_bp, init_contextual_sear
 from src.api.advertising import advertising_bp, init_advertising_bp
 from src.api.program_comparison import program_comparison_bp
 from src.api.costs import costs_bp
+from src.api.standards_importer_bp import standards_importer_bp, init_standards_importer_bp
+from src.services.standards_import_service import get_import_service
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 from src.services.chat_context_service import ChatContextService
@@ -258,6 +260,16 @@ init_standards_harvester_bp(workspace_manager)
 init_contextual_search_bp(workspace_manager, standards_store)
 init_advertising_bp(workspace_manager)
 
+# Initialize standards import service and blueprint
+import_service = get_import_service(
+    standards_store=standards_store,
+    workspace_manager=workspace_manager,
+)
+init_standards_importer_bp(
+    import_service=import_service,
+    standards_store=standards_store,
+)
+
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
 app.register_blueprint(institutions_bp)
@@ -302,6 +314,7 @@ app.register_blueprint(contextual_search_bp)
 app.register_blueprint(advertising_bp)
 app.register_blueprint(program_comparison_bp)
 app.register_blueprint(costs_bp)
+app.register_blueprint(standards_importer_bp)
 
 
 # =============================================================================
@@ -911,6 +924,12 @@ def evidence_assistant():
 def standards_harvester_page():
     """Standards Harvester page."""
     return render_template('pages/standards_harvester.html')
+
+
+@app.route('/standards-importer')
+def standards_importer_page():
+    """Universal Standards Importer page."""
+    return render_template('standards_importer.html')
 
 
 @app.route('/agent-sessions')
