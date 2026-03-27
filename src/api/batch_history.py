@@ -18,16 +18,19 @@ batch_history_bp = Blueprint('batch_history', __name__)
 
 # Module-level references (set during initialization)
 _workspace_manager = None
+_ai_client = None
 
 
-def init_batch_history_bp(workspace_manager):
+def init_batch_history_bp(workspace_manager, ai_client=None):
     """Initialize the batch history blueprint with dependencies.
 
     Args:
         workspace_manager: WorkspaceManager instance for persistence.
+        ai_client: AIClient instance for Anthropic Batch API (optional).
     """
-    global _workspace_manager
+    global _workspace_manager, _ai_client
     _workspace_manager = workspace_manager
+    _ai_client = ai_client
     return batch_history_bp
 
 
@@ -251,4 +254,102 @@ def get_batch_stats(institution_id: str):
         "total_cost": round(total_cost, 2),
         "avg_success_rate": avg_success_rate,
         "by_operation_type": by_operation_type,
+    }), 200
+
+
+@batch_history_bp.route('/api/institutions/<institution_id>/batches/<batch_id>/submit-anthropic', methods=['POST'])
+def submit_to_anthropic(institution_id: str, batch_id: str):
+    """Submit a batch to Anthropic Batch API for async processing.
+
+    This enables 50% cost savings compared to real-time processing.
+    Batch will be processed asynchronously (typically <1 hour, max 24 hours).
+
+    Returns:
+        JSON with anthropic_batch_id, processing_status, request_count, expires_at
+    """
+    if not _ai_client:
+        return jsonify({"error": "AI client not configured"}), 500
+
+    batch_service = BatchService(_workspace_manager)
+    batch = batch_service.get_batch(batch_id)
+
+    if not batch:
+        return jsonify({"error": "Batch not found"}), 404
+
+    if batch.institution_id != institution_id:
+        return jsonify({"error": "Batch does not belong to this institution"}), 403
+
+    result = batch_service.submit_to_anthropic(batch_id, _ai_client)
+
+    if "error" in result:
+        return jsonify(result), 400
+
+    return jsonify({
+        "message": "Batch submitted to Anthropic Batch API",
+        "batch_id": result["batch_id"],
+        "anthropic_batch_id": result["anthropic_batch_id"],
+        "processing_status": result["processing_status"],
+        "request_count": result["request_count"],
+        "expires_at": result.get("expires_at"),
+        "estimated_savings": "50% vs real-time",
+    }), 202
+
+
+@batch_history_bp.route('/api/institutions/<institution_id>/batches/<batch_id>/poll-anthropic', methods=['GET'])
+def poll_anthropic_batch(institution_id: str, batch_id: str):
+    """Poll Anthropic batch status.
+
+    Returns:
+        JSON with processing_status, request_counts, ended_at, results_url
+    """
+    if not _ai_client:
+        return jsonify({"error": "AI client not configured"}), 500
+
+    batch_service = BatchService(_workspace_manager)
+    batch = batch_service.get_batch(batch_id)
+
+    if not batch:
+        return jsonify({"error": "Batch not found"}), 404
+
+    if batch.institution_id != institution_id:
+        return jsonify({"error": "Batch does not belong to this institution"}), 403
+
+    result = batch_service.poll_anthropic_batch(batch_id, _ai_client)
+
+    if "error" in result:
+        return jsonify(result), 400
+
+    return jsonify(result), 200
+
+
+@batch_history_bp.route('/api/institutions/<institution_id>/batches/<batch_id>/process-results', methods=['POST'])
+def process_anthropic_results(institution_id: str, batch_id: str):
+    """Process results from completed Anthropic batch.
+
+    Call this after polling shows processing_status='ended'.
+
+    Returns:
+        JSON with succeeded, failed, total_tokens, actual_cost (with 50% savings)
+    """
+    if not _ai_client:
+        return jsonify({"error": "AI client not configured"}), 500
+
+    batch_service = BatchService(_workspace_manager)
+    batch = batch_service.get_batch(batch_id)
+
+    if not batch:
+        return jsonify({"error": "Batch not found"}), 404
+
+    if batch.institution_id != institution_id:
+        return jsonify({"error": "Batch does not belong to this institution"}), 403
+
+    result = batch_service.process_anthropic_results(batch_id, _ai_client)
+
+    if "error" in result:
+        return jsonify(result), 400
+
+    return jsonify({
+        "message": "Batch results processed",
+        **result,
+        "note": "Cost includes 50% Batch API discount"
     }), 200
