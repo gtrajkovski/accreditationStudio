@@ -96,36 +96,45 @@ class AgentRegistry:
         # Import all agents to trigger registration
         try:
             from src.agents import (
+                # Tier 0 - Runtime & Governance
                 orchestrator_agent,
-                evidence_guardian,  # Tier 0 governance
+                evidence_guardian,
+                # Tier 1 - Document Intake
                 ingestion_agent,
+                # Tier 2 - Standards Management
                 standards_librarian,
-                evidence_mapper,
-                crosswalk_builder,
-                policy_consistency,
-                truth_index_curator,
+                # Tier 3 - Compliance Analysis
                 compliance_audit,
+                policy_consistency,
                 risk_scorer,
-                substantive_change,
+                findings_agent,  # GAP_FINDER
+                # Tier 4 - Remediation & Authoring
                 remediation_agent,
+                truth_index_curator,
+                substantive_change,
+                # Tier 5 - Submission Preparation
                 narrative_agent,
+                crosswalk_builder,
+                packet_agent,  # PACKET
                 packet_assembler,
-                calendar_deadline,
                 site_visit_prep,
-                # Phase 6
+                # Tier 6 - Product Experience
+                checklist_agent,  # WORKFLOW_COACH
+                calendar_deadline,
+                evidence_mapper,
+                # Domain Agents
                 faculty_agent,
                 catalog_agent,
                 evidence_agent,
                 achievement_agent,
-                # Phase 7
+                # Visit Preparation
                 interview_prep_agent,
                 ser_drafting_agent,
-                checklist_agent,
-                # Phase 8
+                # Post-Visit & Ongoing
                 team_report_agent,
                 compliance_calendar_agent,
                 document_review_agent,
-                # Post-MVP
+                # Analytics
                 knowledge_graph_agent,
             )
         except ImportError:

@@ -27,87 +27,82 @@ from src.core.models import (
 
 
 class AgentType(Enum):
-    """Types of specialized agents in the system (24 total).
+    """Types of specialized agents in the system (29 registered).
+
+    Organized by functional tier:
 
     Tier 0 - Runtime & Governance:
-        ORCHESTRATOR, POLICY_SAFETY, EVIDENCE_GUARDIAN
-    Tier 1 - Intake, Organization & Retrieval:
-        DOCUMENT_INTAKE, PARSING_STRUCTURE, PII_REDACTION, RETRIEVAL_TUNING
-    Tier 2 - Standards & Regulatory Stack:
-        STANDARDS_CURATOR, REGULATORY_STACK, STANDARDS_TRANSLATOR
-    Tier 3 - Compliance Analysis & Quality:
-        COMPLIANCE_AUDIT, CONSISTENCY, RISK_SCORER, GAP_FINDER
+        ORCHESTRATOR, EVIDENCE_GUARDIAN
+    Tier 1 - Document Intake:
+        INGESTION
+    Tier 2 - Standards Management:
+        STANDARDS_LIBRARIAN
+    Tier 3 - Compliance Analysis:
+        COMPLIANCE_AUDIT, POLICY_CONSISTENCY, RISK_SCORER, GAP_FINDER
     Tier 4 - Remediation & Authoring:
-        REMEDIATION, POLICY_AUTHOR, EXHIBIT_BUILDER, CHANGE_IMPACT
-    Tier 5 - Submission & Audit Defense:
-        NARRATIVE, CROSSWALK, PACKET, SITE_VISIT_COACH
+        REMEDIATION, TRUTH_INDEX_CURATOR, SUBSTANTIVE_CHANGE
+    Tier 5 - Submission Preparation:
+        NARRATIVE, CROSSWALK_BUILDER, PACKET, PACKET_ASSEMBLER, SITE_VISIT_PREP
     Tier 6 - Product Experience:
-        WORKFLOW_COACH, LOCALIZATION_QA
+        WORKFLOW_COACH, CALENDAR_DEADLINE, EVIDENCE_MAPPER
+    Domain Agents:
+        FACULTY, ACHIEVEMENT, EVIDENCE, CATALOG
+    Visit Preparation:
+        INTERVIEW_PREP, SER_DRAFTING
+    Post-Visit:
+        TEAM_REPORT, COMPLIANCE_CALENDAR, DOCUMENT_REVIEW
+    Analytics:
+        KNOWLEDGE_GRAPH
     """
     # Tier 0 - Runtime & Governance
     ORCHESTRATOR = "orchestrator"
-    POLICY_SAFETY = "policy_safety"
     EVIDENCE_GUARDIAN = "evidence_guardian"
 
-    # Tier 1 - Intake, Organization & Retrieval
-    DOCUMENT_INTAKE = "document_intake"
-    INGESTION = "ingestion"  # Legacy alias for DOCUMENT_INTAKE
-    PARSING_STRUCTURE = "parsing_structure"
-    PII_REDACTION = "pii_redaction"
-    RETRIEVAL_TUNING = "retrieval_tuning"
+    # Tier 1 - Document Intake
+    INGESTION = "ingestion"
 
-    # Tier 2 - Standards & Regulatory Stack
-    STANDARDS_CURATOR = "standards_curator"
-    STANDARDS_LIBRARIAN = "standards_librarian"  # Legacy alias
-    REGULATORY_STACK = "regulatory_stack"
-    STANDARDS_TRANSLATOR = "standards_translator"
+    # Tier 2 - Standards Management
+    STANDARDS_LIBRARIAN = "standards_librarian"
 
-    # Tier 3 - Compliance Analysis & Quality
+    # Tier 3 - Compliance Analysis
     COMPLIANCE_AUDIT = "compliance_audit"
-    CONSISTENCY = "consistency"
-    POLICY_CONSISTENCY = "policy_consistency"  # Legacy alias
+    POLICY_CONSISTENCY = "policy_consistency"
     RISK_SCORER = "risk_scorer"
     GAP_FINDER = "gap_finder"
 
     # Tier 4 - Remediation & Authoring
     REMEDIATION = "remediation"
-    POLICY_AUTHOR = "policy_author"
-    EXHIBIT_BUILDER = "exhibit_builder"
-    CHANGE_IMPACT = "change_impact"
-    TRUTH_INDEX_CURATOR = "truth_index_curator"  # Legacy
-    SUBSTANTIVE_CHANGE = "substantive_change"  # Legacy alias
+    TRUTH_INDEX_CURATOR = "truth_index_curator"
+    SUBSTANTIVE_CHANGE = "substantive_change"
 
-    # Tier 5 - Submission & Audit Defense
+    # Tier 5 - Submission Preparation
     NARRATIVE = "narrative"
-    CROSSWALK = "crosswalk"
-    CROSSWALK_BUILDER = "crosswalk_builder"  # Legacy alias
+    CROSSWALK_BUILDER = "crosswalk_builder"
     PACKET = "packet"
-    PACKET_ASSEMBLER = "packet_assembler"  # Legacy alias
-    SITE_VISIT_COACH = "site_visit_coach"
-    SITE_VISIT_PREP = "site_visit_prep"  # Legacy alias
+    PACKET_ASSEMBLER = "packet_assembler"
+    SITE_VISIT_PREP = "site_visit_prep"
 
     # Tier 6 - Product Experience
     WORKFLOW_COACH = "workflow_coach"
-    LOCALIZATION_QA = "localization_qa"
-    CALENDAR_DEADLINE = "calendar_deadline"  # Legacy
-    EVIDENCE_MAPPER = "evidence_mapper"  # Legacy
+    CALENDAR_DEADLINE = "calendar_deadline"
+    EVIDENCE_MAPPER = "evidence_mapper"
 
-    # Phase 6 - Catalog, Exhibits, Faculty, Achievements
+    # Domain Agents - Catalog, Exhibits, Faculty, Achievements
     FACULTY = "faculty"
     ACHIEVEMENT = "achievement"
     EVIDENCE = "evidence"
     CATALOG = "catalog"
 
-    # Phase 7 - Visit Prep, Interview, SER Drafting
+    # Visit Preparation
     INTERVIEW_PREP = "interview_prep"
     SER_DRAFTING = "ser_drafting"
 
-    # Phase 8 - Post-Visit + Ongoing
+    # Post-Visit & Ongoing Compliance
     TEAM_REPORT = "team_report"
     COMPLIANCE_CALENDAR = "compliance_calendar"
     DOCUMENT_REVIEW = "document_review"
 
-    # Post-MVP Features
+    # Analytics & Knowledge Management
     KNOWLEDGE_GRAPH = "knowledge_graph"
 
 
