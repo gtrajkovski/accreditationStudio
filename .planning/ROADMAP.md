@@ -370,7 +370,7 @@ Plans:
 
 - [x] **Phase 28: Performance Quick Wins** - HTTP caching, gzip compression, N+1 query fixes, database indexes (completed 2026-03-27)
 - [x] **Phase 29: AI Cost Optimization** - Multi-model routing, cost tracking dashboard, batch API integration (2/3 complete, gap closure in progress) (completed 2026-03-27)
-- [ ] **Phase 30: Accessibility & Polish** - Skip-to-main link, ARIA live regions, form validation ARIA, toast improvements
+- [x] **Phase 30: Accessibility & Polish** - Skip-to-main link, ARIA live regions, form validation ARIA, toast improvements (completed 2026-03-27)
 
 ## Phase Details
 
@@ -412,10 +412,10 @@ Plans:
   2. ARIA live regions announce status updates to screen readers
   3. Form validation errors are associated with fields via aria-describedby
   4. Toast notifications have stacking limit and dismiss-all button
-**Plans:** 1/1 plans
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 30-01-PLAN.md — Skip-to-main, ARIA live regions, form validation CSS, toast improvements (A11Y-01, A11Y-02, A11Y-03, A11Y-04)
+- [x] 30-01-PLAN.md — Skip-to-main, ARIA live regions, form validation CSS, toast improvements (A11Y-01, A11Y-02, A11Y-03, A11Y-04)
 
 ---
 
