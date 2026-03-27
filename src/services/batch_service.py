@@ -16,6 +16,7 @@ from src.core.models import (
     now_iso,
 )
 from src.db.connection import get_conn
+from src.config import Config
 
 
 # Anthropic API pricing (as of 2024, per 1M tokens)
@@ -26,6 +27,14 @@ MODEL_PRICING = {
     "claude-3-5-sonnet-20241022": {"input": 3.0, "output": 15.0},
     # Phase 29: Fast model for simple tasks
     "claude-3-5-haiku-20241022": {"input": 0.80, "output": 4.0},
+}
+
+# Anthropic Batch API pricing (50% of standard rates)
+BATCH_PRICING = {
+    "claude-sonnet-4-20250514": {"input": 1.5, "output": 7.5},
+    "claude-opus-4-5-20251101": {"input": 7.5, "output": 37.5},
+    "claude-3-5-sonnet-20241022": {"input": 1.5, "output": 7.5},
+    "claude-3-5-haiku-20241022": {"input": 0.40, "output": 2.0},
 }
 
 # Average token usage per operation (empirical estimates)
@@ -53,7 +62,8 @@ AVG_TOKENS_PER_OPERATION = {
 def estimate_batch_cost(
     operation_type: str,
     documents: List[Dict[str, Any]],
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-sonnet-4-20250514",
+    batch_mode: str = "realtime"
 ) -> Dict[str, Any]:
     """Estimate the cost of a batch operation.
 
@@ -61,6 +71,7 @@ def estimate_batch_cost(
         operation_type: "audit" or "remediation"
         documents: List of document dicts with 'id', 'name', 'doc_type'
         model: Model name to use for pricing
+        batch_mode: "realtime" (standard pricing) or "async" (50% discount)
 
     Returns:
         Dict with:
@@ -73,7 +84,11 @@ def estimate_batch_cost(
     if model not in MODEL_PRICING:
         model = "claude-sonnet-4-20250514"  # Default fallback
 
-    pricing = MODEL_PRICING[model]
+    # Select pricing based on batch mode
+    if batch_mode == "async":
+        pricing = BATCH_PRICING.get(model, BATCH_PRICING["claude-sonnet-4-20250514"])
+    else:
+        pricing = MODEL_PRICING.get(model, MODEL_PRICING["claude-sonnet-4-20250514"])
     token_estimates = AVG_TOKENS_PER_OPERATION.get(operation_type, AVG_TOKENS_PER_OPERATION["audit"])
 
     per_document = []
@@ -460,6 +475,261 @@ class BatchService:
             batches.append(BatchOperation.from_dict(batch_data))
 
         return batches
+
+    def submit_to_anthropic(
+        self,
+        batch_id: str,
+        ai_client: "AIClient"
+    ) -> Dict[str, Any]:
+        """Submit a batch to Anthropic Batch API for async processing.
+
+        Args:
+            batch_id: Local batch operation ID
+            ai_client: AIClient instance with API credentials
+
+        Returns:
+            Dict with anthropic_batch_id, processing_status, expires_at
+        """
+        batch = self.get_batch(batch_id)
+        if not batch:
+            return {"error": "Batch not found"}
+
+        if batch.status != "pending":
+            return {"error": f"Batch already {batch.status}"}
+
+        # Load documents to build prompts
+        institution = self.workspace_manager.load_institution(batch.institution_id)
+        if not institution:
+            return {"error": "Institution not found"}
+
+        # Build Anthropic batch requests
+        requests = []
+        for item in batch.items:
+            # Find document
+            doc = next((d for d in institution.documents if d.id == item.document_id), None)
+            if not doc:
+                continue
+
+            # Load document content
+            doc_path = self.workspace_manager.get_document_path(
+                batch.institution_id, item.document_id
+            )
+            content = ""
+            if doc_path and doc_path.exists():
+                content = doc_path.read_text(encoding='utf-8', errors='ignore')[:50000]  # Limit to 50k chars
+
+            # Build request
+            system_prompt = self._get_audit_system_prompt(batch.operation_type)
+            user_prompt = self._get_audit_user_prompt(batch.operation_type, doc, content)
+
+            requests.append({
+                "custom_id": item.id,  # Use batch_item.id as custom_id
+                "params": {
+                    "model": Config.MODEL,
+                    "max_tokens": Config.MAX_TOKENS,
+                    "system": system_prompt,
+                    "messages": [{"role": "user", "content": user_prompt}]
+                }
+            })
+
+        if not requests:
+            return {"error": "No valid documents to process"}
+
+        # Submit to Anthropic
+        result = ai_client.submit_batch(requests)
+
+        # Update local batch record
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE batch_operations
+            SET anthropic_batch_id = ?,
+                batch_mode = 'async',
+                anthropic_status = ?,
+                expires_at = ?,
+                status = 'running',
+                started_at = ?
+            WHERE id = ?
+        """, (
+            result["batch_id"],
+            result["processing_status"],
+            result.get("expires_at"),
+            now_iso(),
+            batch_id
+        ))
+
+        # Update item custom_ids
+        for req in requests:
+            cursor.execute("""
+                UPDATE batch_items
+                SET anthropic_custom_id = ?
+                WHERE id = ?
+            """, (req["custom_id"], req["custom_id"]))
+
+        self.conn.commit()
+
+        return {
+            "batch_id": batch_id,
+            "anthropic_batch_id": result["batch_id"],
+            "processing_status": result["processing_status"],
+            "request_count": len(requests),
+            "expires_at": result.get("expires_at"),
+        }
+
+    def poll_anthropic_batch(
+        self,
+        batch_id: str,
+        ai_client: "AIClient"
+    ) -> Dict[str, Any]:
+        """Poll Anthropic batch status and update local record."""
+        batch = self.get_batch(batch_id)
+        anthropic_batch_id = None
+
+        if not batch or not batch.metadata.get("anthropic_batch_id"):
+            # Check if anthropic_batch_id is in the db directly
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT anthropic_batch_id FROM batch_operations WHERE id = ?", (batch_id,))
+            row = cursor.fetchone()
+            if not row or not row["anthropic_batch_id"]:
+                return {"error": "No Anthropic batch ID found"}
+            anthropic_batch_id = row["anthropic_batch_id"]
+        else:
+            anthropic_batch_id = batch.metadata.get("anthropic_batch_id")
+
+        # Poll Anthropic
+        status = ai_client.get_batch_status(anthropic_batch_id)
+
+        # Update local record
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            UPDATE batch_operations
+            SET anthropic_status = ?,
+                results_url = ?
+            WHERE id = ?
+        """, (
+            status["processing_status"],
+            status.get("results_url"),
+            batch_id
+        ))
+        self.conn.commit()
+
+        return {
+            "batch_id": batch_id,
+            "anthropic_batch_id": anthropic_batch_id,
+            "processing_status": status["processing_status"],
+            "request_counts": status["request_counts"],
+            "ended_at": status.get("ended_at"),
+            "results_url": status.get("results_url"),
+        }
+
+    def process_anthropic_results(
+        self,
+        batch_id: str,
+        ai_client: "AIClient"
+    ) -> Dict[str, Any]:
+        """Retrieve and process results from completed Anthropic batch."""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT anthropic_batch_id, anthropic_status FROM batch_operations WHERE id = ?", (batch_id,))
+        row = cursor.fetchone()
+
+        if not row or not row["anthropic_batch_id"]:
+            return {"error": "No Anthropic batch ID found"}
+
+        if row["anthropic_status"] != "ended":
+            return {"error": "Batch not yet completed", "status": row["anthropic_status"]}
+
+        anthropic_batch_id = row["anthropic_batch_id"]
+
+        # Process results
+        succeeded = 0
+        failed = 0
+        total_input_tokens = 0
+        total_output_tokens = 0
+
+        for result in ai_client.get_batch_results(anthropic_batch_id):
+            custom_id = result["custom_id"]
+
+            if result["result_type"] == "succeeded":
+                message = result["message"]
+                input_tokens = message.usage.input_tokens if message else 0
+                output_tokens = message.usage.output_tokens if message else 0
+
+                self.update_item_status(
+                    custom_id,
+                    "completed",
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens
+                )
+                succeeded += 1
+                total_input_tokens += input_tokens
+                total_output_tokens += output_tokens
+
+            elif result["result_type"] in ("errored", "expired", "canceled"):
+                error_msg = str(result.get("error", result["result_type"]))
+                self.update_item_status(custom_id, "failed", error=error_msg)
+                failed += 1
+
+        # Calculate actual cost with batch pricing (50% discount)
+        pricing = BATCH_PRICING.get(Config.MODEL, BATCH_PRICING["claude-sonnet-4-20250514"])
+        actual_cost = (
+            (total_input_tokens / 1_000_000) * pricing["input"] +
+            (total_output_tokens / 1_000_000) * pricing["output"]
+        )
+
+        # Update batch record
+        cursor.execute("""
+            UPDATE batch_operations
+            SET status = 'completed',
+                completed_at = ?,
+                actual_cost = ?,
+                completed_count = ?,
+                failed_count = ?
+            WHERE id = ?
+        """, (now_iso(), actual_cost, succeeded, failed, batch_id))
+        self.conn.commit()
+
+        return {
+            "batch_id": batch_id,
+            "succeeded": succeeded,
+            "failed": failed,
+            "total_input_tokens": total_input_tokens,
+            "total_output_tokens": total_output_tokens,
+            "actual_cost": round(actual_cost, 4),
+            "savings_vs_realtime": round(actual_cost, 4),  # 50% savings
+        }
+
+    def _get_audit_system_prompt(self, operation_type: str) -> str:
+        """Get system prompt for audit/remediation."""
+        if operation_type == "audit":
+            return """You are an expert compliance auditor for post-secondary educational institutions.
+Analyze the document against accreditation standards and identify compliance issues.
+Return findings in JSON format with: standard_id, finding_type, severity, description, evidence, recommendation."""
+        else:
+            return """You are an expert compliance remediation specialist.
+Review the document and suggest specific improvements to address compliance gaps.
+Return recommendations in JSON format with: issue, current_text, suggested_text, rationale."""
+
+    def _get_audit_user_prompt(self, operation_type: str, doc, content: str) -> str:
+        """Get user prompt for audit/remediation."""
+        if operation_type == "audit":
+            return f"""Audit the following document for compliance issues:
+
+Document: {doc.name}
+Type: {doc.doc_type}
+
+Content:
+{content}
+
+Identify any compliance gaps, missing information, or areas needing improvement."""
+        else:
+            return f"""Remediate the following document:
+
+Document: {doc.name}
+Type: {doc.doc_type}
+
+Content:
+{content}
+
+Suggest specific text changes to improve compliance."""
 
     def _save_batch_to_db(self, batch: BatchOperation) -> None:
         """Save batch and items to database.
