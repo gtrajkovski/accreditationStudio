@@ -18,6 +18,12 @@ from src.importers.document_chunker import (
     get_chunker,
     chunk_document,
 )
+from src.importers.language_detector import (
+    detect_language,
+    detect_language_simple,
+    detect_language_ai,
+    detect_language_hybrid,
+)
 from src.core.models import DocumentChunk, ChunkedDocument
 
 __all__ = [
@@ -32,6 +38,11 @@ __all__ = [
     "get_detector",
     "detect_pii",
     "redact_pii",
+    # Language
+    "detect_language",
+    "detect_language_simple",
+    "detect_language_ai",
+    "detect_language_hybrid",
     # Chunker
     "DocumentChunker",
     "DocumentChunk",
