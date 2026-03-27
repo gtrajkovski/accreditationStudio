@@ -7,10 +7,13 @@ Detects common PII patterns:
 - Dates of birth
 - Street addresses
 - Credit card numbers
+
+Phase 29: Added AI-enhanced detection using Haiku for edge cases.
 """
 
 import re
-from typing import List, Dict, Any, Tuple
+import json
+from typing import List, Dict, Any, Tuple, Optional
 from dataclasses import dataclass
 
 
@@ -243,3 +246,135 @@ def redact_pii(text: str) -> str:
     """Convenience function to redact PII."""
     redacted, _ = get_detector().redact(text)
     return redacted
+
+
+def detect_pii_ai(text: str, ai_client) -> List[PIIMatch]:
+    """Detect PII using AI-enhanced detection (routed to Haiku for cost efficiency).
+
+    Uses Claude Haiku for pattern recognition to catch edge cases that regex might miss.
+    Falls back to regex-only if AI detection fails.
+
+    Args:
+        text: Text to scan for PII (limited to 4000 chars for efficiency)
+        ai_client: AIClient instance
+
+    Returns:
+        List of PIIMatch objects with AI-detected instances
+    """
+    # Import here to avoid circular dependency
+    from src.ai.client import AIClient
+
+    # Limit input for cost efficiency
+    text_sample = text[:4000]
+
+    # System prompt for PII detection
+    system_prompt = """You are a PII (Personally Identifiable Information) detection specialist.
+
+Your task is to identify PII in text with high precision. Output ONLY valid JSON.
+
+PII types to detect:
+- ssn: Social Security Numbers (XXX-XX-XXXX format)
+- phone: Phone numbers (various formats)
+- email: Email addresses
+- dob: Dates of birth (MM/DD/YYYY or similar)
+- credit_card: Credit card numbers
+- address: Street addresses (house number + street name)
+- name: Full names (first + last name combinations)
+
+Output format (JSON only, no other text):
+{
+  "pii_found": [
+    {"type": "ssn", "value": "123-45-6789", "start": 45, "end": 56},
+    {"type": "email", "value": "john@example.com", "start": 120, "end": 136}
+  ]
+}
+
+If no PII found, return: {"pii_found": []}
+
+Be conservative - only flag items you're confident are PII."""
+
+    user_prompt = f"Scan this text for PII:\n\n{text_sample}"
+
+    try:
+        # Use fast model - simple pattern recognition task (Phase 29)
+        response = ai_client.generate_fast(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt
+        )
+
+        # Parse JSON response
+        result = json.loads(response.strip())
+        pii_items = result.get("pii_found", [])
+
+        # Convert to PIIMatch objects
+        matches = []
+        for item in pii_items:
+            # Validate that positions are within text bounds
+            start = item.get("start", 0)
+            end = item.get("end", 0)
+            if start < 0 or end > len(text_sample):
+                continue
+
+            matches.append(PIIMatch(
+                pii_type=item.get("type", "unknown"),
+                value=item.get("value", ""),
+                start=start,
+                end=end,
+                confidence=0.85  # AI detection confidence
+            ))
+
+        return matches
+
+    except (json.JSONDecodeError, Exception):
+        # Fallback to regex detection on AI failure
+        return get_detector().detect(text_sample)
+
+
+def detect_pii_hybrid(text: str, ai_client: Optional[object] = None) -> List[PIIMatch]:
+    """Hybrid PII detection combining regex + AI (Phase 29).
+
+    Uses regex for high-confidence patterns, AI for edge cases.
+    Routes AI calls to Haiku for 90% cost savings.
+
+    Args:
+        text: Text to scan for PII
+        ai_client: Optional AIClient instance for AI-enhanced detection
+
+    Returns:
+        Combined list of PIIMatch objects (deduplicated)
+    """
+    # Start with regex detection (fast, free)
+    regex_matches = get_detector().detect(text)
+
+    # If no AI client or text is short, use regex only
+    if not ai_client or len(text) < 100:
+        return regex_matches
+
+    # Add AI detection for edge cases
+    ai_matches = detect_pii_ai(text, ai_client)
+
+    # Combine and deduplicate (prefer higher confidence)
+    all_matches = regex_matches + ai_matches
+    seen_positions = set()
+    unique_matches = []
+
+    # Sort by confidence (highest first)
+    all_matches.sort(key=lambda m: m.confidence, reverse=True)
+
+    for match in all_matches:
+        # Check for overlap with existing matches
+        overlaps = False
+        for seen_start, seen_end in seen_positions:
+            if (match.start >= seen_start and match.start < seen_end) or \
+               (match.end > seen_start and match.end <= seen_end):
+                overlaps = True
+                break
+
+        if not overlaps:
+            unique_matches.append(match)
+            seen_positions.add((match.start, match.end))
+
+    # Sort by position
+    unique_matches.sort(key=lambda m: m.start)
+
+    return unique_matches
