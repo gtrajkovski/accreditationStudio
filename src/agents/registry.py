@@ -103,6 +103,7 @@ class AgentRegistry:
                 ingestion_agent,
                 # Tier 2 - Standards Management
                 standards_librarian,
+                standards_importer_agent,
                 # Tier 3 - Compliance Analysis
                 compliance_audit,
                 policy_consistency,
