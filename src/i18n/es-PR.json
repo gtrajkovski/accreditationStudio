@@ -662,5 +662,29 @@
       "standards": "Buscar estandares...",
       "compliance": "Buscar datos de cumplimiento..."
     }
+  },
+  "advertising": {
+    "title": "Cumplimiento Publicitario",
+    "subtitle": "Escanear materiales de marketing para cumplimiento con FTC y acreditadores",
+    "scan_url": "Escanear URL",
+    "scan_document": "Escanear Documento",
+    "scanning": "Escaneando...",
+    "compliance_score": "Puntuación de Cumplimiento",
+    "total_claims": "Declaraciones Totales",
+    "verified": "Verificadas",
+    "unverified": "Sin Verificar",
+    "violations": "Violaciones",
+    "warnings": "Advertencias",
+    "unverifiable": "No Verificable",
+    "risk_level": "Nivel de Riesgo",
+    "findings": "Hallazgos",
+    "no_findings": "Ejecute un escaneo para ver hallazgos",
+    "scan_history": "Historial de Escaneos",
+    "no_scans": "Aún no hay escaneos. Escanee una URL o documento para verificar cumplimiento publicitario.",
+    "url_to_scan": "URL a Escanear",
+    "url_scan_description": "Ingrese una URL de página web para escanear declaraciones publicitarias. El escáner extraerá y verificará declaraciones contra los datos de logros de su institución.",
+    "select_document": "Seleccionar Documento",
+    "doc_scan_description": "Seleccione un documento de marketing para escanear declaraciones publicitarias. El escáner extraerá y verificará declaraciones contra los datos de logros de su institución.",
+    "start_scan": "Iniciar Escaneo"
   }
 }

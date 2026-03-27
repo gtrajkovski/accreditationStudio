@@ -182,6 +182,9 @@
                         <a href="{{ url_for('institution_simulation', id=current_institution.id) }}" class="nav-item nav-item-nested">
                             Simulation
                         </a>
+                        <a href="{{ url_for('institution_advertising', id=current_institution.id) }}" class="nav-item nav-item-nested {% if request.endpoint == 'institution_advertising' %}active{% endif %}">
+                            {{ t('advertising.title') }}
+                        </a>
                         <a href="{{ url_for('reports_page', institution_id=current_institution.id) }}" class="nav-item nav-item-nested {% if request.endpoint == 'reports_page' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 8px;">
                                 <path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>

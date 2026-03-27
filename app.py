@@ -713,6 +713,21 @@ def institution_simulation(id):
     )
 
 
+@app.route('/institutions/<id>/advertising')
+def institution_advertising(id):
+    """Advertising compliance scanner page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/advertising.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
 @app.route('/institutions/<id>/faculty')
 def institution_faculty(id):
     """Faculty credential management page."""

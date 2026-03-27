@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}{{ t('advertising.title') }} - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-primary" onclick="showUrlScanModal()" id="scanUrlBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+    </svg>
+    {{ t('advertising.scan_url') }}
+</button>
+<button class="btn btn-secondary" onclick="showDocScanModal()" id="scanDocBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+    </svg>
+    {{ t('advertising.scan_document') }}
+</button>
+{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title=t('advertising.title'),
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), (t('advertising.title'), none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<!-- Progress Card (hidden by default) -->
+<div class="scan-progress card mb-lg" id="progressCard" style="display: none;">
+    <div class="card-header"><h3 class="card-title">{{ t('advertising.scanning') }}</h3></div>
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+    </div>
+    <div class="progress-message" id="progressMessage">{{ t('common.loading') }}</div>
+</div>
+
+<!-- Results Summary -->
+<div class="results-section" id="resultsSection" style="display: none;">
+    <div class="results-summary">
+        <div class="score-card">
+            <div class="score-value" id="complianceScore">--</div>
+            <div class="score-label">{{ t('advertising.compliance_score') }}</div>
+        </div>
+        <div class="stats-breakdown">
+            <div class="stat-item">
+                <span class="stat-value" id="totalClaims">0</span>
+                <span class="stat-label">{{ t('advertising.total_claims') }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value stat-success" id="verifiedClaims">0</span>
+                <span class="stat-label">{{ t('advertising.verified') }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value stat-warning" id="unverifiedClaims">0</span>
+                <span class="stat-label">{{ t('advertising.unverified') }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value stat-danger" id="violations">0</span>
+                <span class="stat-label">{{ t('advertising.violations') }}</span>
+            </div>
+        </div>
+        <div class="risk-card">
+            <div class="risk-label">{{ t('advertising.risk_level') }}</div>
+            <div class="risk-value" id="riskLevel">--</div>
+        </div>
+    </div>
+
+    <!-- Findings -->
+    <div class="card mt-lg">
+        <div class="card-header">
+            <h3 class="card-title">{{ t('advertising.findings') }}</h3>
+            <div class="findings-filters">
+                <button class="filter-btn active" data-filter="all">{{ t('common.filter') }}: {{ t('work_queue.all') }}</button>
+                <button class="filter-btn" data-filter="violation">{{ t('advertising.violations') }}</button>
+                <button class="filter-btn" data-filter="warning">{{ t('advertising.warnings') }}</button>
+                <button class="filter-btn" data-filter="verified">{{ t('advertising.verified') }}</button>
+                <button class="filter-btn" data-filter="unverifiable">{{ t('advertising.unverifiable') }}</button>
+            </div>
+        </div>
+        <div class="findings-list" id="findingsList">
+            <div class="empty-state">{{ t('advertising.no_findings') }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Scan History -->
+<div class="card mt-lg" id="historySection">
+    <div class="card-header">
+        <h3 class="card-title">{{ t('advertising.scan_history') }}</h3>
+        <button class="btn btn-sm btn-secondary" onclick="loadHistory()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+            {{ t('common.refresh') }}
+        </button>
+    </div>
+    <div class="history-list" id="historyList">
+        <div class="empty-state">{{ t('advertising.no_scans') }}</div>
+    </div>
+</div>
+
+<!-- URL Scan Modal -->
+<div class="modal" id="urlScanModal">
+    <div class="modal-overlay" onclick="closeModal('urlScanModal')"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>{{ t('advertising.scan_url') }}</h3>
+            <button class="modal-close" onclick="closeModal('urlScanModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="scanUrl">{{ t('advertising.url_to_scan') }}</label>
+                <input type="url" id="scanUrl" class="form-control" placeholder="https://example.edu/programs">
+            </div>
+            <p class="text-muted" style="font-size: 0.875rem;">
+                {{ t('advertising.url_scan_description') }}
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('urlScanModal')">{{ t('common.cancel') }}</button>
+            <button class="btn btn-primary" onclick="submitUrlScan()">{{ t('advertising.start_scan') }}</button>
+        </div>
+    </div>
+</div>
+
+<!-- Document Scan Modal -->
+<div class="modal" id="docScanModal">
+    <div class="modal-overlay" onclick="closeModal('docScanModal')"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>{{ t('advertising.scan_document') }}</h3>
+            <button class="modal-close" onclick="closeModal('docScanModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="docSelect">{{ t('advertising.select_document') }}</label>
+                <select id="docSelect" class="form-control">
+                    <option value="">{{ t('common.loading') }}</option>
+                </select>
+            </div>
+            <p class="text-muted" style="font-size: 0.875rem;">
+                {{ t('advertising.doc_scan_description') }}
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('docScanModal')">{{ t('common.cancel') }}</button>
+            <button class="btn btn-primary" onclick="submitDocScan()">{{ t('advertising.start_scan') }}</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.scan-progress { padding: var(--spacing-lg); }
+.progress-container { height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; margin: var(--spacing-md) 0; }
+.progress-bar { height: 100%; background: var(--accent); transition: width 0.3s; }
+.progress-message { font-size: 0.875rem; color: var(--text-muted); text-align: center; }
+
+.results-summary { display: grid; grid-template-columns: 150px 1fr 150px; gap: var(--spacing-lg); margin-bottom: var(--spacing-lg); }
+@media (max-width: 800px) { .results-summary { grid-template-columns: 1fr; } }
+
+.score-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--spacing-lg); text-align: center; }
+.score-value { font-size: 2.5rem; font-weight: 700; color: var(--accent); }
+.score-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); }
+
+.stats-breakdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--spacing-md); background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--spacing-lg); }
+@media (max-width: 600px) { .stats-breakdown { grid-template-columns: repeat(2, 1fr); } }
+.stat-item { text-align: center; }
+.stat-value { display: block; font-size: 1.5rem; font-weight: 600; }
+.stat-value.stat-success { color: var(--success); }
+.stat-value.stat-warning { color: var(--warning); }
+.stat-value.stat-danger { color: var(--danger); }
+.stat-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+.risk-card { background: var(--bg-card); border-radius: var(--radius-lg); padding: var(--spacing-lg); text-align: center; }
+.risk-label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); }
+.risk-value { font-size: 1.5rem; font-weight: 700; margin-top: var(--spacing-sm); text-transform: uppercase; }
+.risk-value.low { color: var(--success); }
+.risk-value.medium { color: var(--warning); }
+.risk-value.high, .risk-value.critical { color: var(--danger); }
+
+.findings-filters { display: flex; gap: var(--spacing-xs); flex-wrap: wrap; }
+.filter-btn { padding: 4px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-muted); cursor: pointer; font-size: 12px; }
+.filter-btn:hover { border-color: var(--accent); }
+.filter-btn.active { background: var(--accent); border-color: var(--accent); color: var(--bg-primary); }
+
+.findings-list { max-height: 500px; overflow-y: auto; padding: var(--spacing-md); }
+.finding-item { padding: var(--spacing-md); border-radius: var(--radius-md); background: var(--bg-secondary); margin-bottom: var(--spacing-sm); border-left: 3px solid var(--border-color); }
+.finding-item.violation { border-left-color: var(--danger); }
+.finding-item.warning { border-left-color: var(--warning); }
+.finding-item.verified { border-left-color: var(--success); }
+.finding-item.unverifiable { border-left-color: var(--text-muted); }
+.finding-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xs); flex-wrap: wrap; gap: var(--spacing-xs); }
+.finding-type { font-weight: 600; text-transform: capitalize; }
+.finding-type.violation { color: var(--danger); }
+.finding-type.warning { color: var(--warning); }
+.finding-type.verified { color: var(--success); }
+.finding-severity { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg-card); text-transform: capitalize; }
+.finding-claim { font-size: 0.9rem; margin: var(--spacing-xs) 0; padding: var(--spacing-sm); background: var(--bg-card); border-radius: var(--radius-sm); font-style: italic; }
+.finding-details { font-size: 0.875rem; color: var(--text-muted); }
+.finding-recommendation { margin-top: var(--spacing-sm); padding: var(--spacing-sm); background: var(--bg-card); border-radius: var(--radius-sm); font-size: 0.875rem; }
+.finding-recommendation strong { color: var(--accent); }
+
+.history-list { padding: var(--spacing-md); }
+.history-item { display: grid; grid-template-columns: 1fr auto auto auto; gap: var(--spacing-md); align-items: center; padding: var(--spacing-md); border-radius: var(--radius-md); background: var(--bg-secondary); margin-bottom: var(--spacing-sm); }
+@media (max-width: 600px) { .history-item { grid-template-columns: 1fr; } }
+.history-title { font-weight: 500; }
+.history-meta { font-size: 0.875rem; color: var(--text-muted); }
+.history-score { font-weight: 600; }
+.history-score.high { color: var(--success); }
+.history-score.medium { color: var(--warning); }
+.history-score.low { color: var(--danger); }
+.history-status { font-size: 12px; padding: 2px 8px; border-radius: 10px; text-transform: capitalize; }
+.history-status.completed { background: var(--success); color: var(--bg-primary); }
+.history-status.running { background: var(--accent); color: var(--bg-primary); }
+.history-status.failed { background: var(--danger); color: white; }
+.history-status.pending { background: var(--text-muted); color: var(--bg-primary); }
+
+.modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; align-items: center; justify-content: center; }
+.modal.active { display: flex; }
+.modal-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); }
+.modal-content { position: relative; background: var(--bg-card); border-radius: var(--radius-lg); max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+.modal-header { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.modal-header h3 { margin: 0; }
+.modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+.modal-body { padding: var(--spacing-lg); }
+.modal-footer { padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: var(--spacing-sm); }
+
+.form-group { margin-bottom: var(--spacing-md); }
+.form-group label { display: block; margin-bottom: var(--spacing-xs); font-weight: 500; }
+.form-control { width: 100%; padding: var(--spacing-sm) var(--spacing-md); border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); }
+.form-control:focus { outline: none; border-color: var(--accent); }
+
+.empty-state { text-align: center; padding: var(--spacing-xl); color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = '{{ institution.id }}';
+let currentFilter = 'all';
+let allFindings = [];
+let activeScanId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadHistory();
+    loadDocuments();
+    setupFilters();
+});
+
+// Modal functions
+function showUrlScanModal() {
+    document.getElementById('urlScanModal').classList.add('active');
+    document.getElementById('scanUrl').focus();
+}
+
+function showDocScanModal() {
+    document.getElementById('docScanModal').classList.add('active');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+// Load documents for dropdown
+async function loadDocuments() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/documents?limit=100`);
+        const data = await res.json();
+        const select = document.getElementById('docSelect');
+        if (data.success && data.documents.length > 0) {
+            select.innerHTML = data.documents.map(d =>
+                `<option value="${d.id}">${d.title || d.filename}</option>`
+            ).join('');
+        } else {
+            select.innerHTML = '<option value="">No documents found</option>';
+        }
+    } catch (err) {
+        console.error('Failed to load documents:', err);
+    }
+}
+
+// Submit URL scan
+async function submitUrlScan() {
+    const url = document.getElementById('scanUrl').value.trim();
+    if (!url) {
+        window.toast?.warning('Please enter a URL') || alert('Please enter a URL');
+        return;
+    }
+
+    closeModal('urlScanModal');
+    startScan('/api/advertising/scan-url', { institution_id: institutionId, url });
+}
+
+// Submit document scan
+async function submitDocScan() {
+    const docId = document.getElementById('docSelect').value;
+    if (!docId) {
+        window.toast?.warning('Please select a document') || alert('Please select a document');
+        return;
+    }
+
+    closeModal('docScanModal');
+    startScan('/api/advertising/scan-document', { institution_id: institutionId, document_id: docId });
+}
+
+// Start scan and stream progress
+async function startScan(endpoint, body) {
+    document.getElementById('progressCard').style.display = 'block';
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('scanUrlBtn').disabled = true;
+    document.getElementById('scanDocBtn').disabled = true;
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('progressMessage').textContent = 'Initializing...';
+
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            activeScanId = data.scan_id;
+            streamProgress(data.scan_id);
+        } else {
+            showError(data.error || 'Scan failed to start');
+        }
+    } catch (err) {
+        showError(err.message);
+    }
+}
+
+function streamProgress(scanId) {
+    const es = new EventSource(`/api/advertising/scans/${scanId}/stream`);
+
+    es.onmessage = async (e) => {
+        const msg = JSON.parse(e.data);
+
+        if (msg.type === 'started') {
+            document.getElementById('progressBar').style.width = '10%';
+            document.getElementById('progressMessage').textContent = 'Scan started...';
+        } else if (msg.type === 'progress') {
+            const pct = msg.data.tasks_completed && msg.data.total_tasks
+                ? Math.round((msg.data.tasks_completed / msg.data.total_tasks) * 100)
+                : 50;
+            document.getElementById('progressBar').style.width = `${pct}%`;
+            document.getElementById('progressMessage').textContent = msg.data.status || 'Processing...';
+        } else if (msg.type === 'update') {
+            document.getElementById('progressBar').style.width = '75%';
+            document.getElementById('progressMessage').textContent = 'Analyzing claims...';
+        } else if (msg.type === 'complete') {
+            es.close();
+            document.getElementById('progressBar').style.width = '100%';
+            document.getElementById('progressMessage').textContent = 'Complete!';
+            setTimeout(() => showResults(scanId), 500);
+        } else if (msg.type === 'error') {
+            es.close();
+            showError(msg.data?.error || msg.error || 'Scan failed');
+        }
+    };
+
+    es.onerror = () => {
+        es.close();
+        // Check if scan completed
+        setTimeout(() => checkScanStatus(scanId), 1000);
+    };
+}
+
+async function checkScanStatus(scanId) {
+    try {
+        const res = await fetch(`/api/advertising/scans/${scanId}`);
+        const data = await res.json();
+        if (data.success && data.scan.status === 'completed') {
+            showResults(scanId);
+        } else if (data.success && data.scan.status === 'failed') {
+            showError(data.scan.error_message || 'Scan failed');
+        }
+    } catch (err) {
+        showError('Connection lost');
+    }
+}
+
+async function showResults(scanId) {
+    document.getElementById('progressCard').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('scanUrlBtn').disabled = false;
+    document.getElementById('scanDocBtn').disabled = false;
+
+    try {
+        const res = await fetch(`/api/advertising/scans/${scanId}`);
+        const data = await res.json();
+
+        if (data.success) {
+            const scan = data.scan;
+
+            // Update score
+            const scoreEl = document.getElementById('complianceScore');
+            scoreEl.textContent = scan.compliance_score || '--';
+
+            // Update stats
+            document.getElementById('totalClaims').textContent = scan.total_claims || 0;
+            document.getElementById('verifiedClaims').textContent = scan.verified_claims || 0;
+            document.getElementById('unverifiedClaims').textContent = scan.unverified_claims || 0;
+            document.getElementById('violations').textContent = scan.violation_count || 0;
+
+            // Update risk
+            const riskEl = document.getElementById('riskLevel');
+            riskEl.textContent = scan.risk_level || '--';
+            riskEl.className = `risk-value ${scan.risk_level || ''}`;
+
+            // Update findings
+            allFindings = data.findings || [];
+            renderFindings(allFindings);
+        }
+
+        loadHistory();
+    } catch (err) {
+        console.error('Failed to load results:', err);
+    }
+}
+
+function renderFindings(findings) {
+    const container = document.getElementById('findingsList');
+
+    if (!findings.length) {
+        container.innerHTML = '<div class="empty-state">No findings - looking good!</div>';
+        return;
+    }
+
+    container.innerHTML = findings.map(f => `
+        <div class="finding-item ${f.finding_type}">
+            <div class="finding-header">
+                <span class="finding-type ${f.finding_type}">${f.finding_type}</span>
+                <span class="finding-severity">${f.severity || 'unknown'}</span>
+            </div>
+            <div class="finding-claim">"${escapeHtml(f.claim_text)}"</div>
+            <div class="finding-details">
+                ${f.regulation_code ? `<strong>Regulation:</strong> ${f.regulation_code} — ${f.regulation_title || ''}<br>` : ''}
+                ${f.claimed_value && f.verified_value ? `<strong>Claimed:</strong> ${f.claimed_value} | <strong>Actual:</strong> ${f.verified_value}` : ''}
+                ${f.variance ? ` (${f.variance > 0 ? '+' : ''}${(f.variance * 100).toFixed(1)}% variance)` : ''}
+            </div>
+            ${f.recommendation ? `<div class="finding-recommendation"><strong>Recommendation:</strong> ${escapeHtml(f.recommendation)}</div>` : ''}
+        </div>
+    `).join('');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function setupFilters() {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            const filtered = currentFilter === 'all'
+                ? allFindings
+                : allFindings.filter(f => f.finding_type === currentFilter);
+            renderFindings(filtered);
+        });
+    });
+}
+
+async function loadHistory() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/advertising/scans?limit=20`);
+        const data = await res.json();
+        const container = document.getElementById('historyList');
+
+        if (data.success && data.scans.length > 0) {
+            container.innerHTML = data.scans.map(s => `
+                <div class="history-item">
+                    <div>
+                        <div class="history-title">${escapeHtml(s.title)}</div>
+                        <div class="history-meta">${s.scan_type} scan - ${formatDate(s.created_at)}</div>
+                    </div>
+                    <span class="history-score ${getScoreClass(s.compliance_score)}">${s.compliance_score || '--'}%</span>
+                    <span class="history-status ${s.status}">${s.status}</span>
+                    <button class="btn btn-sm btn-secondary" onclick="showResults('${s.id}')">View</button>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<div class="empty-state">No scans yet. Scan a URL or document to check advertising compliance.</div>';
+        }
+    } catch (err) {
+        console.error('Failed to load history:', err);
+    }
+}
+
+function getScoreClass(score) {
+    if (score >= 80) return 'high';
+    if (score >= 50) return 'medium';
+    return 'low';
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '--';
+    const d = new Date(dateStr);
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function showError(msg) {
+    document.getElementById('progressCard').style.display = 'none';
+    document.getElementById('scanUrlBtn').disabled = false;
+    document.getElementById('scanDocBtn').disabled = false;
+    window.toast?.error(msg) || alert('Error: ' + msg);
+}
+</script>
+{% endblock %}

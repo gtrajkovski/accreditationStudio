@@ -662,5 +662,29 @@
       "standards": "Search standards...",
       "compliance": "Search compliance data..."
     }
+  },
+  "advertising": {
+    "title": "Advertising Compliance",
+    "subtitle": "Scan marketing materials for FTC and accreditor compliance",
+    "scan_url": "Scan URL",
+    "scan_document": "Scan Document",
+    "scanning": "Scanning...",
+    "compliance_score": "Compliance Score",
+    "total_claims": "Total Claims",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "violations": "Violations",
+    "warnings": "Warnings",
+    "unverifiable": "Unverifiable",
+    "risk_level": "Risk Level",
+    "findings": "Findings",
+    "no_findings": "Run a scan to see findings",
+    "scan_history": "Scan History",
+    "no_scans": "No scans yet. Scan a URL or document to check advertising compliance.",
+    "url_to_scan": "URL to Scan",
+    "url_scan_description": "Enter a web page URL to scan for advertising claims. The scanner will extract and verify claims against your institution's achievement data.",
+    "select_document": "Select Document",
+    "doc_scan_description": "Select a marketing document to scan for advertising claims. The scanner will extract and verify claims against your institution's achievement data.",
+    "start_scan": "Start Scan"
   }
 }
