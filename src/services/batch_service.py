@@ -24,6 +24,8 @@ MODEL_PRICING = {
     "claude-sonnet-4-20250514": {"input": 3.0, "output": 15.0},
     "claude-opus-4-5-20251101": {"input": 15.0, "output": 75.0},
     "claude-3-5-sonnet-20241022": {"input": 3.0, "output": 15.0},
+    # Phase 29: Fast model for simple tasks
+    "claude-3-5-haiku-20241022": {"input": 0.80, "output": 4.0},
 }
 
 # Average token usage per operation (empirical estimates)
