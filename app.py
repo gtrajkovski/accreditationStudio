@@ -68,6 +68,7 @@ from src.api.evidence_assistant import evidence_assistant_bp, init_evidence_assi
 from src.api.change_detection import change_detection_bp, init_change_detection_bp
 from src.api.standards_harvester import standards_harvester_bp, init_standards_harvester_bp
 from src.api.contextual_search import contextual_search_bp, init_contextual_search_bp
+from src.api.costs import costs_bp
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
 from src.services.chat_context_service import ChatContextService
@@ -295,6 +296,7 @@ app.register_blueprint(audit_trails_bp)
 app.register_blueprint(change_detection_bp)
 app.register_blueprint(standards_harvester_bp)
 app.register_blueprint(contextual_search_bp)
+app.register_blueprint(costs_bp)
 
 
 # =============================================================================
