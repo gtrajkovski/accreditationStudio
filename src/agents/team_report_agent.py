@@ -9,9 +9,12 @@ Handles accreditor team visit report findings and drafts institutional responses
 """
 
 import json
+import logging
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 from src.agents.base_agent import BaseAgent, AgentType
 from src.agents.registry import register_agent
@@ -593,8 +596,8 @@ Use formal third-person voice ("The institution..."). Include [EVIDENCE: descrip
                             "relevance": "potential",
                         })
 
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Evidence search failed for finding %s: %s", finding_id, e)
 
         return {
             "success": True,

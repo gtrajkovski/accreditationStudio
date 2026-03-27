@@ -1,10 +1,13 @@
 """Work Queue Service - Aggregates blockers, tasks, and approvals into unified queue."""
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 import sqlite3
+
+logger = logging.getLogger(__name__)
 
 from src.core.task_queue import get_task_queue, TaskStatus
 from src.db.connection import get_conn
@@ -102,9 +105,8 @@ def _get_blockers_as_work_items(
                 action_label="Fix",
                 action_link=blocker.link,
             ))
-    except Exception:
-        # If readiness computation fails, skip blockers
-        pass
+    except Exception as e:
+        logger.debug("Readiness computation failed, skipping blockers: %s", e)
 
     return items
 

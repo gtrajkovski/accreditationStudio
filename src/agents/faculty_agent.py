@@ -5,8 +5,11 @@ Tracks academic credentials, professional licenses, and teaching qualifications.
 """
 
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from src.agents.base_agent import BaseAgent, AgentType
 from src.agents.registry import register_agent
@@ -255,7 +258,8 @@ Always cite specific credential gaps and provide actionable recommendations."""
                 member = FacultyMember.from_dict(fac_data)
                 members.append(member)
                 self._faculty_cache[member.id] = member
-            except Exception:
+            except Exception as e:
+                logger.debug("Failed to parse faculty member: %s", e)
                 continue
         return members
 

@@ -8,10 +8,13 @@ Provides endpoints for:
 """
 
 import json
+import logging
 import time
 from typing import Dict, Any
 from flask import Blueprint, request, jsonify, Response, stream_with_context, send_file
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from src.agents.remediation_agent import RemediationAgent
 from src.core.models import AgentSession, RemediationStatus, generate_id
@@ -299,8 +302,8 @@ def get_remediation(institution_id: str, remediation_id: str):
                         remed_data = json.load(f)
                         if remed_data.get("id") == remediation_id:
                             return jsonify(remed_data), 200
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Failed to load remediation %s: %s", remediation_id, e)
 
     return jsonify({"error": "Remediation not found"}), 404
 
@@ -356,8 +359,8 @@ def list_remediations(institution_id: str):
                             })
                     except (json.JSONDecodeError, KeyError):
                         continue
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Failed to list remediations: %s", e)
 
     # Sort by created_at descending
     remediations.sort(key=lambda x: x.get("created_at", ""), reverse=True)
@@ -676,8 +679,8 @@ def download_remediation_document(institution_id: str, remediation_id: str, doc_
                         if data.get("id") == remediation_id:
                             remed_data = data
                             break
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Failed to find remediation %s for download: %s", remediation_id, e)
 
     if not remed_data:
         return jsonify({"error": "Remediation not found"}), 404

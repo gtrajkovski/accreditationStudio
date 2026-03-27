@@ -15,7 +15,10 @@ Tools:
 8. export_graph - Export as JSON/GraphML
 """
 
+import logging
 from typing import Dict, Any, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from src.agents.base_agent import BaseAgent, AgentType
 from src.agents.registry import register_agent
@@ -322,8 +325,8 @@ Always provide clear explanations of graph structure and relationships."""
                 # Get standards for institution's accreditor
                 accreditor = institution.accrediting_body.value if institution.accrediting_body else "ACCSC"
                 standards_data = store.get_standards(accreditor)
-            except Exception:
-                pass  # Standards optional
+            except Exception as e:
+                logger.debug("Standards not available for knowledge graph: %s", e)
 
         result = kg_service.build_graph_from_institution(
             institution_id=institution.id,

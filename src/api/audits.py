@@ -8,9 +8,12 @@ Provides endpoints for:
 """
 
 import json
+import logging
 import time
 from typing import Dict, Any, Optional
 from flask import Blueprint, request, jsonify, Response, stream_with_context
+
+logger = logging.getLogger(__name__)
 
 from src.agents.compliance_audit import ComplianceAuditAgent
 from src.core.models import AgentSession, AuditStatus, generate_id
@@ -501,8 +504,8 @@ def get_audit(institution_id: str, audit_id: str):
         if data:
             audit_data = json.loads(data.decode("utf-8"))
             return jsonify(audit_data), 200
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Failed to load audit %s: %s", audit_id, e)
 
     return jsonify({"error": "Audit not found"}), 404
 
@@ -557,10 +560,11 @@ def list_audits(institution_id: str):
                             "completed_at": audit_data.get("completed_at"),
                             "findings_count": len(audit_data.get("findings", [])),
                         })
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("Failed to parse audit file %s: %s", audit_file.name, e)
                         continue
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Failed to list audits directory: %s", e)
 
     # Include active audits
     for audit_id, audit_info in _active_audits.items():
@@ -623,8 +627,8 @@ def get_audit_findings(institution_id: str, audit_id: str):
             data = _workspace_manager.read_file(institution_id, audit_path)
             if data:
                 audit_data = json.loads(data.decode("utf-8"))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Failed to load audit %s for findings: %s", audit_id, e)
 
     if not audit_data:
         return jsonify({"error": "Audit not found"}), 404

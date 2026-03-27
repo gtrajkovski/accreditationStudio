@@ -7,8 +7,11 @@ Provides REST API for managing accreditation checklists:
 """
 
 import json
+import logging
 from flask import Blueprint, request, jsonify, Response
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from src.core.models import (
     AgentSession,
@@ -65,8 +68,8 @@ def list_checklists(institution_id: str):
                     "created_at": data.get("created_at"),
                     "updated_at": data.get("updated_at"),
                 })
-    except Exception:
-        pass  # No checklists directory yet
+    except Exception as e:
+        logger.debug("No checklists found for institution %s: %s", institution_id, e)
 
     # Check program-level checklists
     for program in institution.programs:
@@ -93,8 +96,8 @@ def list_checklists(institution_id: str):
                         "created_at": data.get("created_at"),
                         "updated_at": data.get("updated_at"),
                     })
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Failed to load checklists for program %s: %s", program.id, e)
 
     # Sort by updated_at descending
     checklists.sort(key=lambda x: x.get("updated_at", ""), reverse=True)

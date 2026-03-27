@@ -8,9 +8,12 @@ teams spend months doing manually.
 import csv
 import io
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from src.agents.base_agent import BaseAgent, AgentType
 from src.agents.registry import register_agent
@@ -921,9 +924,8 @@ Always be precise with citations. Never claim evidence exists if you cannot cite
                 accreditor_code=accreditor_code
             )
             contract_coverage = coverage_report.to_dict()
-        except Exception:
-            # Service may not be available or DB not set up
-            pass
+        except Exception as e:
+            logger.debug("Evidence contract service unavailable: %s", e)
 
         # Build combined report
         critical_count = gaps_result.get("summary", {}).get("critical_count", 0)

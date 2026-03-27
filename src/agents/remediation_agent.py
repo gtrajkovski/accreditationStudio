@@ -14,9 +14,12 @@ Tools:
 
 import io
 import json
+import logging
 import re
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Generator
+
+logger = logging.getLogger(__name__)
 
 from docx import Document as DocxDocument
 from docx.shared import Pt, Inches, RGBColor
@@ -299,8 +302,8 @@ class RemediationAgent(BaseAgent):
                     audit = Audit.from_dict(json.loads(data.decode("utf-8")))
                     self._audit_cache[cache_key] = audit
                     return audit
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed to load audit %s: %s", audit_id, e)
         return None
 
     def _load_document(self, institution_id: str, document_id: str) -> Optional[Document]:
@@ -350,8 +353,8 @@ class RemediationAgent(BaseAgent):
                     remed = RemediationResult.from_dict(json.loads(data.decode("utf-8")))
                     self._remediation_cache[cache_key] = remed
                     return remed
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed to load remediation for audit %s: %s", audit_id, e)
 
         # Create new
         remed = RemediationResult(

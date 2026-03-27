@@ -5,7 +5,10 @@ Tailored to prepare institutional representatives for evaluator interviews.
 """
 
 import json
+import logging
 from typing import Dict, Any, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from src.agents.base_agent import BaseAgent, AgentType
 from src.agents.registry import register_agent
@@ -705,8 +708,8 @@ Return as JSON array with objects containing:
             if json_match:
                 questions = json.loads(json_match.group())
                 return questions
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("AI question generation failed, using fallback: %s", e)
 
         # Fallback: generate basic questions from focus areas
         return [
@@ -756,8 +759,8 @@ Return as JSON array with objects containing:
             json_match = re.search(r'\[[\s\S]*\]', content)
             if json_match:
                 return json.loads(json_match.group())
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("AI talking points generation failed, using fallback: %s", e)
 
         # Fallback
         return [

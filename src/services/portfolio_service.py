@@ -6,10 +6,13 @@ and recent institution tracking for quick navigation.
 """
 
 import json
+import logging
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from uuid import uuid4
+
+logger = logging.getLogger(__name__)
 
 from src.db.connection import get_conn
 from src.services.readiness_service import get_or_compute_readiness, CACHE_WINDOW_MINUTES
@@ -232,8 +235,8 @@ def add_institutions_to_portfolio(portfolio_id: str, institution_ids: List[str])
                 (generate_id("pi"), portfolio_id, inst_id, portfolio_id)
             )
             added += 1
-        except Exception:
-            pass  # Ignore duplicates
+        except Exception as e:
+            logger.debug("Institution %s already in portfolio or error: %s", inst_id, e)
 
     conn.commit()
     return added
@@ -415,7 +418,8 @@ def compute_portfolio_readiness(
             try:
                 readiness = get_or_compute_readiness(inst_id, force_recompute=force_recompute)
                 score = readiness.get("total", 0)
-            except Exception:
+            except Exception as e:
+                logger.debug("Readiness computation failed for %s: %s", inst_id, e)
                 score = 0
                 readiness = {"total": 0, "documents": 0, "compliance": 0, "evidence": 0, "consistency": 0}
 

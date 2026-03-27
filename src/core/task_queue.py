@@ -4,6 +4,7 @@ Simple in-memory task queue using threading for single-user localhost tool.
 For production, consider Celery or similar distributed task queue.
 """
 
+import logging
 import threading
 import queue
 import uuid
@@ -12,6 +13,8 @@ from typing import Dict, Any, Optional, Callable, List
 from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 
 class TaskStatus(Enum):
@@ -333,8 +336,8 @@ class TaskQueue:
         for callback in callbacks:
             try:
                 callback(task_id, event, task_status)
-            except Exception:
-                pass  # Don't let callback errors crash the worker
+            except Exception as e:
+                logger.warning("Task callback error for %s: %s", task_id, e)
 
 
 # Global task queue instance

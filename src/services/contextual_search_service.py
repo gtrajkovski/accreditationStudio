@@ -15,9 +15,12 @@ Search sources (8 total per SRC-01):
 """
 
 import json
+import logging
 import time
 from dataclasses import dataclass
 from typing import Dict, Any, List, Optional, Set
+
+logger = logging.getLogger(__name__)
 
 from src.db.connection import get_conn
 from src.core.models import SearchContext, SearchScope, generate_id
@@ -180,8 +183,8 @@ class ContextualSearchService:
                         "search_type": "semantic",
                     },
                 ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Semantic document search failed: %s", e)
 
         return results
 
@@ -222,8 +225,8 @@ class ContextualSearchService:
                     score=0.7,
                     metadata={"search_type": "fts5"},
                 ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Document text FTS search failed: %s", e)
 
         return results
 
@@ -268,8 +271,8 @@ class ContextualSearchService:
                     score=0.75,
                     metadata={"accreditor": row["accreditor_code"] or ""},
                 ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Standards FTS search failed: %s", e)
 
         return results
 
@@ -315,8 +318,8 @@ class ContextualSearchService:
                         "severity": row["severity"],
                     },
                 ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Findings FTS search failed: %s", e)
 
         return results
 
@@ -358,8 +361,8 @@ class ContextualSearchService:
                     score=0.75,
                     metadata={"finding_id": row["finding_id"]},
                 ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Evidence FTS search failed: %s", e)
 
         return results
 
@@ -404,8 +407,8 @@ class ContextualSearchService:
                         "entity_id": row["entity_id"],
                     },
                 ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Knowledge graph search failed: %s", e)
 
         return results
 
@@ -502,8 +505,8 @@ class ContextualSearchService:
                         "created_at": row["created_at"],
                     },
                 ))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Agent sessions search failed: %s", e)
 
         return results
 

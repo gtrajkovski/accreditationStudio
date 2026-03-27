@@ -8,10 +8,13 @@ Provides functionality for:
 """
 
 import json
+import logging
 import sqlite3
 from typing import List, Dict, Optional, Any
 from src.db.connection import get_conn
 from src.core.models import generate_id, now_iso
+
+logger = logging.getLogger(__name__)
 
 
 class ChatContextService:
@@ -137,9 +140,8 @@ class ChatContextService:
                     )
                     if ai_title and len(ai_title) < 60:
                         title = ai_title.strip().strip('"').strip("'")
-                except Exception:
-                    # Fall back to truncated message
-                    pass
+                except Exception as e:
+                    logger.debug("AI title generation failed, using truncated message: %s", e)
 
         # Update conversation title
         conn = get_conn()

@@ -14,10 +14,13 @@ Search sources:
 """
 
 import json
+import logging
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional, Set
+
+logger = logging.getLogger(__name__)
 from hashlib import md5
 
 from src.db.connection import get_conn
@@ -293,9 +296,8 @@ class SiteVisitService:
                         "chunk_index": sr.chunk.chunk_index,
                     },
                 ))
-        except Exception:
-            # ChromaDB may not be initialized yet
-            pass
+        except Exception as e:
+            logger.debug("ChromaDB search unavailable: %s", e)
 
         return results
 
@@ -321,8 +323,8 @@ class SiteVisitService:
                 """,
                 (query,),
             )
-        except Exception:
-            # Fall back to LIKE search
+        except Exception as e:
+            logger.debug("FTS5 search failed, using LIKE fallback: %s", e)
             cursor = conn.execute(
                 """
                 SELECT s.id, s.standard_code, s.title, s.body_text, a.code as accreditor_code
@@ -381,8 +383,8 @@ class SiteVisitService:
                 """,
                 (self.institution_id, query),
             )
-        except Exception:
-            # Fall back to LIKE search
+        except Exception as e:
+            logger.debug("Findings FTS search failed, using LIKE fallback: %s", e)
             cursor = conn.execute(
                 """
                 SELECT f.id, f.summary, f.recommendation, f.status, f.severity,
@@ -569,9 +571,8 @@ class SiteVisitService:
                         "entity_id": row["entity_id"],
                     },
                 ))
-        except Exception:
-            # kg_entities table may not exist
-            pass
+        except Exception as e:
+            logger.debug("Knowledge graph search unavailable: %s", e)
 
         return results
 
@@ -633,8 +634,8 @@ class SiteVisitService:
                 updated = datetime.fromisoformat(result.metadata["last_updated"].rstrip("Z"))
                 days_old = (datetime.now(timezone.utc) - updated).days
                 recency_boost = max(0, 0.1 - (days_old / 365) * 0.1)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Could not parse recency date: %s", e)
 
         return min(1.0, base_score * source_weight + recency_boost + title_boost)
 
@@ -702,9 +703,8 @@ class SiteVisitService:
                 ),
             )
             conn.commit()
-        except Exception:
-            # Don't fail search if history save fails
-            pass
+        except Exception as e:
+            logger.debug("Failed to save search history: %s", e)
 
 
 # =============================================================================

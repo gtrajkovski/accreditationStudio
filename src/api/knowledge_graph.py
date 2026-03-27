@@ -14,8 +14,11 @@ Endpoints:
 - GET /api/institutions/<id>/knowledge-graph/impact/<eid> - Impact analysis
 """
 
+import logging
 from flask import Blueprint, jsonify, request
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from src.services import knowledge_graph_service as kg_service
 
@@ -130,8 +133,8 @@ def build_graph(institution_id: str):
             try:
                 accreditor = institution.accrediting_body.value if institution.accrediting_body else "ACCSC"
                 standards_data = _standards_store.get_standards(accreditor)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed to load standards for graph build: %s", e)
 
         result = kg_service.build_graph_from_institution(
             institution_id=institution_id,

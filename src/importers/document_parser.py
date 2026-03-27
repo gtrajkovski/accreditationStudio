@@ -7,11 +7,14 @@ Supports:
 - Images with OCR (via pytesseract) - optional
 """
 
+import logging
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 # PDF parsing
 try:
@@ -234,8 +237,8 @@ class DocumentParser:
                     "created": str(props.created) if props.created else "",
                     "modified": str(props.modified) if props.modified else "",
                 }
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Could not extract DOCX metadata: %s", e)
 
             for i, para in enumerate(doc.paragraphs):
                 text = para.text.strip()

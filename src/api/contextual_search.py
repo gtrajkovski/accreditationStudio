@@ -10,9 +10,12 @@ Endpoints:
 """
 
 import json
+import logging
 import time
 from typing import Dict, Any, Optional, List
 from flask import Blueprint, request, jsonify
+
+logger = logging.getLogger(__name__)
 
 from src.core.models import SearchContext, SearchScope
 from src.services.contextual_search_service import (
@@ -125,8 +128,8 @@ def search():
             accreditor = _standards_store.get_accreditor(accreditor_code)
             if accreditor:
                 accreditor_id = accreditor.id
-        except Exception:
-            pass  # Use None if lookup fails
+        except Exception as e:
+            logger.debug("Failed to lookup accreditor %s: %s", accreditor_code, e)
 
     # Create SearchContext
     context = SearchContext(

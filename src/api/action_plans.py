@@ -7,8 +7,11 @@ Provides REST endpoints for action plan management:
 """
 
 import json
+import logging
 from datetime import datetime
 from flask import Blueprint, request, jsonify
+
+logger = logging.getLogger(__name__)
 
 from src.core.models import (
     ActionItem,
@@ -71,7 +74,8 @@ def list_plans(institution_id: str):
                     "target_completion_date": data.get("target_completion_date"),
                     "created_at": data.get("created_at"),
                 })
-            except Exception:
+            except Exception as e:
+                logger.debug("Failed to parse action plan %s: %s", f.name, e)
                 continue
 
     return jsonify({"plans": plans})

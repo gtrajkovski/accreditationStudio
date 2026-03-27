@@ -9,7 +9,10 @@ Export endpoints are gated by evidence validation (EVID-01, EVID-02).
 """
 
 import json
+import logging
 from flask import Blueprint, request, jsonify, Response
+
+logger = logging.getLogger(__name__)
 
 from src.agents.packet_agent import PacketAgent
 from src.core.models import AgentSession, generate_id
@@ -66,7 +69,8 @@ def list_packets(institution_id: str):
                     "is_valid": data.get("is_valid", False),
                     "created_at": data.get("created_at"),
                 })
-            except Exception:
+            except Exception as e:
+                logger.debug("Failed to parse packet file %s: %s", f.name, e)
                 continue
 
     return jsonify({"packets": packets})

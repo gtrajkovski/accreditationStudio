@@ -922,8 +922,8 @@ def schedule_institution(
     # Remove existing job if any
     try:
         scheduler.remove_job(job_id)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("No existing autopilot job to remove for %s: %s", institution_id, e)
 
     if not config.enabled:
         logger.info(f"Autopilot disabled for {institution_id}")
