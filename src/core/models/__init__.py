@@ -122,6 +122,7 @@ from src.core.models.faculty import (
 # Batch operation models
 from src.core.models.batch import BatchItem, BatchOperation
 from src.core.models.batch_templates import BatchTemplate
+from src.core.models.batch_schedules import BatchSchedule
 
 # Search models
 from src.core.models.search import SearchContext
@@ -209,6 +210,7 @@ __all__ = [
     "BatchItem",
     "BatchOperation",
     "BatchTemplate",
+    "BatchSchedule",
     # Search models
     "SearchContext",
 ]
