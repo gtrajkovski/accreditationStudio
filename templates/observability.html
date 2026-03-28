@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Observability - AccreditAI{% endblock %}
+{% block header_title %}System Observability{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/observability.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Last Updated Banner -->
+<div class="obs-header">
+    <div class="obs-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="last-updated">Loading...</span>
+    </div>
+    <div class="obs-controls">
+        <select id="time-range" class="form-select form-select-sm">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="refresh-btn" title="Refresh Now">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<div class="dashboard-grid obs-grid">
+    <!-- System Health Panel -->
+    <div class="card metric-panel" id="health-panel">
+        <div class="card-header">
+            <h2 class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+                System Health
+            </h2>
+        </div>
+        <div class="metric-grid">
+            <div class="metric-item">
+                <span class="metric-label">Database Size</span>
+                <span class="metric-value" id="db-size">--</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Uptime</span>
+                <span class="metric-value" id="uptime">--</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Institutions</span>
+                <span class="metric-value" id="inst-count">--</span>
+            </div>
+            <div class="metric-item">
+                <span class="metric-label">Documents</span>
+                <span class="metric-value" id="doc-count">--</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Costs Panel -->
+    <div class="card metric-panel" id="costs-panel">
+        <div class="card-header">
+            <h2 class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                </svg>
+                AI Costs
+            </h2>
+        </div>
+        <div class="cost-summary">
+            <div class="cost-total">
+                <span class="cost-amount" id="total-cost">$0.00</span>
+                <span class="cost-period" id="cost-period">Last 30 days</span>
+            </div>
+            <div class="cost-breakdown">
+                <div class="cost-row">
+                    <span>API Calls</span>
+                    <span id="call-count">0</span>
+                </div>
+                <div class="cost-row">
+                    <span>Input Tokens</span>
+                    <span id="input-tokens">0</span>
+                </div>
+                <div class="cost-row">
+                    <span>Output Tokens</span>
+                    <span id="output-tokens">0</span>
+                </div>
+            </div>
+        </div>
+        <div class="model-breakdown" id="model-breakdown">
+            <!-- Populated by JS -->
+        </div>
+        <div class="cost-chart-container">
+            <canvas id="cost-chart" height="150"></canvas>
+        </div>
+    </div>
+
+    <!-- Agent Activity Panel -->
+    <div class="card metric-panel" id="activity-panel">
+        <div class="card-header">
+            <h2 class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                </svg>
+                Agent Activity
+            </h2>
+        </div>
+        <div class="activity-stats">
+            <div class="activity-stat">
+                <span class="activity-value running" id="active-count">0</span>
+                <span class="activity-label">Active</span>
+            </div>
+            <div class="activity-stat">
+                <span class="activity-value success" id="completed-count">0</span>
+                <span class="activity-label">Completed (24h)</span>
+            </div>
+            <div class="activity-stat">
+                <span class="activity-value danger" id="failed-count">0</span>
+                <span class="activity-label">Failed (24h)</span>
+            </div>
+        </div>
+        <div class="recent-batches" id="recent-batches">
+            <h4>Recent Batches</h4>
+            <div class="batch-list" id="batch-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Panel -->
+    <div class="card metric-panel" id="performance-panel">
+        <div class="card-header">
+            <h2 class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                Performance
+            </h2>
+        </div>
+        <div class="perf-metrics">
+            <div class="perf-metric">
+                <span class="perf-label">Queue Depth</span>
+                <span class="perf-value" id="queue-depth">0</span>
+                <span class="perf-unit">items pending</span>
+            </div>
+            <div class="perf-metric">
+                <span class="perf-label">Avg Batch Duration</span>
+                <span class="perf-value" id="avg-duration">--</span>
+                <span class="perf-unit">ms</span>
+            </div>
+            <div class="perf-metric">
+                <span class="perf-label">Throughput</span>
+                <span class="perf-value" id="throughput">0</span>
+                <span class="perf-unit">batches/hour</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/observability.js') }}"></script>
+{% endblock %}
