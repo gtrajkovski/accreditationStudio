@@ -62,6 +62,7 @@ from src.api.portfolios import portfolios_bp, init_portfolios_bp
 from src.api.evidence_highlighting import evidence_highlighting_bp, init_evidence_highlighting_bp
 from src.api.compliance_heatmap import compliance_heatmap_bp, init_compliance_heatmap_bp
 from src.api.batch_history import batch_history_bp, init_batch_history_bp
+from src.api.batch_queue_bp import batch_queue_bp, init_batch_queue_bp
 from src.api.global_search import global_search_bp, init_global_search_bp
 from src.api.standard_explainer import standard_explainer_bp, init_standard_explainer_bp
 from src.api.evidence_assistant import evidence_assistant_bp, init_evidence_assistant_bp
@@ -182,6 +183,8 @@ app.config["TAGS"] = [
     {"name": "Evidence", "description": "Evidence highlighting"},
     {"name": "Heatmap", "description": "Compliance heatmap"},
     {"name": "Batch", "description": "Batch operations"},
+    {"name": "Queue", "description": "Batch queue monitoring"},
+    {"name": "Templates", "description": "Batch templates"},
     {"name": "Search", "description": "Global search"},
     {"name": "Explainer", "description": "Standard explanations"},
     {"name": "Assistant", "description": "Evidence assistant"},
@@ -251,6 +254,7 @@ init_portfolios_bp(workspace_manager)
 init_evidence_highlighting_bp(workspace_manager)
 init_compliance_heatmap_bp(workspace_manager)
 init_batch_history_bp(workspace_manager, ai_client)
+init_batch_queue_bp(workspace_manager)
 init_global_search_bp(workspace_manager)
 init_standard_explainer_bp(ai_client, standards_store)
 init_evidence_assistant_bp(ai_client, standards_store)
@@ -305,6 +309,7 @@ app.register_blueprint(portfolios_bp)
 app.register_blueprint(evidence_highlighting_bp)
 app.register_blueprint(compliance_heatmap_bp)
 app.register_blueprint(batch_history_bp)
+app.register_blueprint(batch_queue_bp)
 app.register_blueprint(global_search_bp)
 app.register_blueprint(standard_explainer_bp)
 app.register_blueprint(evidence_assistant_bp)
