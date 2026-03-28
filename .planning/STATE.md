@@ -4,8 +4,8 @@ milestone: v1.7
 milestone_name: Performance & Efficiency
 status: complete
 stopped_at: v1.7 milestone completed and archived
-last_updated: "2026-03-27T20:07:33Z"
-last_activity: 2026-03-27
+last_updated: "2026-03-28T16:28:20Z"
+last_activity: 2026-03-28
 progress:
   total_phases: 3
   completed_phases: 3
@@ -129,17 +129,29 @@ All 4 tech debt tasks completed 2026-03-27:
   - CSS with dark theme and state-specific styling
   - Flask route and nav link
 
-**Remaining phases:**
-- 9-05: Enhanced Batch Processing
+**Phase 9-05: Enhanced Batch Processing** — In Progress
+- ✅ Plan 9-05-01: Batch Templates Service (commit afc7ff8)
+  - BatchTemplate dataclass with operation_type, document_ids, concurrency
+  - BatchTemplateService with CRUD and execute_template()
+  - API blueprint with 7 endpoints
+  - UI with template list and creation modal
+- ✅ Plan 9-05-02: Batch Scheduling with APScheduler (commit 4c920bc)
+  - BatchSchedule dataclass with cron_expression, next_run, status
+  - BatchScheduleService with APScheduler integration
+  - API blueprint with 8 endpoints (CRUD + pause/resume/trigger)
+  - UI with schedule list and cron reference
+
+**Remaining:**
+- 9-05-03 to 9-05-05: Remaining batch processing plans
 - 9-06: Full Observability Dashboard
 
 ## Session Continuity
 
-Last session: 2026-03-27
-Stopped at: Phase 9-04 complete (State Regulatory Modules)
+Last session: 2026-03-28
+Stopped at: Phase 9-05-02 complete (Batch Scheduling)
 Resume file: None
 
 ## Next Steps
 
-1. Continue with Phase 9-05: Enhanced Batch Processing
-2. Or continue with Phase 9-06: Full Observability Dashboard
+1. Continue with Phase 9-05: Plans 9-05-03 through 9-05-05
+2. Then Phase 9-06: Full Observability Dashboard
