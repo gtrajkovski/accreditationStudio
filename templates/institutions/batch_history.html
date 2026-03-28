@@ -11,6 +11,38 @@
     score=readiness_score
 ) }}
 
+<!-- Queue Monitor Card -->
+<div class="card mb-lg">
+    <div class="card-header">
+        <h3 class="card-title">Queue Monitor</h3>
+    </div>
+    <div class="queue-monitor-grid" id="queueMonitor">
+        <div class="queue-stat">
+            <div class="queue-stat-value" id="queuePending">--</div>
+            <div class="queue-stat-label">Pending</div>
+        </div>
+        <div class="queue-stat">
+            <div class="queue-stat-value" id="queueRunning">--</div>
+            <div class="queue-stat-label">Running</div>
+        </div>
+        <div class="queue-stat">
+            <div class="queue-stat-value" id="queueCompleted">--</div>
+            <div class="queue-stat-label">Completed</div>
+        </div>
+        <div class="queue-stat">
+            <div class="queue-stat-value" id="queueFailed">--</div>
+            <div class="queue-stat-label">Failed</div>
+        </div>
+        <div class="queue-stat">
+            <div class="queue-stat-value" id="queueDepth">--</div>
+            <div class="queue-stat-label">Queue Depth</div>
+        </div>
+    </div>
+    <div id="activeBatches" class="active-batches-list">
+        <!-- Active batches rendered here -->
+    </div>
+</div>
+
 <!-- Stats Summary Cards -->
 <div class="dashboard-grid mb-lg" id="statsCards">
     <div class="card">
@@ -28,6 +60,22 @@
     <div class="card">
         <h3 class="card-title">Avg Success Rate</h3>
         <div id="avgSuccess" class="stat-value">--</div>
+    </div>
+</div>
+
+<!-- Templates Section -->
+<div class="card mb-lg">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">Batch Templates</h3>
+        <button class="btn btn-secondary" onclick="showTemplateModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            New Template
+        </button>
+    </div>
+    <div id="templateList" class="template-list">
+        <p class="text-muted text-center" style="padding: var(--spacing-lg);">Loading templates...</p>
     </div>
 </div>
 
@@ -49,6 +97,7 @@
                 <tr>
                     <th>Date</th>
                     <th>Type</th>
+                    <th>Priority</th>
                     <th>Documents</th>
                     <th>Success Rate</th>
                     <th>Cost</th>
@@ -59,7 +108,7 @@
             </thead>
             <tbody id="batchList">
                 <tr>
-                    <td colspan="8" class="text-center text-muted" style="padding: var(--spacing-xl);">
+                    <td colspan="9" class="text-center text-muted" style="padding: var(--spacing-xl);">
                         Loading batches...
                     </td>
                 </tr>
@@ -82,7 +131,168 @@
     </div>
 </div>
 
+<!-- Template Modal -->
+<div id="templateModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeTemplateModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>New Template</h3>
+            <button class="btn btn-ghost" onclick="closeTemplateModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="templateForm" onsubmit="saveTemplate(event)">
+                <div class="form-group">
+                    <label for="templateName">Name</label>
+                    <input type="text" id="templateName" class="form-control" required placeholder="e.g., Weekly Catalog Audit">
+                </div>
+                <div class="form-group">
+                    <label for="templateType">Operation Type</label>
+                    <select id="templateType" class="form-control" required>
+                        <option value="audit">Audit</option>
+                        <option value="remediation">Remediation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="templateDocs">Documents</label>
+                    <select id="templateDocs" class="form-control" multiple required style="height: 150px;">
+                        <!-- Populated by JS -->
+                    </select>
+                    <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+                </div>
+                <div class="form-group">
+                    <label for="templateConcurrency">Concurrency</label>
+                    <select id="templateConcurrency" class="form-control">
+                        <option value="1">1 (Sequential)</option>
+                        <option value="2">2</option>
+                        <option value="3" selected>3</option>
+                        <option value="4">4</option>
+                        <option value="5">5 (Maximum)</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTemplateModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Template</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
+.queue-monitor-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+.queue-stat {
+    text-align: center;
+    padding: var(--spacing-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.queue-stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+}
+
+.queue-stat-label {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.active-batches-list {
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.active-batch-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.active-batch-item .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-primary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.active-batch-item .progress-fill {
+    height: 100%;
+    background: var(--accent-gold);
+    transition: width 0.3s;
+}
+
+.template-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+.template-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-subtle);
+}
+
+.template-card h4 {
+    margin: 0 0 var(--spacing-xs) 0;
+}
+
+.template-card .template-meta {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-md);
+}
+
+.template-card .template-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.priority-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.priority-critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.priority-high {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.priority-normal {
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+}
+
+.priority-low {
+    background: rgba(107, 114, 128, 0.2);
+    color: #6b7280;
+}
+
 .stat-value {
     font-size: 2rem;
     font-weight: 700;
@@ -226,11 +436,29 @@
 }
 
 .form-control {
-    padding: var(--spacing-xs) var(--spacing-sm);
+    width: 100%;
+    padding: var(--spacing-sm);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background: var(--bg-secondary);
     color: var(--text-primary);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
 }
 
 .summary-section {
@@ -272,7 +500,183 @@
 {% block extra_scripts %}
 <script>
 const institutionId = '{{ institution.id }}';
+const priorityNames = {1: 'critical', 2: 'high', 3: 'normal', 4: 'low'};
 
+// Queue Monitor
+async function loadQueueStatus() {
+    try {
+        const res = await fetch(`/api/batches/queue/status?institution_id=${institutionId}`);
+        if (!res.ok) throw new Error('Failed to load queue status');
+        const data = await res.json();
+
+        document.getElementById('queuePending').textContent = data.status_counts?.pending || 0;
+        document.getElementById('queueRunning').textContent = data.status_counts?.running || 0;
+        document.getElementById('queueCompleted').textContent = data.status_counts?.completed || 0;
+        document.getElementById('queueFailed').textContent = data.status_counts?.failed || 0;
+        document.getElementById('queueDepth').textContent = data.queue_depth || 0;
+
+        // Render active batches
+        renderActiveBatches(data.active_batches || []);
+    } catch (err) {
+        console.error('Failed to load queue status:', err);
+    }
+}
+
+function renderActiveBatches(batches) {
+    const container = document.getElementById('activeBatches');
+    if (batches.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No active batches</p>';
+        return;
+    }
+
+    container.innerHTML = batches.map(b => {
+        const progress = b.document_count > 0
+            ? ((b.completed_count + b.failed_count) / b.document_count * 100).toFixed(0)
+            : 0;
+        const priorityName = priorityNames[b.priority_level] || 'normal';
+
+        return `
+            <div class="active-batch-item">
+                <span class="priority-badge priority-${priorityName}">${priorityName}</span>
+                <span>${b.operation_type}</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${progress}%"></div>
+                </div>
+                <span>${progress}%</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Templates
+async function loadTemplates() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-templates`);
+        if (!res.ok) throw new Error('Failed to load templates');
+        const data = await res.json();
+        renderTemplates(data.templates || []);
+    } catch (err) {
+        console.error('Failed to load templates:', err);
+        document.getElementById('templateList').innerHTML =
+            '<p class="text-muted text-center">Failed to load templates</p>';
+    }
+}
+
+function renderTemplates(templates) {
+    const container = document.getElementById('templateList');
+    if (templates.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center" style="grid-column: 1/-1;">No templates yet. Create one to save batch configurations for reuse.</p>';
+        return;
+    }
+
+    container.innerHTML = templates.map(t => `
+        <div class="template-card">
+            <h4>${escapeHtml(t.name)}</h4>
+            <div class="template-meta">
+                <span class="batch-type-badge badge-${t.operation_type}">${t.operation_type}</span>
+                <span>${t.document_ids.length} documents</span>
+            </div>
+            <div class="template-actions">
+                <button class="btn btn-sm btn-primary" onclick="executeTemplate('${t.id}')">Run</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${t.id}')">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showTemplateModal() {
+    loadDocumentsForTemplate();
+    document.getElementById('templateModal').classList.remove('hidden');
+}
+
+function closeTemplateModal() {
+    document.getElementById('templateModal').classList.add('hidden');
+}
+
+async function loadDocumentsForTemplate() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/documents`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const select = document.getElementById('templateDocs');
+        select.innerHTML = (data.documents || []).map(d =>
+            `<option value="${d.id}">${escapeHtml(d.title || d.name)}</option>`
+        ).join('');
+    } catch (err) {
+        console.error('Failed to load documents:', err);
+    }
+}
+
+async function saveTemplate(e) {
+    e.preventDefault();
+
+    const docSelect = document.getElementById('templateDocs');
+    const selectedDocs = Array.from(docSelect.selectedOptions).map(o => o.value);
+
+    if (selectedDocs.length === 0) {
+        window.toast?.error('Select at least one document');
+        return;
+    }
+
+    const data = {
+        name: document.getElementById('templateName').value,
+        operation_type: document.getElementById('templateType').value,
+        document_ids: selectedDocs,
+        concurrency: parseInt(document.getElementById('templateConcurrency').value),
+    };
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-templates`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Failed to create template');
+        }
+
+        closeTemplateModal();
+        document.getElementById('templateForm').reset();
+        loadTemplates();
+        window.toast?.success('Template created');
+    } catch (err) {
+        window.toast?.error(err.message);
+    }
+}
+
+async function executeTemplate(id) {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-templates/${id}/execute`, { method: 'POST' });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Failed to execute template');
+        }
+        const data = await res.json();
+        loadQueueStatus();
+        loadBatches();
+        window.toast?.success(`Batch ${data.batch_id} created`);
+    } catch (err) {
+        window.toast?.error(err.message);
+    }
+}
+
+async function deleteTemplate(id) {
+    if (!confirm('Delete this template?')) return;
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-templates/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete');
+        loadTemplates();
+        window.toast?.success('Template deleted');
+    } catch (err) {
+        window.toast?.error(err.message);
+    }
+}
+
+// Stats
 async function loadStats() {
     try {
         const res = await fetch(`/api/institutions/${institutionId}/batches/stats`);
@@ -292,6 +696,7 @@ async function loadStats() {
     }
 }
 
+// Batch List
 async function loadBatches(typeFilter = '') {
     try {
         const url = `/api/institutions/${institutionId}/batches?limit=20&operation_type=${typeFilter}`;
@@ -312,7 +717,7 @@ function renderBatchList(batches) {
     if (batches.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="text-center text-muted" style="padding: var(--spacing-xl);">
+                <td colspan="9" class="text-center text-muted" style="padding: var(--spacing-xl);">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 64px; height: 64px; color: var(--text-muted); margin: 0 auto var(--spacing-lg);">
                         <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                     </svg>
@@ -332,12 +737,17 @@ function renderBatchList(batches) {
         const successRate = batch.document_count > 0
             ? ((batch.completed_count / batch.document_count) * 100).toFixed(1)
             : 0;
+        const priorityLevel = batch.priority_level || 3;
+        const priorityName = priorityNames[priorityLevel] || 'normal';
 
         return `
             <tr onclick="showBatchDetail('${batch.id}')">
                 <td>${date}</td>
                 <td>
                     <span class="batch-type-badge badge-${batch.operation_type}">${batch.operation_type}</span>
+                </td>
+                <td>
+                    <span class="priority-badge priority-${priorityName}">${priorityName}</span>
                 </td>
                 <td>${batch.document_count}</td>
                 <td>
@@ -372,6 +782,8 @@ async function showBatchDetail(batchId) {
 
         const successRate = batch.success_rate || 0;
         const totalDuration = formatDuration(batch.total_duration_ms);
+        const priorityLevel = batch.priority_level || 3;
+        const priorityName = priorityNames[priorityLevel] || 'normal';
 
         const detailHtml = `
             <div class="summary-section">
@@ -380,6 +792,10 @@ async function showBatchDetail(batchId) {
                     <div class="summary-item">
                         <span class="summary-label">Operation Type</span>
                         <span class="summary-value">${batch.operation_type}</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Priority</span>
+                        <span class="summary-value priority-badge priority-${priorityName}">${priorityName}</span>
                     </div>
                     <div class="summary-item">
                         <span class="summary-label">Status</span>
@@ -397,12 +813,20 @@ async function showBatchDetail(batchId) {
                         <span class="summary-label">Total Duration</span>
                         <span class="summary-value">${totalDuration}</span>
                     </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Total Tokens</span>
-                        <span class="summary-value">${(batch.total_tokens || 0).toLocaleString()}</span>
-                    </div>
                 </div>
             </div>
+
+            ${batch.status === 'pending' || batch.status === 'running' ? `
+            <div class="summary-section">
+                <h4>Change Priority</h4>
+                <div style="display: flex; gap: var(--spacing-sm);">
+                    <button class="btn btn-sm ${priorityLevel === 1 ? 'btn-primary' : 'btn-secondary'}" onclick="changePriority('${batchId}', 1)">Critical</button>
+                    <button class="btn btn-sm ${priorityLevel === 2 ? 'btn-primary' : 'btn-secondary'}" onclick="changePriority('${batchId}', 2)">High</button>
+                    <button class="btn btn-sm ${priorityLevel === 3 ? 'btn-primary' : 'btn-secondary'}" onclick="changePriority('${batchId}', 3)">Normal</button>
+                    <button class="btn btn-sm ${priorityLevel === 4 ? 'btn-primary' : 'btn-secondary'}" onclick="changePriority('${batchId}', 4)">Low</button>
+                </div>
+            </div>
+            ` : ''}
 
             <div class="summary-section">
                 <h4>Items (${batch.items ? batch.items.length : 0})</h4>
@@ -428,6 +852,28 @@ async function showBatchDetail(batchId) {
     } catch (err) {
         console.error('Failed to load batch detail:', err);
         window.toast?.error('Failed to load batch details');
+    }
+}
+
+async function changePriority(batchId, level) {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batches/${batchId}/priority`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ priority_level: level }),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Failed to update priority');
+        }
+
+        closeDetailModal();
+        loadQueueStatus();
+        loadBatches();
+        window.toast?.success(`Priority updated to ${priorityNames[level]}`);
+    } catch (err) {
+        window.toast?.error(err.message);
     }
 }
 
@@ -462,10 +908,15 @@ document.getElementById('typeFilter').addEventListener('change', (e) => {
     loadBatches(e.target.value);
 });
 
-// Load on page load
+// Load on page load and set refresh interval
 document.addEventListener('DOMContentLoaded', () => {
+    loadQueueStatus();
     loadStats();
+    loadTemplates();
     loadBatches();
+
+    // Refresh queue status every 10 seconds
+    setInterval(loadQueueStatus, 10000);
 });
 </script>
 {% endblock %}
