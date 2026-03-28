@@ -74,6 +74,7 @@ from src.api.advertising import advertising_bp, init_advertising_bp
 from src.api.program_comparison import program_comparison_bp
 from src.api.state_regulatory_bp import state_regulatory_bp, init_state_regulatory_bp
 from src.api.costs import costs_bp
+from src.api.observability import observability_bp, init_observability_bp
 from src.api.standards_importer_bp import standards_importer_bp, init_standards_importer_bp
 from src.services.standards_import_service import get_import_service
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
@@ -196,6 +197,7 @@ app.config["TAGS"] = [
     {"name": "Autopilot", "description": "Autopilot settings"},
     {"name": "Action Plans", "description": "Action plan tracking"},
     {"name": "Contextual Search", "description": "Context-aware search API"},
+    {"name": "Observability", "description": "System metrics and monitoring"},
 ]
 
 # Import schemas before blueprint registration (required for apispec)
@@ -268,6 +270,7 @@ init_standards_harvester_bp(workspace_manager)
 init_contextual_search_bp(workspace_manager, standards_store)
 init_advertising_bp(workspace_manager)
 init_state_regulatory_bp(workspace_manager)
+init_observability_bp()
 
 # Initialize standards import service and blueprint
 import_service = get_import_service(
@@ -327,6 +330,7 @@ app.register_blueprint(program_comparison_bp)
 app.register_blueprint(costs_bp)
 app.register_blueprint(state_regulatory_bp)
 app.register_blueprint(standards_importer_bp)
+app.register_blueprint(observability_bp)
 
 
 # =============================================================================
@@ -972,6 +976,12 @@ def standards_harvester_page():
 def standards_importer_page():
     """Universal Standards Importer page."""
     return render_template('standards_importer.html')
+
+
+@app.route('/observability')
+def observability_dashboard():
+    """Observability dashboard page."""
+    return render_template('observability.html')
 
 
 @app.route('/agent-sessions')
