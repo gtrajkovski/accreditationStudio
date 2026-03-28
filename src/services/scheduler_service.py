@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 scheduler = APScheduler()
 
 
+def get_scheduler():
+    """Get the scheduler instance."""
+    return scheduler
+
+
 def init_scheduler(app):
     """Initialize APScheduler with Flask app.
 
