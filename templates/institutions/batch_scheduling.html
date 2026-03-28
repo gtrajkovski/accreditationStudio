@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}Batch Scheduling - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title='Batch Scheduling',
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), ('Batch Scheduling', none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<!-- Schedule List Card -->
+<div class="card mb-lg">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">Scheduled Batches</h3>
+        <button class="btn btn-primary" onclick="showCreateModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; margin-right: 4px;">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            New Schedule
+        </button>
+    </div>
+    <div id="scheduleList">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Template</th>
+                    <th>Schedule</th>
+                    <th>Next Run</th>
+                    <th>Last Run</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="scheduleTableBody">
+                <tr>
+                    <td colspan="7" class="text-center text-muted" style="padding: var(--spacing-xl);">
+                        Loading schedules...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Common Cron Presets Reference -->
+<div class="card">
+    <h3 class="card-title">Cron Expression Reference</h3>
+    <div class="presets-grid">
+        <div class="preset-item">
+            <code>0 9 * * *</code>
+            <span>Daily at 9:00 AM</span>
+        </div>
+        <div class="preset-item">
+            <code>0 9 * * MON</code>
+            <span>Every Monday at 9:00 AM</span>
+        </div>
+        <div class="preset-item">
+            <code>0 9 1 * *</code>
+            <span>First of every month at 9:00 AM</span>
+        </div>
+        <div class="preset-item">
+            <code>0 */6 * * *</code>
+            <span>Every 6 hours</span>
+        </div>
+        <div class="preset-item">
+            <code>0 9 * * MON-FRI</code>
+            <span>Weekdays at 9:00 AM</span>
+        </div>
+        <div class="preset-item">
+            <code>0 0 * * SUN</code>
+            <span>Every Sunday at midnight</span>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Schedule Modal -->
+<div id="scheduleModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">New Schedule</h3>
+            <button class="btn btn-ghost" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="scheduleForm" onsubmit="saveSchedule(event)">
+                <input type="hidden" id="scheduleId" value="">
+
+                <div class="form-group">
+                    <label for="scheduleName">Name</label>
+                    <input type="text" id="scheduleName" class="form-control" required placeholder="e.g., Daily Audit">
+                </div>
+
+                <div class="form-group">
+                    <label for="templateSelect">Template</label>
+                    <select id="templateSelect" class="form-control" required>
+                        <option value="">Select a template...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="cronExpression">Cron Expression</label>
+                    <input type="text" id="cronExpression" class="form-control" required placeholder="0 9 * * MON">
+                    <small class="text-muted">Format: minute hour day_of_month month day_of_week</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead {
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.data-table th {
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.data-table td {
+    padding: var(--spacing-md);
+}
+
+.presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+.preset-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.preset-item code {
+    font-family: 'Fira Code', monospace;
+    color: var(--accent-gold);
+}
+
+.preset-item span {
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.status-active {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.status-paused {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--warning);
+}
+
+.action-buttons {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.action-buttons button {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: 0.85em;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-modal, 1300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 500px;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const institutionId = '{{ institution.id }}';
+let templates = [];
+
+async function loadTemplates() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-templates`);
+        if (!res.ok) throw new Error('Failed to load templates');
+        const data = await res.json();
+        templates = data.templates || [];
+
+        const select = document.getElementById('templateSelect');
+        select.innerHTML = '<option value="">Select a template...</option>';
+        templates.forEach(t => {
+            select.innerHTML += `<option value="${t.id}">${t.name} (${t.operation_type})</option>`;
+        });
+    } catch (err) {
+        console.error('Failed to load templates:', err);
+    }
+}
+
+async function loadSchedules() {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-schedules`);
+        if (!res.ok) throw new Error('Failed to load schedules');
+        const data = await res.json();
+        renderSchedules(data.schedules || []);
+    } catch (err) {
+        console.error('Failed to load schedules:', err);
+        renderSchedules([]);
+    }
+}
+
+function renderSchedules(schedules) {
+    const tbody = document.getElementById('scheduleTableBody');
+
+    if (schedules.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-muted" style="padding: var(--spacing-xl);">
+                    <p>No scheduled batches yet</p>
+                    <p style="color: var(--text-muted);">Create a schedule to automate recurring batch operations.</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = schedules.map(s => {
+        const template = templates.find(t => t.id === s.template_id);
+        const templateName = template ? template.name : s.template_id;
+        const nextRun = s.next_run ? new Date(s.next_run).toLocaleString() : '--';
+        const lastRun = s.last_run ? new Date(s.last_run).toLocaleString() : 'Never';
+
+        return `
+            <tr>
+                <td><strong>${escapeHtml(s.name)}</strong></td>
+                <td>${escapeHtml(templateName)}</td>
+                <td><code>${escapeHtml(s.cron_expression)}</code></td>
+                <td>${nextRun}</td>
+                <td>${lastRun}</td>
+                <td>
+                    <span class="status-badge status-${s.status}">${s.status}</span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        ${s.status === 'active' ?
+                            `<button class="btn btn-sm btn-secondary" onclick="pauseSchedule('${s.id}')">Pause</button>` :
+                            `<button class="btn btn-sm btn-success" onclick="resumeSchedule('${s.id}')">Resume</button>`
+                        }
+                        <button class="btn btn-sm btn-primary" onclick="triggerSchedule('${s.id}')">Run Now</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSchedule('${s.id}')">Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function showCreateModal() {
+    document.getElementById('modalTitle').textContent = 'New Schedule';
+    document.getElementById('scheduleId').value = '';
+    document.getElementById('scheduleForm').reset();
+    document.getElementById('scheduleModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('scheduleModal').classList.add('hidden');
+}
+
+async function saveSchedule(e) {
+    e.preventDefault();
+
+    const scheduleId = document.getElementById('scheduleId').value;
+    const data = {
+        name: document.getElementById('scheduleName').value,
+        template_id: document.getElementById('templateSelect').value,
+        cron_expression: document.getElementById('cronExpression').value,
+    };
+
+    const url = scheduleId
+        ? `/api/institutions/${institutionId}/batch-schedules/${scheduleId}`
+        : `/api/institutions/${institutionId}/batch-schedules`;
+    const method = scheduleId ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Failed to save schedule');
+        }
+
+        closeModal();
+        loadSchedules();
+        window.toast?.success('Schedule saved');
+    } catch (err) {
+        window.toast?.error(err.message);
+    }
+}
+
+async function pauseSchedule(id) {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-schedules/${id}/pause`, { method: 'POST' });
+        if (!res.ok) throw new Error('Failed to pause');
+        loadSchedules();
+        window.toast?.success('Schedule paused');
+    } catch (err) {
+        window.toast?.error(err.message);
+    }
+}
+
+async function resumeSchedule(id) {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-schedules/${id}/resume`, { method: 'POST' });
+        if (!res.ok) throw new Error('Failed to resume');
+        loadSchedules();
+        window.toast?.success('Schedule resumed');
+    } catch (err) {
+        window.toast?.error(err.message);
+    }
+}
+
+async function triggerSchedule(id) {
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-schedules/${id}/trigger`, { method: 'POST' });
+        if (!res.ok) throw new Error('Failed to trigger');
+        const data = await res.json();
+        loadSchedules();
+        window.toast?.success(`Batch ${data.batch_id} created`);
+    } catch (err) {
+        window.toast?.error(err.message);
+    }
+}
+
+async function deleteSchedule(id) {
+    if (!confirm('Delete this schedule?')) return;
+
+    try {
+        const res = await fetch(`/api/institutions/${institutionId}/batch-schedules/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete');
+        loadSchedules();
+        window.toast?.success('Schedule deleted');
+    } catch (err) {
+        window.toast?.error(err.message);
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Load on page load
+document.addEventListener('DOMContentLoaded', () => {
+    loadTemplates();
+    loadSchedules();
+});
+</script>
+{% endblock %}
