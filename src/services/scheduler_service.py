@@ -11,7 +11,7 @@ from flask_apscheduler import APScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 
 from src.config import Config
-from src.db.connection import get_conn
+from src.db.connection import get_conn, get_db_path
 from src.services.report_service import ReportService
 from src.services.email_service import EmailService
 # PDFExporter imported lazily to avoid WeasyPrint/GTK at startup
@@ -33,8 +33,9 @@ def init_scheduler(app):
     Args:
         app: Flask application instance
     """
+    db_path = get_db_path()
     app.config['SCHEDULER_JOBSTORES'] = {
-        'default': SQLAlchemyJobStore(url=f'sqlite:///{Config.DATABASE}')
+        'default': SQLAlchemyJobStore(url=f'sqlite:///{db_path}')
     }
     app.config['SCHEDULER_API_ENABLED'] = False
     scheduler.init_app(app)
