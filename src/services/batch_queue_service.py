@@ -56,10 +56,10 @@ class BatchQueueService:
             active_params.append(self.institution_id)
 
         cursor.execute(f"""
-            SELECT id, operation_type, document_count, completed_count, failed_count, status, created_at
+            SELECT id, operation_type, document_count, completed_count, failed_count, status, created_at, priority_level
             FROM batch_operations
             {active_where}
-            ORDER BY created_at ASC
+            ORDER BY priority_level ASC, created_at ASC
         """, active_params)
 
         active_batches = [dict(row) for row in cursor.fetchall()]

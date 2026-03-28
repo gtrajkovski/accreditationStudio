@@ -242,3 +242,56 @@ def execute_template(institution_id: str, template_id: str):
         "message": "Batch created from template",
         **result,
     }), 201
+
+
+# =============================================================================
+# Priority Endpoints
+# =============================================================================
+
+@batch_queue_bp.route('/api/institutions/<institution_id>/batches/<batch_id>/priority', methods=['PATCH'])
+def update_batch_priority(institution_id: str, batch_id: str):
+    """Update priority of a batch.
+
+    Request Body:
+        priority_level: New priority (1=critical, 2=high, 3=normal, 4=low).
+
+    Returns:
+        JSON with updated priority info.
+    """
+    from src.services.batch_service import BatchService
+
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    data = request.get_json() or {}
+
+    if 'priority_level' not in data:
+        return jsonify({"error": "priority_level is required"}), 400
+
+    try:
+        priority_level = int(data['priority_level'])
+    except (TypeError, ValueError):
+        return jsonify({"error": "priority_level must be an integer"}), 400
+
+    if priority_level < 1 or priority_level > 4:
+        return jsonify({"error": "priority_level must be 1-4"}), 400
+
+    batch_service = BatchService(_workspace_manager)
+
+    # Verify batch belongs to institution
+    batch = batch_service.get_batch(batch_id)
+    if not batch:
+        return jsonify({"error": "Batch not found"}), 404
+    if batch.institution_id != institution_id:
+        return jsonify({"error": "Batch does not belong to this institution"}), 403
+
+    result = batch_service.update_priority(batch_id, priority_level)
+
+    if "error" in result:
+        return jsonify(result), 400
+
+    return jsonify({
+        "message": "Priority updated",
+        **result,
+    }), 200
