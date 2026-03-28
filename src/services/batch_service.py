@@ -167,6 +167,7 @@ class BatchService:
         document_ids: List[str],
         concurrency: int = 3,
         parent_batch_id: Optional[str] = None,
+        priority_level: int = 3,
     ) -> BatchOperation:
         """Create a new batch operation.
 
@@ -176,6 +177,7 @@ class BatchService:
             document_ids: List of document IDs to process
             concurrency: Number of concurrent operations (1-5)
             parent_batch_id: Optional parent batch ID for chained operations
+            priority_level: Priority level 1-4 (1=critical, 2=high, 3=normal, 4=low)
 
         Returns:
             Created BatchOperation with items
@@ -184,6 +186,9 @@ class BatchService:
         institution = self.workspace_manager.load_institution(institution_id)
         if not institution:
             raise ValueError(f"Institution not found: {institution_id}")
+
+        # Validate priority level (1-4)
+        priority_level = min(max(priority_level, 1), 4)
 
         # Create batch operation
         batch = BatchOperation(
@@ -194,6 +199,7 @@ class BatchService:
             concurrency=min(max(concurrency, 1), 5),  # Clamp to 1-5
             status="pending",
             parent_batch_id=parent_batch_id,
+            priority_level=priority_level,
         )
 
         # Create batch items
@@ -424,6 +430,44 @@ class BatchService:
             "batch_id": batch_id,
         }
 
+    def update_priority(self, batch_id: str, priority_level: int) -> Dict[str, Any]:
+        """Update priority of a pending or running batch.
+
+        Args:
+            batch_id: Batch ID.
+            priority_level: New priority (1=critical, 2=high, 3=normal, 4=low).
+
+        Returns:
+            Dict with updated batch info or error.
+        """
+        batch = self.get_batch(batch_id)
+        if not batch:
+            return {"error": "Batch not found"}
+
+        if batch.status not in ("pending", "running"):
+            return {"error": "Can only change priority of pending or running batches"}
+
+        # Validate priority level
+        priority_level = min(max(priority_level, 1), 4)
+
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "UPDATE batch_operations SET priority_level = ? WHERE id = ?",
+            (priority_level, batch_id)
+        )
+        self.conn.commit()
+
+        return {
+            "batch_id": batch_id,
+            "priority_level": priority_level,
+            "priority_name": self._priority_name(priority_level),
+        }
+
+    def _priority_name(self, level: int) -> str:
+        """Convert priority level to name."""
+        names = {1: "critical", 2: "high", 3: "normal", 4: "low"}
+        return names.get(level, "normal")
+
     def list_batches(
         self,
         institution_id: str,
@@ -449,7 +493,7 @@ class BatchService:
                 """
                 SELECT * FROM batch_operations
                 WHERE institution_id = ? AND operation_type = ?
-                ORDER BY created_at DESC
+                ORDER BY priority_level ASC, created_at DESC
                 LIMIT ? OFFSET ?
                 """,
                 (institution_id, operation_type, limit, offset)
@@ -459,7 +503,7 @@ class BatchService:
                 """
                 SELECT * FROM batch_operations
                 WHERE institution_id = ?
-                ORDER BY created_at DESC
+                ORDER BY priority_level ASC, created_at DESC
                 LIMIT ? OFFSET ?
                 """,
                 (institution_id, limit, offset)
@@ -746,8 +790,8 @@ Suggest specific text changes to improve compliance."""
                 id, institution_id, operation_type, document_count,
                 completed_count, failed_count, estimated_cost, actual_cost,
                 concurrency, status, created_at, started_at, completed_at,
-                parent_batch_id, metadata
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                parent_batch_id, metadata, priority_level, sla_deadline
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 batch.id,
@@ -765,6 +809,8 @@ Suggest specific text changes to improve compliance."""
                 batch.completed_at,
                 batch.parent_batch_id,
                 json.dumps(batch.metadata),
+                batch.priority_level,
+                batch.sla_deadline,
             )
         )
 

@@ -82,6 +82,8 @@ class BatchOperation:
     started_at: Optional[str] = None
     completed_at: Optional[str] = None
     parent_batch_id: Optional[str] = None
+    priority_level: int = 3  # 1=critical, 2=high, 3=normal, 4=low
+    sla_deadline: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     items: List[BatchItem] = field(default_factory=list)
 
@@ -101,6 +103,8 @@ class BatchOperation:
             "started_at": self.started_at,
             "completed_at": self.completed_at,
             "parent_batch_id": self.parent_batch_id,
+            "priority_level": self.priority_level,
+            "sla_deadline": self.sla_deadline,
             "metadata": self.metadata,
             "items": [item.to_dict() for item in self.items],
         }
@@ -122,6 +126,8 @@ class BatchOperation:
             started_at=data.get("started_at"),
             completed_at=data.get("completed_at"),
             parent_batch_id=data.get("parent_batch_id"),
+            priority_level=data.get("priority_level", 3),
+            sla_deadline=data.get("sla_deadline"),
             metadata=data.get("metadata", {}),
             items=[BatchItem.from_dict(item) for item in data.get("items", [])],
         )
