@@ -1,0 +1,366 @@
+/* Observability Dashboard Styles
+ * Dark theme styling for metrics panels
+ */
+
+/* ============================================
+   Header Bar
+   ============================================ */
+.obs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+}
+
+.obs-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s infinite;
+}
+
+.status-dot.error {
+    background: var(--danger);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.obs-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.obs-controls .form-select {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-medium);
+    color: var(--text-primary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+}
+
+/* ============================================
+   Dashboard Grid
+   ============================================ */
+.obs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+}
+
+@media (max-width: 1024px) {
+    .obs-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   Metric Panels
+   ============================================ */
+.metric-panel {
+    min-height: 280px;
+}
+
+.metric-panel .card-header {
+    border-bottom: 1px solid var(--border-subtle);
+    padding: var(--spacing-md);
+}
+
+.metric-panel .card-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin: 0;
+    font-size: 1.1em;
+    color: var(--accent);
+}
+
+.metric-panel .card-title svg {
+    color: var(--accent);
+}
+
+/* ============================================
+   System Health Panel
+   ============================================ */
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md);
+    background: var(--bg-panel);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+}
+
+.metric-label {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-bottom: var(--spacing-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   AI Costs Panel
+   ============================================ */
+.cost-summary {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.cost-total {
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.cost-amount {
+    display: block;
+    font-size: 2.5em;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.cost-period {
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
+
+.cost-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.cost-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--bg-panel);
+    border-radius: var(--radius-sm);
+    font-size: 0.9em;
+}
+
+.cost-row span:first-child {
+    color: var(--text-secondary);
+}
+
+.cost-row span:last-child {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.model-breakdown {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.model-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+    font-size: 0.85em;
+}
+
+.model-name {
+    color: var(--text-secondary);
+}
+
+.model-cost {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.cost-chart-container {
+    padding: var(--spacing-md);
+}
+
+/* ============================================
+   Agent Activity Panel
+   ============================================ */
+.activity-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: var(--spacing-lg) var(--spacing-md);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.activity-stat {
+    text-align: center;
+}
+
+.activity-value {
+    display: block;
+    font-size: 2em;
+    font-weight: 700;
+}
+
+.activity-value.running {
+    color: var(--info);
+}
+
+.activity-value.success {
+    color: var(--success);
+}
+
+.activity-value.danger {
+    color: var(--danger);
+}
+
+.activity-label {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.recent-batches {
+    padding: var(--spacing-md);
+}
+
+.recent-batches h4 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.batch-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.batch-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: var(--bg-panel);
+    border-radius: var(--radius-sm);
+    font-size: 0.9em;
+}
+
+.batch-item .batch-type {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.batch-item .batch-status {
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.8em;
+    text-transform: uppercase;
+}
+
+.batch-status.pending {
+    background: rgba(251, 191, 36, 0.2);
+    color: var(--warning);
+}
+
+.batch-status.running {
+    background: rgba(56, 189, 248, 0.2);
+    color: var(--info);
+}
+
+.batch-status.completed {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.batch-status.failed {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+}
+
+/* ============================================
+   Performance Panel
+   ============================================ */
+.perf-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+}
+
+.perf-metric {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md);
+    background: var(--bg-panel);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+}
+
+.perf-label {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.perf-value {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.perf-unit {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   Empty States
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-lg);
+    color: var(--text-muted);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 768px) {
+    .metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-stats {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .cost-amount {
+        font-size: 2em;
+    }
+}
