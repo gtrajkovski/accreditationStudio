@@ -42,6 +42,24 @@ def init_institutions_bp(workspace_manager):
     return institutions_bp
 
 
+def _require_owner(f):
+    """Helper to check owner role."""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        from flask import current_app, g, jsonify
+        if not current_app.config.get('AUTH_ENABLED', True):
+            return f(*args, **kwargs)
+        user = g.get('current_user')
+        if not user:
+            return jsonify({'error': 'Authentication required'}), 401
+        role = user.get('role', 'viewer')
+        if role != 'owner':
+            return jsonify({'error': 'Insufficient permissions'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+
 # Institution endpoints
 
 @institutions_bp.route('/api/institutions', methods=['GET'])
@@ -168,6 +186,7 @@ def update_institution(institution_id: str):
 
 
 @institutions_bp.route('/api/institutions/<institution_id>', methods=['DELETE'])
+@_require_owner
 def delete_institution(institution_id: str):
     """Delete an institution and all its data.
 

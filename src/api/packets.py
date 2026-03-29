@@ -43,6 +43,25 @@ def _create_agent(institution_id: str) -> PacketAgent:
     return PacketAgent(session, workspace_manager=_workspace_manager)
 
 
+def _require_compliance_officer(f):
+    """Helper to check compliance_officer role."""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        from flask import current_app, g, jsonify
+        if not current_app.config.get('AUTH_ENABLED', True):
+            return f(*args, **kwargs)
+        user = g.get('current_user')
+        if not user:
+            return jsonify({'error': 'Authentication required'}), 401
+        role = user.get('role', 'viewer')
+        allowed_roles = {'compliance_officer', 'admin', 'owner'}
+        if role not in allowed_roles:
+            return jsonify({'error': 'Insufficient permissions'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+
 @packets_bp.route("", methods=["GET"])
 def list_packets(institution_id: str):
     """List all packets for an institution."""
@@ -77,6 +96,7 @@ def list_packets(institution_id: str):
 
 
 @packets_bp.route("", methods=["POST"])
+@_require_compliance_officer
 def create_packet(institution_id: str):
     """Create a new submission packet."""
     data = request.get_json() or {}
@@ -290,6 +310,7 @@ def get_evidence_validation(institution_id: str, packet_id: str):
 
 
 @packets_bp.route("/<packet_id>/export/docx", methods=["POST"])
+@_require_compliance_officer
 def export_docx(institution_id: str, packet_id: str):
     """Export packet as DOCX.
 
@@ -350,6 +371,7 @@ def export_docx(institution_id: str, packet_id: str):
 
 
 @packets_bp.route("/<packet_id>/export/zip", methods=["POST"])
+@_require_compliance_officer
 def export_zip(institution_id: str, packet_id: str):
     """Export packet as ZIP folder.
 

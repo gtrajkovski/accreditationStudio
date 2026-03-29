@@ -77,7 +77,27 @@ def _get_upload_path(institution_id: str, filename: str) -> Path:
     return originals_dir / secure_filename(unique_filename)
 
 
+def _require_department_head(f):
+    """Helper to check department_head role or higher."""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        from flask import current_app, g, jsonify
+        if not current_app.config.get('AUTH_ENABLED', True):
+            return f(*args, **kwargs)
+        user = g.get('current_user')
+        if not user:
+            return jsonify({'error': 'Authentication required'}), 401
+        role = user.get('role', 'viewer')
+        allowed_roles = {'department_head', 'compliance_officer', 'admin', 'owner'}
+        if role not in allowed_roles:
+            return jsonify({'error': 'Insufficient permissions'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+
 @documents_bp.route('/api/institutions/<institution_id>/documents/upload', methods=['POST'])
+@_require_department_head
 def upload_document(institution_id: str):
     """Upload a document file with automatic parsing.
 

@@ -11,7 +11,7 @@ import json
 import logging
 import time
 from typing import Dict, Any, Optional
-from flask import Blueprint, request, jsonify, Response, stream_with_context
+from flask import Blueprint, request, jsonify, Response, stream_with_context, current_app
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,27 @@ def init_audits_bp(workspace_manager):
     return audits_bp
 
 
+def _require_compliance_officer(f):
+    """Helper to check compliance_officer role."""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        from flask import current_app, g, jsonify
+        if not current_app.config.get('AUTH_ENABLED', True):
+            return f(*args, **kwargs)
+        user = g.get('current_user')
+        if not user:
+            return jsonify({'error': 'Authentication required'}), 401
+        role = user.get('role', 'viewer')
+        allowed_roles = {'compliance_officer', 'admin', 'owner'}
+        if role not in allowed_roles:
+            return jsonify({'error': 'Insufficient permissions'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+
 @audits_bp.route('/api/institutions/<institution_id>/audits', methods=['POST'])
+@_require_compliance_officer
 def start_audit(institution_id: str):
     """Start a compliance audit on a document.
 
@@ -204,6 +224,7 @@ def stream_audit(institution_id: str, audit_id: str):
 
 
 @audits_bp.route('/api/institutions/<institution_id>/audits/<audit_id>/run', methods=['POST'])
+@_require_compliance_officer
 def run_audit_sync(institution_id: str, audit_id: str):
     """Run all audit passes synchronously (non-streaming).
 
@@ -249,6 +270,7 @@ def run_audit_sync(institution_id: str, audit_id: str):
 
 
 @audits_bp.route('/api/institutions/<institution_id>/audits/batch/estimate', methods=['POST'])
+@_require_compliance_officer
 def estimate_batch_audit(institution_id: str):
     """Estimate cost for batch audit operation.
 
@@ -292,6 +314,7 @@ def estimate_batch_audit(institution_id: str):
 
 
 @audits_bp.route('/api/institutions/<institution_id>/audits/batch', methods=['POST'])
+@_require_compliance_officer
 def start_batch_audit(institution_id: str):
     """Start a batch audit operation.
 
@@ -417,6 +440,7 @@ def stream_batch_audit(institution_id: str, batch_id: str):
 
 
 @audits_bp.route('/api/institutions/<institution_id>/audits/batch/<batch_id>/cancel', methods=['POST'])
+@_require_compliance_officer
 def cancel_batch_audit(institution_id: str, batch_id: str):
     """Cancel a batch audit operation.
 
@@ -438,6 +462,7 @@ def cancel_batch_audit(institution_id: str, batch_id: str):
 
 
 @audits_bp.route('/api/institutions/<institution_id>/audits/batch/<batch_id>/retry-failed', methods=['POST'])
+@_require_compliance_officer
 def retry_failed_audits(institution_id: str, batch_id: str):
     """Retry failed items from a batch as a new batch.
 

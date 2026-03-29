@@ -40,7 +40,27 @@ def init_remediation_bp(workspace_manager):
     return remediation_bp
 
 
+def _require_compliance_officer(f):
+    """Helper to check compliance_officer role."""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        from flask import current_app, g, jsonify
+        if not current_app.config.get('AUTH_ENABLED', True):
+            return f(*args, **kwargs)
+        user = g.get('current_user')
+        if not user:
+            return jsonify({'error': 'Authentication required'}), 401
+        role = user.get('role', 'viewer')
+        allowed_roles = {'compliance_officer', 'admin', 'owner'}
+        if role not in allowed_roles:
+            return jsonify({'error': 'Insufficient permissions'}), 403
+        return f(*args, **kwargs)
+    return decorated
+
+
 @remediation_bp.route('/api/institutions/<institution_id>/remediations', methods=['POST'])
+@_require_compliance_officer
 def start_remediation(institution_id: str):
     """Start document remediation based on audit findings.
 
@@ -212,6 +232,7 @@ def stream_remediation(institution_id: str, remediation_id: str):
 
 
 @remediation_bp.route('/api/institutions/<institution_id>/remediations/<remediation_id>/run', methods=['POST'])
+@_require_compliance_officer
 def run_remediation_sync(institution_id: str, remediation_id: str):
     """Run all remediation steps synchronously (non-streaming).
 
@@ -373,6 +394,7 @@ def list_remediations(institution_id: str):
 
 
 @remediation_bp.route('/api/institutions/<institution_id>/remediations/batch/estimate', methods=['POST'])
+@_require_compliance_officer
 def estimate_batch_remediation(institution_id: str):
     """Estimate cost for batch remediation operation.
 
@@ -416,6 +438,7 @@ def estimate_batch_remediation(institution_id: str):
 
 
 @remediation_bp.route('/api/institutions/<institution_id>/remediations/batch', methods=['POST'])
+@_require_compliance_officer
 def start_batch_remediation(institution_id: str):
     """Start a batch remediation operation.
 
@@ -533,6 +556,7 @@ def stream_batch_remediation(institution_id: str, batch_id: str):
 
 
 @remediation_bp.route('/api/institutions/<institution_id>/remediations/batch/<batch_id>/cancel', methods=['POST'])
+@_require_compliance_officer
 def cancel_batch_remediation(institution_id: str, batch_id: str):
     """Cancel a batch remediation operation.
 
@@ -554,6 +578,7 @@ def cancel_batch_remediation(institution_id: str, batch_id: str):
 
 
 @remediation_bp.route('/api/institutions/<institution_id>/remediations/batch/<batch_id>/retry-failed', methods=['POST'])
+@_require_compliance_officer
 def retry_failed_remediations(institution_id: str, batch_id: str):
     """Retry failed items from a batch as a new batch.
 
@@ -597,6 +622,7 @@ def retry_failed_remediations(institution_id: str, batch_id: str):
 
 
 @remediation_bp.route('/api/institutions/<institution_id>/remediations/batch/from-audit/<audit_batch_id>', methods=['POST'])
+@_require_compliance_officer
 def chain_from_audit_batch(institution_id: str, audit_batch_id: str):
     """Chain a remediation batch from a completed audit batch.
 
