@@ -701,5 +701,39 @@
     "select_document": "Seleccionar Documento",
     "doc_scan_description": "Seleccione un documento de marketing para escanear declaraciones publicitarias. El escáner extraerá y verificará declaraciones contra los datos de logros de su institución.",
     "start_scan": "Iniciar Escaneo"
+  },
+  "bulk": {
+    "title": "Remediación Masiva",
+    "fix_all_findings": "Corregir Todos los Hallazgos",
+    "scope": {
+      "all": "Todos los documentos con hallazgos",
+      "doc_type": "Por tipo de documento",
+      "program": "Por programa",
+      "severity": "Por severidad"
+    },
+    "severity": {
+      "critical": "Crítico",
+      "high": "Alto",
+      "moderate": "Moderado"
+    },
+    "select_type": "Seleccionar tipo...",
+    "select_program": "Seleccionar programa...",
+    "documents": "Documentos",
+    "findings": "Hallazgos",
+    "start": "Iniciar Corrección Total",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "cancel": "Cancelar",
+    "progress": "Progreso de Remediación",
+    "review": "Revisar Remediaciones",
+    "approve_all": "Aprobar Todas",
+    "reject_all": "Rechazar Todas",
+    "view_diff": "Ver Diferencias",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "approved": "Aprobado",
+    "rejected": "Rechazado",
+    "fixes": "correcciones",
+    "confidence": "confianza"
   }
 }

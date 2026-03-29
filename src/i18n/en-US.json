@@ -701,5 +701,39 @@
     "select_document": "Select Document",
     "doc_scan_description": "Select a marketing document to scan for advertising claims. The scanner will extract and verify claims against your institution's achievement data.",
     "start_scan": "Start Scan"
+  },
+  "bulk": {
+    "title": "Bulk Remediation",
+    "fix_all_findings": "Fix All Findings",
+    "scope": {
+      "all": "All documents with findings",
+      "doc_type": "By document type",
+      "program": "By program",
+      "severity": "By severity"
+    },
+    "severity": {
+      "critical": "Critical",
+      "high": "High",
+      "moderate": "Moderate"
+    },
+    "select_type": "Select type...",
+    "select_program": "Select program...",
+    "documents": "Documents",
+    "findings": "Findings",
+    "start": "Start Fix All",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel": "Cancel",
+    "progress": "Remediation Progress",
+    "review": "Review Remediations",
+    "approve_all": "Approve All",
+    "reject_all": "Reject All",
+    "view_diff": "View Diff",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "fixes": "fixes",
+    "confidence": "confidence"
   }
 }
