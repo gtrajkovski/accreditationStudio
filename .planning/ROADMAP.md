@@ -25,9 +25,9 @@ v1.8 ✅ Operational Intelligence (ALREADY IMPLEMENTED)
   │     ├── Evidence Coverage Service + UI ✅
   │     └── Audit Reproducibility Service + UI ✅
   │
-v1.9 ⬜ Regulatory Intelligence (PARTIAL)
-  │     ├── Phase 36: Accreditor Package System (2 plans) ⬜
-  │     └── Phase 37: Federal Regulations Library (1 plan) ⬜
+v1.9 ✅ Regulatory Intelligence (COMPLETE)
+  │     ├── Phase 36: Accreditor Package System (1 plan) ✅
+  │     └── Phase 37: Federal Regulations Library (1 plan) ✅
   │
 v2.0 ⬜ Power User Features
         ├── Phase 38: Bulk Remediation Wizard (2 plans) ⬜
@@ -51,14 +51,14 @@ v2.0 ⬜ Power User Features
 
 ## Remaining Work
 
-### v1.9 — Regulatory Intelligence
+### v1.9 — Regulatory Intelligence (COMPLETE)
 
 | Phase | Plans | Status | Files |
 |-------|-------|--------|-------|
-| 36: Accreditor Packages | 36-01 | Not started | `src/accreditors/` |
-| 37: Federal Library | 37-01 | Not started | `src/regulatory/federal/` |
+| 36: Accreditor Packages | 36-01 | Complete | `src/accreditors/` |
+| 37: Federal Library | 37-01 | Complete | `src/regulatory/federal/` |
 
-**Total: 2 phases, 2 plans**
+**Total: 2 phases, 2 plans - ALL COMPLETE**
 
 ### v2.0 — Power User Features
 
