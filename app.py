@@ -993,6 +993,21 @@ def institution_bulk_remediation(id):
     )
 
 
+@app.route('/institutions/<id>/packet-wizard')
+def institution_packet_wizard(id):
+    """Packet Studio wizard page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'institutions/packet_wizard.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
 @app.route('/chat')
 def chat():
     """AI chat interface page."""
