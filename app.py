@@ -1349,6 +1349,14 @@ def audit_reproducibility_page(institution_id: str, audit_id: str):
     )
 
 
+@app.route('/admin/users')
+@require_minimum_role('admin')
+def admin_users_page():
+    """User management page for admins."""
+    institution_id = request.args.get("institution_id", "")
+    return render_template('admin/users.html', institution_id=institution_id)
+
+
 # =============================================================================
 # Error Handlers
 # =============================================================================
