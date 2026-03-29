@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}{{ t('bulk.title') }} - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bulk_remediation.css') }}">
+{% endblock %}
+
+{% block data_institution_id %}{{ institution.id }}{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title=t('bulk.title'),
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), (t('bulk.title'), none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<!-- Scope Selection -->
+<div class="card mb-lg" id="scope-section">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('bulk.fix_all_findings') }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="scope-options">
+            <label class="scope-option">
+                <input type="radio" name="scope_type" value="all" checked>
+                <span class="scope-label">{{ t('bulk.scope.all') }}</span>
+            </label>
+            <label class="scope-option">
+                <input type="radio" name="scope_type" value="doc_type">
+                <span class="scope-label">{{ t('bulk.scope.doc_type') }}</span>
+                <select id="doc-type-select" class="form-control" disabled>
+                    <option value="">{{ t('bulk.select_type') }}</option>
+                    {% for dtype in doc_types %}
+                    <option value="{{ dtype }}">{{ dtype }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="scope-option">
+                <input type="radio" name="scope_type" value="program">
+                <span class="scope-label">{{ t('bulk.scope.program') }}</span>
+                <select id="program-select" class="form-control" disabled>
+                    <option value="">{{ t('bulk.select_program') }}</option>
+                    {% for prog in programs %}
+                    <option value="{{ prog.id }}">{{ prog.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="scope-option">
+                <input type="radio" name="scope_type" value="severity">
+                <span class="scope-label">{{ t('bulk.scope.severity') }}</span>
+                <div class="severity-checks" style="display: none;">
+                    <label><input type="checkbox" value="critical" checked> {{ t('bulk.severity.critical') }}</label>
+                    <label><input type="checkbox" value="high"> {{ t('bulk.severity.high') }}</label>
+                    <label><input type="checkbox" value="moderate"> {{ t('bulk.severity.moderate') }}</label>
+                </div>
+            </label>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-panel mt-lg" id="preview-panel">
+            <div class="preview-stats">
+                <div class="stat">
+                    <span class="stat-value" id="preview-docs">-</span>
+                    <span class="stat-label">{{ t('bulk.documents') }}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="preview-findings">-</span>
+                    <span class="stat-label">{{ t('bulk.findings') }}</span>
+                </div>
+            </div>
+            <button class="btn btn-primary btn-lg" id="start-btn" disabled>
+                {{ t('bulk.start') }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Panel (hidden until started) -->
+<div class="card mb-lg" id="progress-section" style="display: none;">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('bulk.progress') }}</h2>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="pause-btn">{{ t('bulk.pause') }}</button>
+            <button class="btn btn-danger" id="cancel-btn">{{ t('bulk.cancel') }}</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+        </div>
+        <div class="progress-stats">
+            <span id="progress-text">0%</span>
+            <span id="progress-count">0 / 0 {{ t('bulk.documents').lower() }}</span>
+        </div>
+
+        <div class="progress-list" id="progress-list">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Approval Panel (hidden until complete) -->
+<div class="card" id="approval-section" style="display: none;">
+    <div class="card-header">
+        <h2 class="card-title">{{ t('bulk.review') }}</h2>
+        <div class="header-actions">
+            <button class="btn btn-success" id="approve-all-btn">{{ t('bulk.approve_all') }}</button>
+            <button class="btn btn-danger" id="reject-all-btn">{{ t('bulk.reject_all') }}</button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="approval-list" id="approval-list">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/bulk_remediation.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const institutionId = '{{ institution.id }}';
+        BulkRemediation.init(institutionId);
+    });
+</script>
+{% endblock %}
