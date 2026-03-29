@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% from 'macros/page_header.html' import page_header %}
+
+{% block title %}{{ t('wizard.title') }} - {{ institution.name }} - AccreditAI{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/packet_wizard.css') }}">
+{% endblock %}
+
+{% block data_institution_id %}{{ institution.id }}{% endblock %}
+
+{% block content %}
+{{ page_header(
+    title=t('wizard.title'),
+    breadcrumbs=[('Dashboard', '/dashboard'), (institution.name, '/institutions/' ~ institution.id), (t('wizard.title'), none)],
+    institution=institution,
+    score=readiness_score
+) }}
+
+<div class="wizard-container">
+    <!-- Step Progress Indicator -->
+    <div class="wizard-progress">
+        <div class="wizard-step-indicator active" data-step="1">
+            <div class="step-number"><span>1</span></div>
+            <span class="step-label">{{ t('wizard.step1_type') }}</span>
+        </div>
+        <div class="wizard-step-indicator" data-step="2">
+            <div class="step-number"><span>2</span></div>
+            <span class="step-label">{{ t('wizard.step2_standards') }}</span>
+        </div>
+        <div class="wizard-step-indicator" data-step="3">
+            <div class="step-number"><span>3</span></div>
+            <span class="step-label">{{ t('wizard.step3_evidence') }}</span>
+        </div>
+        <div class="wizard-step-indicator" data-step="4">
+            <div class="step-number"><span>4</span></div>
+            <span class="step-label">{{ t('wizard.step4_narrative') }}</span>
+        </div>
+        <div class="wizard-step-indicator" data-step="5">
+            <div class="step-number"><span>5</span></div>
+            <span class="step-label">{{ t('wizard.step5_preview') }}</span>
+        </div>
+    </div>
+
+    <!-- Wizard Steps Container -->
+    <div class="wizard-steps">
+        <!-- Step 1: Submission Type -->
+        <div class="wizard-step active" data-step="1">
+            <div class="wizard-step-header">
+                <h2>{{ t('wizard.select_type') }}</h2>
+                <p>{{ t('wizard.select_type_desc') }}</p>
+            </div>
+
+            <div class="submission-type-grid">
+                <div class="submission-type-card" data-type="self_study">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+                    </svg>
+                    <div class="card-title">{{ t('wizard.type_self_study') }}</div>
+                    <div class="card-desc">{{ t('wizard.type_self_study_desc') }}</div>
+                </div>
+
+                <div class="submission-type-card" data-type="response">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                    </svg>
+                    <div class="card-title">{{ t('wizard.type_response') }}</div>
+                    <div class="card-desc">{{ t('wizard.type_response_desc') }}</div>
+                </div>
+
+                <div class="submission-type-card" data-type="teach_out">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                    </svg>
+                    <div class="card-title">{{ t('wizard.type_teach_out') }}</div>
+                    <div class="card-desc">{{ t('wizard.type_teach_out_desc') }}</div>
+                </div>
+
+                <div class="submission-type-card" data-type="annual">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <div class="card-title">{{ t('wizard.type_annual') }}</div>
+                    <div class="card-desc">{{ t('wizard.type_annual_desc') }}</div>
+                </div>
+
+                <div class="submission-type-card" data-type="substantive_change">
+                    <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    <div class="card-title">{{ t('wizard.type_substantive') }}</div>
+                    <div class="card-desc">{{ t('wizard.type_substantive_desc') }}</div>
+                </div>
+            </div>
+
+            <div class="accreditor-section">
+                <div class="form-group">
+                    <label for="accreditor-select">{{ t('wizard.select_accreditor') }}</label>
+                    <select id="accreditor-select" class="form-control accreditor-select">
+                        <option value="">{{ t('wizard.select_accreditor_placeholder') }}</option>
+                        <option value="ACCSC">ACCSC</option>
+                        <option value="SACSCOC">SACSCOC</option>
+                        <option value="HLC">HLC</option>
+                        <option value="ABHES">ABHES</option>
+                        <option value="COE">COE</option>
+                        <option value="DEAC">DEAC</option>
+                    </select>
+                </div>
+
+                <div class="form-group mt-md">
+                    <label for="packet-name">{{ t('wizard.packet_name') }}</label>
+                    <input type="text" id="packet-name" class="form-control"
+                           placeholder="{{ t('wizard.packet_name_placeholder') }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Standards Selection -->
+        <div class="wizard-step" data-step="2">
+            <div class="wizard-step-header">
+                <h2>{{ t('wizard.select_standards') }}</h2>
+                <p>{{ t('wizard.select_standards_desc') }}</p>
+            </div>
+
+            <div class="standards-shortcuts">
+                <button class="shortcut-chip" onclick="PacketWizard.selectAllStandards()">
+                    {{ t('wizard.select_all') }}
+                </button>
+                <button class="shortcut-chip" onclick="PacketWizard.clearStandards()">
+                    {{ t('wizard.clear_all') }}
+                </button>
+                <button class="shortcut-chip" onclick="PacketWizard.selectCriticalStandards()">
+                    {{ t('wizard.critical_only') }}
+                </button>
+            </div>
+
+            <div class="standards-panel">
+                <div class="standards-tree-container">
+                    <div class="standards-tree" id="standards-tree">
+                        <div class="empty-state text-center py-xl">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 48px; height: 48px; margin: 0 auto var(--spacing-md); color: var(--text-muted);">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                            </svg>
+                            <p class="text-muted">{{ t('wizard.select_accreditor_first') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="standards-summary">
+                    <div class="summary-title">{{ t('wizard.selected_standards') }}</div>
+                    <div class="summary-count" id="selected-count">0</div>
+                    <div class="summary-label">{{ t('wizard.standards_selected') }}</div>
+
+                    <div class="selected-standards-list" id="selected-standards-list">
+                        <span class="text-muted">{{ t('wizard.no_standards_selected') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Evidence Mapping -->
+        <div class="wizard-step" data-step="3">
+            <div class="wizard-step-header">
+                <h2>{{ t('wizard.map_evidence') }}</h2>
+                <p>{{ t('wizard.map_evidence_desc') }}</p>
+            </div>
+
+            <div class="evidence-mapping-panel">
+                <div class="evidence-pool">
+                    <div class="evidence-pool-header">
+                        <h3>{{ t('wizard.evidence_pool') }}</h3>
+                        <input type="text" id="evidence-search" class="form-control evidence-search"
+                               placeholder="{{ t('wizard.search_evidence') }}">
+                    </div>
+                    <div class="evidence-pool-list" id="evidence-pool-list">
+                        <div class="empty-state text-center py-lg">
+                            <p class="text-muted">{{ t('wizard.no_documents') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="standards-mapping-list" id="standards-mapping-list">
+                    <div class="empty-state text-center py-lg">
+                        <p class="text-muted">{{ t('wizard.select_standards_first') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Narrative Editor -->
+        <div class="wizard-step" data-step="4">
+            <div class="wizard-step-header">
+                <h2>{{ t('wizard.edit_narratives') }}</h2>
+                <p>{{ t('wizard.edit_narratives_desc') }}</p>
+            </div>
+
+            <div class="narrative-editor-panel">
+                <div class="narrative-sections-list">
+                    <div class="sections-header">
+                        <h3>{{ t('wizard.sections') }}</h3>
+                    </div>
+                    <div class="sections-list" id="narrative-sections-list">
+                        <div class="empty-state text-center py-lg">
+                            <p class="text-muted">{{ t('wizard.select_standards_first') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="narrative-editor">
+                    <div class="editor-header">
+                        <h3 id="editor-section-title">{{ t('wizard.select_section') }}</h3>
+                        <div class="editor-actions">
+                            <button class="btn btn-secondary" id="generate-narrative-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                                </svg>
+                                {{ t('wizard.generate') }}
+                            </button>
+                            <button class="btn btn-ghost" id="regenerate-narrative-btn" title="{{ t('wizard.regenerate') }}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M1 4v6h6"/>
+                                    <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="editor-content" id="editor-content">
+                        <textarea id="narrative-content" class="narrative-textarea"
+                                  placeholder="{{ t('wizard.narrative_placeholder') }}"></textarea>
+                    </div>
+                    <div class="editor-footer">
+                        <span id="word-count">0 words</span>
+                        <span id="last-saved"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Live Preview -->
+        <div class="wizard-step" data-step="5">
+            <div class="wizard-step-header">
+                <h2>{{ t('wizard.preview_export') }}</h2>
+                <p>{{ t('wizard.preview_export_desc') }}</p>
+            </div>
+
+            <div class="preview-panel">
+                <div class="preview-toc">
+                    <div class="preview-toc-header">{{ t('wizard.table_of_contents') }}</div>
+                    <div class="preview-toc-list" id="preview-toc-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="preview-document">
+                    <div class="preview-document-header">
+                        <h3>{{ t('wizard.document_preview') }}</h3>
+                        <div class="preview-zoom">
+                            <button onclick="PacketWizard.zoomOut()" title="{{ t('wizard.zoom_out') }}">-</button>
+                            <span id="zoom-level">100%</span>
+                            <button onclick="PacketWizard.zoomIn()" title="{{ t('wizard.zoom_in') }}">+</button>
+                        </div>
+                    </div>
+                    <div class="preview-content" id="preview-content">
+                        <!-- Preview rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wizard Navigation Footer -->
+    <div class="wizard-footer">
+        <div class="wizard-footer-left">
+            <button class="btn btn-wizard btn-wizard-secondary" id="prev-btn" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                {{ t('common.back') }}
+            </button>
+        </div>
+        <div class="wizard-footer-right">
+            <button class="btn btn-wizard btn-wizard-primary" id="next-btn">
+                {{ t('common.next') }}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </button>
+            <button class="btn btn-wizard btn-export" id="export-btn" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                {{ t('wizard.export') }}
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/packet_wizard.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const institutionId = '{{ institution.id }}';
+        PacketWizard.init(institutionId);
+    });
+</script>
+{% endblock %}
