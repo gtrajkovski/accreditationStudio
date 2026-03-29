@@ -74,6 +74,7 @@ from src.api.contextual_search import contextual_search_bp, init_contextual_sear
 from src.api.advertising import advertising_bp, init_advertising_bp
 from src.api.program_comparison import program_comparison_bp
 from src.api.state_regulatory_bp import state_regulatory_bp, init_state_regulatory_bp
+from src.api.federal import federal_bp, init_federal_bp
 from src.api.costs import costs_bp
 from src.api.observability import observability_bp, init_observability_bp
 from src.api.standards_importer_bp import standards_importer_bp, init_standards_importer_bp
@@ -271,6 +272,7 @@ init_standards_harvester_bp(workspace_manager)
 init_contextual_search_bp(workspace_manager, standards_store)
 init_advertising_bp(workspace_manager)
 init_state_regulatory_bp(workspace_manager)
+init_federal_bp(workspace_manager)
 init_observability_bp()
 
 # Initialize standards import service and blueprint
@@ -330,6 +332,7 @@ app.register_blueprint(advertising_bp)
 app.register_blueprint(program_comparison_bp)
 app.register_blueprint(costs_bp)
 app.register_blueprint(state_regulatory_bp)
+app.register_blueprint(federal_bp)
 app.register_blueprint(standards_importer_bp)
 app.register_blueprint(observability_bp)
 app.register_blueprint(accreditors_bp)
