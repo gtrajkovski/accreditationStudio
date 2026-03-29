@@ -1,164 +1,100 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.7
-milestone_name: Performance & Efficiency
-status: complete
-stopped_at: v1.7 milestone completed and archived
-last_updated: "2026-03-28T17:32:00Z"
+milestone: v1.9
+milestone_name: Regulatory Intelligence
+status: planned
+stopped_at: Planning complete - ready for Phase 36 execution
+last_updated: "2026-03-28T20:00:00Z"
 last_activity: 2026-03-28
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 8
+  completed_plans: 0
+  percent: 0
 ---
 
 # AccreditAI State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-27)
+See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Institutions can achieve and maintain accreditation compliance with minimal manual effort
-**Current focus:** Planning next milestone
+**Current focus:** v1.9 Regulatory Intelligence + v2.0 Power User Features
 
 ## Current Position
 
-Milestone: v1.7 (COMPLETE)
-Phase: All phases complete
-Status: Milestone archived
-Last activity: 2026-03-27
+Milestone: v1.9 — Regulatory Intelligence
+Phase: 36 (Accreditor Package System) — NOT STARTED
+Status: Planning complete
+Last activity: 2026-03-28
 
-Progress: [████████████████████████] 100% (v1.7)
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (v1.9-v2.0 combined)
 
-## v1.7 Completion Summary
+## Key Audit Finding (2026-03-28)
 
-**Performance & Efficiency** — Shipped 2026-03-27
+**v1.8 was already implemented!** The audit revealed:
 
-All 3 phases (28, 29, 30) and 5 plans completed:
+| v1.8 Feature | Status | Evidence |
+|--------------|--------|----------|
+| Autopilot Service | DONE | `autopilot_service.py` (31K LOC) |
+| Work Queue | DONE | `work_queue_service.py` + `work_queue.html` |
+| Change Detection | DONE | `change_detection_service.py` (24K LOC) |
+| Evidence Coverage | DONE | `evidence_contract_service.py` |
+| Reproducibility | DONE | `audit_reproducibility_service.py` |
 
-- Phase 28: Performance Quick Wins (1 plan) — HTTP caching, gzip, N+1 fix, indexes
-- Phase 29: AI Cost Optimization (3 plans) — Haiku routing, cost tracking, Batch API
-- Phase 30: Accessibility & Polish (1 plan) — WCAG 2.1 AA quick wins
+v1.8 is retroactively documented as complete.
 
-**Key accomplishments:**
-- 2-3x faster page loads via HTTP caching and gzip compression
-- 73-90% AI cost savings via multi-model routing (Haiku for simple tasks)
-- Real-time cost tracking dashboard with budget alerts
-- 50% discount on bulk operations via Anthropic Batch API
-- WCAG 2.1 AA accessibility improvements
+## Remaining Milestones
 
-**Archived to:**
-- .planning/milestones/v1.7-ROADMAP.md
-- .planning/milestones/v1.7-REQUIREMENTS.md
-- .planning/milestones/v1.7-MILESTONE-AUDIT.md
+| Version | Phases | Plans | Status |
+|---------|--------|-------|--------|
+| v1.9 | 36-37 | 2 | Not started |
+| v2.0 | 38-40 | 6 | Not started |
 
-## Accumulated Context
+## v1.9 Phases
 
-### Decisions
+| Phase | Name | Plans | Status |
+|-------|------|-------|--------|
+| 36 | Accreditor Package System | 1 | Not started |
+| 37 | Federal Regulations Library | 1 | Not started |
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Key v1.7 decisions:
+## v2.0 Phases
 
-- Use Haiku for simple pattern recognition tasks (73% cost savings)
-- Use flask-compress for gzip (simpler than manual middleware)
-- Use Anthropic Batch API for 50% discount on bulk operations
-- Toast stacking limit of 5 (prevents viewport overflow)
+| Phase | Name | Plans | Status |
+|-------|------|-------|--------|
+| 38 | Bulk Remediation Wizard | 2 | Not started |
+| 39 | Packet Studio Wizard | 2 | Not started |
+| 40 | Document Workbench IDE | 2 | Not started |
 
-### Pending Todos
+## Planning Artifacts Created
 
-None.
-
-### Blockers/Concerns
-
-None.
-
-## Tech Debt Cleanup (Complete)
-
-All 4 tech debt tasks completed 2026-03-27:
-
-- ✅ TD-1: Split models.py into domain modules (commit 4bce6f0)
-- ✅ TD-2: Add logging to silent exception handlers (commit d53d413)
-- ✅ TD-3: Clean up AgentType enum and registry (commit 7384f22)
-- ✅ TD-4: Add in-memory caching to WorkspaceManager (commit e5d9e5d)
-
-## Phase 9 Advanced Features (In Progress)
-
-**Phase 9-01: Advertising Scanner** — ✅ Complete (commit 2559ba5)
-- Agent implementation with 7 tools
-- API blueprint with SSE streaming
-- UI template with URL/document scan, findings display, history
-
-**Phase 9-02: Cross-Program Comparison Matrix** — ✅ Complete (commit 7ea364f)
-- Service with metrics (readiness, findings, evidence, faculty)
-- API blueprint with 3 endpoints
-- UI with radar chart and comparison table
-
-**Phase 9-03: Universal Standards Importer** — ✅ Complete (commit bfc80db)
-- ✅ Plan 9-03-01: Core Extraction and Parsing Pipeline (commit b32c8bf)
-  - ExtractorFactory with 5 extractors (PDF, Excel, CSV, text, web)
-  - StandardsParser with hierarchy detection (Roman, Arabic, combined)
-  - StandardsValidator with quality scoring (0-100)
-  - StandardsImporter pipeline orchestrator
-  - Database migration 0038_standards_importer.sql
-- ✅ Plan 9-03-02: Agent and Service Layer (commit 7a10085)
-  - StandardsImporterAgent with 8 AI-powered tools
-  - StandardsImportService for business logic orchestration
-  - Database persistence for import history
-  - AI agent integration via use_ai flag
-- ✅ Plan 9-03-03: API and UI (commit bfc80db)
-  - REST API blueprint with 10 endpoints (upload, parse, parse-ai, validate, import, preview, imports list, accreditors)
-  - SSE streaming for AI parsing progress
-  - 4-tab UI (Upload, Preview, Mapping, History)
-  - Full-featured JavaScript with drag-drop, state management
-  - Dark theme CSS with gold accent
-
-**Phase 9-04: State Regulatory Modules** — ✅ Complete (commit da80853)
-- ✅ Plan 9-04-01: Core Backend (commit 0572c72)
-  - 6 dataclasses: StateAuthorization, StateCatalogRequirement, StateCatalogCompliance, StateProgramApproval, StateReadinessScore, StateSummary
-  - Database migration 0039_state_regulatory.sql with 4 tables
-  - StateRegulatoryService with 15+ methods (CRUD, scoring, calendar integration)
-- ✅ Plan 9-04-02: API and State Presets (commit 123f7f9)
-  - REST API blueprint with 16 endpoints (CRUD, scoring, preset loading)
-  - 5 state preset JSON files (CA, TX, NY, FL, IL)
-  - Blueprint wired in app.py
-- ✅ Plan 9-04-03: Frontend UI (commit da80853)
-  - HTML template with 4-tab interface (Auth, Catalog, Programs)
-  - JavaScript with full API integration (~500 lines)
-  - CSS with dark theme and state-specific styling
-  - Flask route and nav link
-
-**Phase 9-05: Enhanced Batch Processing** — ✅ Complete (commit 6b26882)
-- ✅ Plan 9-05-01: Queue Monitoring & Batch Templates (commit 7deaec0)
-  - BatchTemplate dataclass with operation_type, document_ids, concurrency
-  - BatchQueueService with queue status and depth metrics
-  - BatchTemplateService with CRUD and execute_template()
-  - API blueprint with 8 endpoints
-- ✅ Plan 9-05-02: Batch Scheduling with APScheduler (commit 4c920bc)
-  - BatchSchedule dataclass with cron_expression, next_run, status
-  - BatchScheduleService with APScheduler integration
-  - API blueprint with 8 endpoints (CRUD + pause/resume/trigger)
-  - UI with schedule list and cron reference
-- ✅ Plan 9-05-03: Priority Queue & UI Enhancements (commit 6b26882)
-  - Migration 0042_batch_priority.sql with priority_level column
-  - BatchService with priority support in create_batch and update_priority
-  - API endpoint PATCH /api/institutions/{id}/batches/{id}/priority
-  - Enhanced batch_history.html with queue monitor, templates, priority badges
-
-**Phase 9-06: Full Observability Dashboard** — ✅ Complete (commit a788bd9)
-- ✅ Plan 9-06-01: Observability Dashboard (commit a788bd9)
-  - ObservabilityService with 4 metric categories (health, costs, activity, performance)
-  - REST API blueprint with 3 endpoints (/metrics, /health, /costs)
-  - Dashboard UI with 4 panels and Chart.js cost trend
-  - Auto-refresh every 30 seconds with time range selector
+- `.planning/AUDIT_2026-03-28.md` — Full codebase audit
+- `.planning/ROADMAP.md` — Master roadmap
+- `.planning/milestones/v1.8-ROADMAP.md` — v1.8 (retroactive)
+- `.planning/milestones/v1.9-ROADMAP.md` — v1.9 plan
+- `.planning/milestones/v1.9-REQUIREMENTS.md` — v1.9 requirements
+- `.planning/milestones/v2.0-ROADMAP.md` — v2.0 plan
+- `.planning/milestones/v2.0-REQUIREMENTS.md` — v2.0 requirements
+- `.planning/phases/36-accreditor-packages/36-01-PLAN.md`
+- `.planning/phases/37-federal-library/37-01-PLAN.md`
+- `.planning/phases/38-bulk-remediation/38-01-PLAN.md`
+- `.planning/phases/38-bulk-remediation/38-02-PLAN.md`
+- `.planning/phases/39-packet-wizard/39-01-PLAN.md`
+- `.planning/phases/39-packet-wizard/39-02-PLAN.md`
+- `.planning/phases/40-workbench-ide/40-01-PLAN.md`
+- `.planning/phases/40-workbench-ide/40-02-PLAN.md`
 
 ## Session Continuity
 
 Last session: 2026-03-28
-Stopped at: Phase 9-06 complete (Full Observability Dashboard)
+Stopped at: Master planning complete
 Resume file: None
 
 ## Next Steps
 
-1. Phase 9 Advanced Features complete - all 6 sub-phases shipped
+1. Execute Phase 36, Plan 36-01 (Accreditor Package System)
+2. Follow plan file: `.planning/phases/36-accreditor-packages/36-01-PLAN.md`
+3. After Phase 36-37: v1.9 complete
+4. Then execute Phases 38-40 for v2.0
