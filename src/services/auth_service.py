@@ -8,7 +8,7 @@ import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from src.db.connection import get_conn
-from src.core.utils import generate_id, now_iso
+from src.core.models.helpers import generate_id, now_iso
 
 
 def register_user(
