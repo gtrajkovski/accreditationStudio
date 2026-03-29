@@ -26,7 +26,7 @@ def test_db():
 
     # Create test users
     conn.execute("""
-        INSERT INTO users (id, email, name, password_hash, role, active)
+        INSERT INTO users (id, email, name, password_hash, role, is_active)
         VALUES
             ('user_owner', 'owner@test.com', 'Owner User', 'hash', 'owner', 1),
             ('user_admin', 'admin@test.com', 'Admin User', 'hash', 'admin', 1),
@@ -153,7 +153,7 @@ def test_accept_invitation(test_db):
 
     # Create new user
     test_db.execute("""
-        INSERT INTO users (id, email, name, password_hash, role, active)
+        INSERT INTO users (id, email, name, password_hash, role, is_active)
         VALUES ('user_new', 'newuser@test.com', 'New User', 'hash', 'viewer', 1)
     """)
     test_db.commit()
@@ -309,7 +309,7 @@ def test_cannot_cancel_accepted_invitation(test_db):
 
     # Create user and accept
     test_db.execute("""
-        INSERT INTO users (id, email, name, password_hash, role, active)
+        INSERT INTO users (id, email, name, password_hash, role, is_active)
         VALUES ('user_test', 'test@test.com', 'Test', 'hash', 'viewer', 1)
     """)
     test_db.commit()

@@ -293,7 +293,7 @@ def list_users(institution_id: str) -> List[Dict[str, Any]]:
     # Get users with permissions for this institution
     rows = conn.execute(
         """
-        SELECT DISTINCT u.id, u.email, u.name, u.active, u.last_login, u.created_at,
+        SELECT DISTINCT u.id, u.email, u.name, u.is_active, u.last_login, u.created_at,
                up.permission
         FROM users u
         LEFT JOIN user_permissions up ON u.id = up.user_id AND up.institution_id = ?
@@ -316,7 +316,7 @@ def list_users(institution_id: str) -> List[Dict[str, Any]]:
             "email": row['email'],
             "name": row['name'],
             "role": role or 'viewer',
-            "active": bool(row['active']),
+            "active": bool(row['is_active']),
             "last_login": row['last_login'],
             "created_at": row['created_at']
         })
