@@ -78,6 +78,7 @@ from src.api.federal import federal_bp, init_federal_bp
 from src.api.costs import costs_bp
 from src.api.observability import observability_bp, init_observability_bp
 from src.api.standards_importer_bp import standards_importer_bp, init_standards_importer_bp
+from src.api.bulk_remediation import bulk_remediation_bp, init_bulk_remediation_bp
 from src.services.standards_import_service import get_import_service
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
@@ -200,6 +201,7 @@ app.config["TAGS"] = [
     {"name": "Action Plans", "description": "Action plan tracking"},
     {"name": "Contextual Search", "description": "Context-aware search API"},
     {"name": "Observability", "description": "System metrics and monitoring"},
+    {"name": "Bulk Remediation", "description": "Bulk remediation operations"},
 ]
 
 # Import schemas before blueprint registration (required for apispec)
@@ -274,6 +276,7 @@ init_advertising_bp(workspace_manager)
 init_state_regulatory_bp(workspace_manager)
 init_federal_bp(workspace_manager)
 init_observability_bp()
+init_bulk_remediation_bp(workspace_manager)
 
 # Initialize standards import service and blueprint
 import_service = get_import_service(
@@ -336,6 +339,7 @@ app.register_blueprint(federal_bp)
 app.register_blueprint(standards_importer_bp)
 app.register_blueprint(observability_bp)
 app.register_blueprint(accreditors_bp)
+app.register_blueprint(bulk_remediation_bp)
 
 
 # =============================================================================
@@ -955,6 +959,32 @@ def institution_state_regulations(id):
         'institutions/state_regulations.html',
         institution=institution,
         current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
+@app.route('/institutions/<id>/bulk-remediation')
+def institution_bulk_remediation(id):
+    """Bulk remediation wizard page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    # Get document types for scope selection
+    from src.db.connection import get_conn
+    conn = get_conn()
+    cursor = conn.execute(
+        "SELECT DISTINCT doc_type FROM documents WHERE institution_id = ? AND doc_type IS NOT NULL ORDER BY doc_type",
+        (id,)
+    )
+    doc_types = [row['doc_type'] for row in cursor.fetchall()]
+
+    return render_template(
+        'institutions/bulk_remediation.html',
+        institution=institution,
+        current_institution=institution,
+        programs=institution.programs,
+        doc_types=doc_types,
         readiness_score=_get_readiness_score(id),
     )
 
