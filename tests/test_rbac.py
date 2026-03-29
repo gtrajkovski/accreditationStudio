@@ -11,18 +11,31 @@ def test_db():
     """Setup test database with RBAC tables."""
     conn = get_conn()
 
-    # Apply RBAC migration
-    migration_path = "src/db/migrations/0047_rbac.sql"
-    with open(migration_path, "r") as f:
-        migration_sql = f.read()
-
-    # Split and execute each statement
-    for statement in migration_sql.split(';'):
-        statement = statement.strip()
-        if statement:
-            conn.execute(statement)
-
+    # Clean up any existing test data
+    conn.execute("DELETE FROM user_permissions WHERE institution_id = 'inst_test'")
+    conn.execute("DELETE FROM user_invitations WHERE institution_id = 'inst_test'")
+    conn.execute("DELETE FROM institutions WHERE id = 'inst_test'")
+    conn.execute("DELETE FROM users WHERE id LIKE 'user_%'")
     conn.commit()
+
+    # Apply RBAC migration if tables don't exist
+    try:
+        conn.execute("SELECT COUNT(*) FROM user_invitations LIMIT 1")
+    except:
+        migration_path = "src/db/migrations/0047_rbac.sql"
+        with open(migration_path, "r") as f:
+            migration_sql = f.read()
+
+        # Split and execute each statement
+        for statement in migration_sql.split(';'):
+            statement = statement.strip()
+            if statement:
+                try:
+                    conn.execute(statement)
+                except:
+                    pass  # Table might already exist
+
+        conn.commit()
 
     # Create test users
     conn.execute("""
@@ -45,6 +58,12 @@ def test_db():
 
     yield conn
 
+    # Cleanup after test
+    conn.execute("DELETE FROM user_permissions WHERE institution_id = 'inst_test'")
+    conn.execute("DELETE FROM user_invitations WHERE institution_id = 'inst_test'")
+    conn.execute("DELETE FROM institutions WHERE id = 'inst_test'")
+    conn.execute("DELETE FROM users WHERE id LIKE 'user_%'")
+    conn.commit()
     conn.close()
 
 
