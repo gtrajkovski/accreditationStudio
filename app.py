@@ -79,6 +79,7 @@ from src.api.costs import costs_bp
 from src.api.observability import observability_bp, init_observability_bp
 from src.api.standards_importer_bp import standards_importer_bp, init_standards_importer_bp
 from src.api.bulk_remediation import bulk_remediation_bp, init_bulk_remediation_bp
+from src.api.packet_wizard import packet_wizard_bp, init_packet_wizard_bp
 from src.services.standards_import_service import get_import_service
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
@@ -202,6 +203,7 @@ app.config["TAGS"] = [
     {"name": "Contextual Search", "description": "Context-aware search API"},
     {"name": "Observability", "description": "System metrics and monitoring"},
     {"name": "Bulk Remediation", "description": "Bulk remediation operations"},
+    {"name": "Packet Wizard", "description": "Submission packet creation wizard"},
 ]
 
 # Import schemas before blueprint registration (required for apispec)
@@ -277,6 +279,7 @@ init_state_regulatory_bp(workspace_manager)
 init_federal_bp(workspace_manager)
 init_observability_bp()
 init_bulk_remediation_bp(workspace_manager)
+init_packet_wizard_bp(workspace_manager, standards_store)
 
 # Initialize standards import service and blueprint
 import_service = get_import_service(
@@ -340,6 +343,7 @@ app.register_blueprint(standards_importer_bp)
 app.register_blueprint(observability_bp)
 app.register_blueprint(accreditors_bp)
 app.register_blueprint(bulk_remediation_bp)
+app.register_blueprint(packet_wizard_bp)
 
 
 # =============================================================================
