@@ -1,0 +1,59 @@
+{
+  "id": "ada",
+  "name": "Americans with Disabilities Act and Section 504",
+  "short_name": "ADA/504",
+  "description": "Prohibits discrimination against individuals with disabilities",
+  "citations": ["42 U.S.C. 12101 et seq.", "29 U.S.C. 794", "34 CFR Part 104"],
+  "applicability_rule": "True",
+  "enforcement_agency": "U.S. Department of Education, Office for Civil Rights; Department of Justice",
+  "penalty_authority": "Loss of federal funding, civil penalties, injunctive relief",
+  "last_updated": "2024-04-15",
+  "effective_date": "1990-07-26",
+  "requirements": [
+    {
+      "id": "ada-001",
+      "citation": "34 CFR 104.7",
+      "title": "Section 504 Coordinator",
+      "description": "Institution with 15+ employees must designate a coordinator for Section 504 compliance",
+      "evidence_types": ["coordinator_designation", "website", "catalog"],
+      "common_violations": ["No designated coordinator", "Contact info not published"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "ada-002",
+      "citation": "34 CFR 104.44",
+      "title": "Academic Adjustments",
+      "description": "Institution must make reasonable modifications to academic requirements for students with disabilities",
+      "evidence_types": ["accommodation_policy", "procedures_manual", "accommodation_records"],
+      "common_violations": ["Denial of reasonable accommodations", "Lengthy approval process"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "ada-003",
+      "citation": "34 CFR 104.21",
+      "title": "Program Accessibility",
+      "description": "Programs and activities must be accessible to individuals with disabilities",
+      "evidence_types": ["accessibility_audit", "transition_plan", "facility_assessment"],
+      "common_violations": ["Inaccessible classrooms", "No alternative formats"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "ada-004",
+      "citation": "28 CFR 35.160",
+      "title": "Effective Communication",
+      "description": "Institution must ensure effective communication with individuals with disabilities",
+      "evidence_types": ["communication_policy", "auxiliary_aids_list", "interpreter_services"],
+      "common_violations": ["No sign language interpreters", "Inaccessible website"],
+      "penalty_range": "Civil penalties, injunctive relief"
+    },
+    {
+      "id": "ada-005",
+      "citation": "34 CFR 104.8",
+      "title": "Grievance Procedures",
+      "description": "Institution must adopt grievance procedures for disability discrimination complaints",
+      "evidence_types": ["grievance_policy", "student_handbook", "website"],
+      "common_violations": ["No formal grievance process", "Procedures not published"],
+      "penalty_range": "Loss of federal funding"
+    }
+  ]
+}

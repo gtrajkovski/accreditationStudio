@@ -1,0 +1,59 @@
+{
+  "id": "gainful_employment",
+  "name": "Gainful Employment Regulations",
+  "short_name": "GE",
+  "description": "Requirements for career education programs leading to gainful employment",
+  "citations": ["34 CFR 668.401-668.415"],
+  "applicability_rule": "institution.offers_certificates == True or institution.for_profit == True",
+  "enforcement_agency": "U.S. Department of Education",
+  "penalty_authority": "Loss of Title IV eligibility for specific programs",
+  "last_updated": "2024-07-01",
+  "effective_date": "2024-07-01",
+  "requirements": [
+    {
+      "id": "ge-001",
+      "citation": "34 CFR 668.402",
+      "title": "Program Definition",
+      "description": "GE programs must be educational programs leading to a credential other than a degree",
+      "evidence_types": ["program_catalog", "credential_documentation"],
+      "common_violations": ["Unclear credential pathway", "Misclassified programs"],
+      "penalty_range": "Loss of Title IV eligibility"
+    },
+    {
+      "id": "ge-002",
+      "citation": "34 CFR 668.403",
+      "title": "Debt-to-Earnings Rates",
+      "description": "Programs must meet debt-to-earnings thresholds comparing student debt to post-graduation earnings",
+      "evidence_types": ["earnings_data", "debt_calculations", "rate_reports"],
+      "common_violations": ["Failing D/E rates", "Inadequate earnings tracking"],
+      "penalty_range": "Loss of Title IV eligibility after two consecutive failing years"
+    },
+    {
+      "id": "ge-003",
+      "citation": "34 CFR 668.410",
+      "title": "Disclosure Requirements",
+      "description": "Institution must disclose program-level costs, completion rates, and employment outcomes",
+      "evidence_types": ["program_disclosures", "website", "enrollment_materials"],
+      "common_violations": ["Missing disclosures", "Incomplete cost information"],
+      "penalty_range": "Fine up to $62,689 per violation"
+    },
+    {
+      "id": "ge-004",
+      "citation": "34 CFR 668.412",
+      "title": "Reporting Requirements",
+      "description": "Institution must report student-level data for GE calculations",
+      "evidence_types": ["nslds_reports", "data_submissions"],
+      "common_violations": ["Late reporting", "Inaccurate data"],
+      "penalty_range": "Fine up to $62,689 per violation"
+    },
+    {
+      "id": "ge-005",
+      "citation": "34 CFR 668.414",
+      "title": "Earnings Premium",
+      "description": "Program completers' median earnings must exceed high school graduate earnings in the state",
+      "evidence_types": ["earnings_comparisons", "state_wage_data"],
+      "common_violations": ["Earnings below threshold", "Inadequate job placement"],
+      "penalty_range": "Loss of Title IV eligibility"
+    }
+  ]
+}

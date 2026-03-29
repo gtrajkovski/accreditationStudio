@@ -1,0 +1,59 @@
+{
+  "id": "coppa",
+  "name": "Children's Online Privacy Protection Act",
+  "short_name": "COPPA",
+  "description": "Protects online privacy of children under 13",
+  "citations": ["15 U.S.C. 6501-6506", "16 CFR Part 312"],
+  "applicability_rule": "institution.serves_minors == True",
+  "enforcement_agency": "Federal Trade Commission (FTC)",
+  "penalty_authority": "Civil penalties up to $50,120 per violation",
+  "last_updated": "2024-01-01",
+  "effective_date": "2000-04-21",
+  "requirements": [
+    {
+      "id": "coppa-001",
+      "citation": "16 CFR 312.3",
+      "title": "Privacy Policy",
+      "description": "Website or online service must post a clear and comprehensive privacy policy",
+      "evidence_types": ["privacy_policy", "website"],
+      "common_violations": ["Missing policy", "Policy not easily accessible"],
+      "penalty_range": "Up to $50,120 per violation"
+    },
+    {
+      "id": "coppa-002",
+      "citation": "16 CFR 312.4",
+      "title": "Parental Consent",
+      "description": "Must obtain verifiable parental consent before collecting personal information from children",
+      "evidence_types": ["consent_forms", "verification_procedures", "consent_records"],
+      "common_violations": ["No consent mechanism", "Insufficient verification"],
+      "penalty_range": "Up to $50,120 per violation"
+    },
+    {
+      "id": "coppa-003",
+      "citation": "16 CFR 312.5",
+      "title": "Parent Access",
+      "description": "Parents must be able to review and delete their child's personal information",
+      "evidence_types": ["access_procedures", "deletion_policy"],
+      "common_violations": ["No access mechanism", "Delayed response to requests"],
+      "penalty_range": "Up to $50,120 per violation"
+    },
+    {
+      "id": "coppa-004",
+      "citation": "16 CFR 312.7",
+      "title": "Prohibition on Conditioning",
+      "description": "Cannot condition participation on disclosure of more information than necessary",
+      "evidence_types": ["data_collection_forms", "policies"],
+      "common_violations": ["Excessive data collection", "Required unnecessary fields"],
+      "penalty_range": "Up to $50,120 per violation"
+    },
+    {
+      "id": "coppa-005",
+      "citation": "16 CFR 312.8",
+      "title": "Data Security",
+      "description": "Must establish reasonable procedures to protect confidentiality and security of children's data",
+      "evidence_types": ["security_policy", "data_protection_procedures", "incident_response_plan"],
+      "common_violations": ["Inadequate security", "Data breaches"],
+      "penalty_range": "Up to $50,120 per violation"
+    }
+  ]
+}

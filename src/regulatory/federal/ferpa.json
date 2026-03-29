@@ -1,0 +1,59 @@
+{
+  "id": "ferpa",
+  "name": "Family Educational Rights and Privacy Act",
+  "short_name": "FERPA",
+  "description": "Protects the privacy of student education records",
+  "citations": ["20 U.S.C. 1232g", "34 CFR Part 99"],
+  "applicability_rule": "True",
+  "enforcement_agency": "U.S. Department of Education, Student Privacy Policy Office",
+  "penalty_authority": "Withdrawal of federal funding",
+  "last_updated": "2024-01-15",
+  "effective_date": "1974-08-21",
+  "requirements": [
+    {
+      "id": "ferpa-001",
+      "citation": "34 CFR 99.7",
+      "title": "Annual Notification",
+      "description": "Institution must annually notify students of their rights under FERPA",
+      "evidence_types": ["catalog", "student_handbook", "website"],
+      "common_violations": ["No annual notification", "Incomplete rights listing"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "ferpa-002",
+      "citation": "34 CFR 99.31",
+      "title": "Disclosure Restrictions",
+      "description": "Institution may not disclose personally identifiable information without consent except in specified circumstances",
+      "evidence_types": ["privacy_policy", "release_forms", "staff_training"],
+      "common_violations": ["Unauthorized disclosure", "Missing consent forms"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "ferpa-003",
+      "citation": "34 CFR 99.10",
+      "title": "Right to Inspect Records",
+      "description": "Students have the right to inspect and review their education records within 45 days",
+      "evidence_types": ["records_request_policy", "procedures_manual"],
+      "common_violations": ["Delayed access to records", "No clear request procedure"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "ferpa-004",
+      "citation": "34 CFR 99.20",
+      "title": "Right to Amend Records",
+      "description": "Students have the right to request amendment of inaccurate or misleading records",
+      "evidence_types": ["amendment_policy", "hearing_procedures"],
+      "common_violations": ["No amendment process", "Missing hearing procedures"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "ferpa-005",
+      "citation": "34 CFR 99.37",
+      "title": "Directory Information",
+      "description": "Institution must give notice of what constitutes directory information and allow opt-out",
+      "evidence_types": ["directory_policy", "opt_out_forms", "catalog"],
+      "common_violations": ["No opt-out option", "Unclear directory information definition"],
+      "penalty_range": "Loss of federal funding"
+    }
+  ]
+}

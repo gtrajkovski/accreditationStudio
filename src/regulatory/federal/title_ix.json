@@ -1,0 +1,59 @@
+{
+  "id": "title_ix",
+  "name": "Title IX of the Education Amendments of 1972",
+  "short_name": "Title IX",
+  "description": "Prohibits sex discrimination in federally funded education programs",
+  "citations": ["20 U.S.C. 1681-1688", "34 CFR Part 106"],
+  "applicability_rule": "True",
+  "enforcement_agency": "U.S. Department of Education, Office for Civil Rights",
+  "penalty_authority": "Loss of federal funding, civil penalties",
+  "last_updated": "2024-08-01",
+  "effective_date": "1972-06-23",
+  "requirements": [
+    {
+      "id": "t9-001",
+      "citation": "34 CFR 106.8",
+      "title": "Title IX Coordinator",
+      "description": "Institution must designate a Title IX Coordinator and publish contact information",
+      "evidence_types": ["coordinator_designation", "website", "catalog"],
+      "common_violations": ["No designated coordinator", "Contact info not published"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "t9-002",
+      "citation": "34 CFR 106.8(c)",
+      "title": "Grievance Procedures",
+      "description": "Institution must adopt and publish grievance procedures for sex discrimination complaints",
+      "evidence_types": ["grievance_policy", "procedures_manual", "student_handbook"],
+      "common_violations": ["No formal procedures", "Procedures not published"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "t9-003",
+      "citation": "34 CFR 106.44",
+      "title": "Response to Sexual Harassment",
+      "description": "Institution must respond promptly and effectively to sexual harassment reports",
+      "evidence_types": ["response_procedures", "investigation_records", "training_records"],
+      "common_violations": ["Delayed response", "Inadequate investigation"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "t9-004",
+      "citation": "34 CFR 106.45",
+      "title": "Investigation and Adjudication",
+      "description": "Institution must follow specified procedures for investigating and adjudicating complaints",
+      "evidence_types": ["investigation_policy", "hearing_procedures", "appeal_process"],
+      "common_violations": ["Missing due process protections", "Biased investigation"],
+      "penalty_range": "Loss of federal funding"
+    },
+    {
+      "id": "t9-005",
+      "citation": "34 CFR 106.8(b)",
+      "title": "Non-Discrimination Notice",
+      "description": "Institution must publish a notice of non-discrimination policy",
+      "evidence_types": ["catalog", "website", "student_handbook", "employee_handbook"],
+      "common_violations": ["Missing notice", "Incomplete policy statement"],
+      "penalty_range": "Loss of federal funding"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "id": "title_iv",
+  "name": "Title IV Student Financial Aid",
+  "short_name": "Title IV",
+  "description": "Requirements for institutions participating in federal student financial aid programs",
+  "citations": ["34 CFR Part 600", "34 CFR Part 668", "34 CFR Part 674", "34 CFR Part 682", "34 CFR Part 685"],
+  "applicability_rule": "institution.title_iv_eligible == True",
+  "enforcement_agency": "U.S. Department of Education",
+  "penalty_authority": "Fine and suspension from Title IV programs",
+  "last_updated": "2024-07-01",
+  "effective_date": "1965-11-08",
+  "requirements": [
+    {
+      "id": "t4-001",
+      "citation": "34 CFR 668.43(a)(1)",
+      "title": "Consumer Information Disclosure",
+      "description": "Institution must make available to enrolled and prospective students information about student body diversity, retention rates, and graduation rates",
+      "evidence_types": ["catalog", "website", "consumer_disclosure"],
+      "common_violations": ["Missing graduation rates", "Outdated diversity statistics"],
+      "penalty_range": "Fine up to $62,689 per violation"
+    },
+    {
+      "id": "t4-002",
+      "citation": "34 CFR 668.43(a)(5)",
+      "title": "Refund Policy Disclosure",
+      "description": "Institution must disclose refund policies for returning unearned tuition, fees, and room and board",
+      "evidence_types": ["catalog", "enrollment_agreement", "refund_policy"],
+      "common_violations": ["Policy not clearly stated", "Missing timeframes"],
+      "penalty_range": "Fine up to $62,689 per violation"
+    },
+    {
+      "id": "t4-003",
+      "citation": "34 CFR 668.23",
+      "title": "Administrative Capability",
+      "description": "Institution must demonstrate administrative capability including adequate staffing and record-keeping",
+      "evidence_types": ["organizational_chart", "staff_credentials", "policies"],
+      "common_violations": ["Insufficient staffing", "Inadequate record retention"],
+      "penalty_range": "Loss of Title IV eligibility"
+    },
+    {
+      "id": "t4-004",
+      "citation": "34 CFR 668.16",
+      "title": "Standards of Administrative Capability",
+      "description": "Institution must administer Title IV programs in accordance with all statutory and regulatory requirements",
+      "evidence_types": ["financial_aid_policies", "procedures_manual", "staff_training"],
+      "common_violations": ["Improper disbursement timing", "Failure to return unearned funds"],
+      "penalty_range": "Loss of Title IV eligibility"
+    },
+    {
+      "id": "t4-005",
+      "citation": "34 CFR 668.22",
+      "title": "Return of Title IV Funds (R2T4)",
+      "description": "Institution must return unearned Title IV funds when a student withdraws",
+      "evidence_types": ["withdrawal_policy", "r2t4_calculations", "refund_records"],
+      "common_violations": ["Late return of funds", "Incorrect calculation of earned aid"],
+      "penalty_range": "Fine up to $62,689 per violation"
+    }
+  ]
+}

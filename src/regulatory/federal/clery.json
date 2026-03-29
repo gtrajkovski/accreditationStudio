@@ -1,0 +1,50 @@
+{
+  "id": "clery",
+  "name": "Jeanne Clery Disclosure of Campus Security Policy and Campus Crime Statistics Act",
+  "short_name": "Clery Act",
+  "description": "Requires disclosure of campus crime statistics and security policies",
+  "citations": ["20 U.S.C. 1092(f)", "34 CFR 668.46"],
+  "applicability_rule": "institution.title_iv_eligible == True",
+  "enforcement_agency": "U.S. Department of Education",
+  "penalty_authority": "Fine up to $62,689 per violation",
+  "last_updated": "2024-01-01",
+  "effective_date": "1990-11-08",
+  "requirements": [
+    {
+      "id": "clery-001",
+      "citation": "34 CFR 668.46(b)",
+      "title": "Annual Security Report",
+      "description": "Institution must publish an annual security report containing crime statistics for the previous three years",
+      "evidence_types": ["annual_security_report", "crime_log"],
+      "common_violations": ["Late publication", "Missing crime categories"],
+      "penalty_range": "Fine up to $62,689 per violation"
+    },
+    {
+      "id": "clery-002",
+      "citation": "34 CFR 668.46(e)",
+      "title": "Timely Warnings",
+      "description": "Institution must issue timely warnings for Clery Act crimes that pose a serious or ongoing threat",
+      "evidence_types": ["warning_procedures", "notification_records"],
+      "common_violations": ["Delayed warnings", "Inconsistent notification"],
+      "penalty_range": "Fine up to $62,689 per violation"
+    },
+    {
+      "id": "clery-003",
+      "citation": "34 CFR 668.46(f)",
+      "title": "Daily Crime Log",
+      "description": "Institution must maintain a daily crime log open for public inspection",
+      "evidence_types": ["crime_log", "log_procedures"],
+      "common_violations": ["Missing entries", "Restricted public access"],
+      "penalty_range": "Fine up to $62,689 per violation"
+    },
+    {
+      "id": "clery-004",
+      "citation": "34 CFR 668.46(g)",
+      "title": "Emergency Response Procedures",
+      "description": "Institution must have documented emergency response and evacuation procedures",
+      "evidence_types": ["emergency_plan", "drill_records", "notification_system"],
+      "common_violations": ["No annual drill", "Outdated procedures"],
+      "penalty_range": "Fine up to $62,689 per violation"
+    }
+  ]
+}
