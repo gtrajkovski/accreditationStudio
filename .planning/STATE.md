@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Productivity Tools
-status: complete
-stopped_at: v2.0 milestone complete, UAT in progress
-last_updated: "2026-03-29T20:20:00.000Z"
-last_activity: 2026-03-29 -- v2.0 milestone complete, verifying work
+milestone: v2.1
+milestone_name: Commercial Readiness
+status: planning
+stopped_at: v2.1 milestone planned
+last_updated: "2026-03-29T20:45:00.000Z"
+last_activity: 2026-03-29 -- v2.1 planning complete
 progress:
-  total_phases: 40
+  total_phases: 47
   completed_phases: 40
-  total_plans: 72
+  total_plans: 79
   completed_plans: 72
-  percent: 100
+  percent: 91
 ---
 
 # AccreditAI State
@@ -21,17 +21,45 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-29)
 
 **Core value:** Institutions can achieve and maintain accreditation compliance with minimal manual effort
-**Current focus:** v2.0 complete - User acceptance testing
+**Current focus:** v2.1 Commercial Readiness - making AccreditAI sellable to first customers
+
+## Strategic Context
+
+From competitive analysis (2026-03-29):
+- AccreditAI is the **only AI-native product** in the accreditation management market
+- Competitors (Watermark, SPOL, Weave) do workflow management, not document-level AI
+- **Blockers to first sale:** No multi-user (✓ v2.1), no onboarding (✓ v2.1), no cloud (v2.2)
+
+Target customers:
+- ACCSC-accredited career schools (~650 institutions)
+- Accreditation consultants (managing multiple institutions)
 
 ## Current Position
 
-Milestone: v2.0 — COMPLETE
-Phase: 40 (workbench-ide) — COMPLETE
-Plan: All complete
-Status: UAT verification in progress
-Last activity: 2026-03-29 -- v2.0 milestone verification started
+Milestone: v2.1 — Planning Complete
+Next Phase: 41 (authentication)
+Status: Ready to execute
+Last activity: 2026-03-29 -- v2.1 planning artifacts created
 
-Progress: [##########] 100% (all milestones through v2.0 complete)
+Progress: [#########░] 91% (40/47 phases, 72/79 plans)
+
+## v2.1 Phases (Commercial Readiness)
+
+| Phase | Name | Plans | Status | Dependencies |
+|-------|------|-------|--------|--------------|
+| 41 | Authentication System | 1 | Ready | None |
+| 42 | Role-Based Access Control | 1 | Ready | 41 |
+| 43 | Activity Audit Trail | 1 | Ready | 42 |
+| 44 | Task Management | 1 | Ready | 42 |
+| 45 | Executive Dashboard | 1 | Ready | 42, 44 |
+| 46 | Onboarding Wizard | 1 | Ready | 41, 42 |
+| 47 | Consulting Mode | 1 | Ready | 42 |
+
+**Execution Order:**
+```
+41 (auth) → 42 (rbac) → 43 (activity) + 44 (tasks) + 46 (onboarding) + 47 (consulting)
+                     → 45 (executive - needs 44 first)
+```
 
 ## Milestone History
 
@@ -41,40 +69,38 @@ Progress: [##########] 100% (all milestones through v2.0 complete)
 | v1.8 | Operational Intelligence | (retroactive) | Complete |
 | v1.9 | Regulatory Intelligence | 36-37 | Complete |
 | v2.0 | Productivity Tools | 38-40 | Complete |
+| v2.1 | Commercial Readiness | 41-47 | Planning |
 
-## v2.0 Phase Summary
+## Planning Artifacts
 
-| Phase | Name | Plans | Status |
-|-------|------|-------|--------|
-| 38 | Bulk Remediation Wizard | 2 | Complete |
-| 39 | Packet Studio Wizard | 2 | Complete |
-| 40 | Document Workbench IDE | 2 | Complete |
+- `.planning/milestones/v2.1-ROADMAP.md` — Milestone roadmap
+- `.planning/milestones/v2.1-REQUIREMENTS.md` — Requirements spec
+- `.planning/phases/41-authentication/41-01-PLAN.md`
+- `.planning/phases/42-rbac/42-01-PLAN.md`
+- `.planning/phases/43-activity-trail/43-01-PLAN.md`
+- `.planning/phases/44-task-management/44-01-PLAN.md`
+- `.planning/phases/45-executive-dashboard/45-01-PLAN.md`
+- `.planning/phases/46-onboarding/46-01-PLAN.md`
+- `.planning/phases/47-consulting-mode/47-01-PLAN.md`
 
-## Codebase Metrics
+## Expected Deliverables
 
-| Metric | Count |
-|--------|-------|
-| Lines of Code | ~129,000 |
-| Database Migrations | 45 |
-| Agents | 34 |
-| Services | 37 |
-| API Blueprints | 55 |
-| i18n Locales | 2 |
-
-## UAT Status
-
-Active UAT session: `.planning/phases/v2.0-milestone/v2.0-UAT.md`
-- 20 tests covering phases 38-40
-- Status: In progress (0/20 completed)
+| Component | v2.0 | v2.1 (target) |
+|-----------|------|---------------|
+| Lines of Code | ~129,000 | ~145,000 |
+| Migrations | 45 | 51 |
+| API Blueprints | 55 | 62 |
+| Services | 37 | 43 |
 
 ## Session Continuity
 
-Last session: 2026-03-29T20:20:00Z
-Stopped at: UAT verification started for v2.0 milestone
-Resume file: .planning/phases/v2.0-milestone/v2.0-UAT.md
+Last session: 2026-03-29T20:45:00Z
+Stopped at: v2.1 planning complete
+Resume file: None
 
 ## Next Steps
 
-1. **Complete UAT** — Run through all 20 verification tests
-2. **Archive milestone** — `/gsd:complete-milestone` after UAT passes
-3. **Plan v2.1** — Define next milestone scope via `/gsd:new-milestone`
+1. **Clear context** — `/clear` for fresh session
+2. **Execute Phase 41** — `/gsd:execute-phase 41`
+3. **After 41, execute 42** — RBAC depends on auth
+4. **After 42, parallelize** — Phases 43-47 can run concurrently
