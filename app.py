@@ -7,7 +7,8 @@ educational institutions.
 
 import atexit
 import click
-from flask import render_template, redirect, url_for, request
+from functools import wraps
+from flask import render_template, redirect, url_for, request, jsonify, g
 from flask_compress import Compress
 from apiflask import APIFlask
 
@@ -37,6 +38,7 @@ from src.api import (
     init_audit_trails_bp,
 )
 from src.api.auth import auth_bp, init_auth_bp
+from src.api.users import users_bp, init_users_bp
 from src.api.readiness import readiness_bp, init_readiness_bp
 from src.api.audits import audits_bp, init_audits_bp
 from src.api.remediation import remediation_bp, init_remediation_bp
@@ -239,6 +241,7 @@ chat_service = ChatContextService(ai_client=ai_client)
 
 # Initialize and register blueprints
 init_auth_bp()
+init_users_bp()
 init_chat_bp(workspace_manager, ai_client, chat_service)
 init_agents_bp(workspace_manager)
 init_institutions_bp(workspace_manager)
@@ -301,6 +304,7 @@ init_standards_importer_bp(
 )
 
 app.register_blueprint(auth_bp)
+app.register_blueprint(users_bp)
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
 app.register_blueprint(institutions_bp)
@@ -408,6 +412,75 @@ def login_required(f):
 
         return f(*args, **kwargs)
     return decorated_function
+
+
+# =============================================================================
+# Role-Based Access Control Decorators (Phase 42)
+# =============================================================================
+
+# Role hierarchy (lowest to highest privilege)
+ROLE_HIERARCHY = ['viewer', 'department_head', 'compliance_officer', 'admin', 'owner']
+
+
+def require_role(*allowed_roles):
+    """
+    Decorator to require specific role(s).
+
+    Args:
+        allowed_roles: One or more role names that are allowed
+
+    Usage:
+        @require_role('admin', 'owner')
+        def my_endpoint():
+            ...
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if not app.config.get('AUTH_ENABLED', True):
+                # Auth disabled - allow through
+                return f(*args, **kwargs)
+
+            user = g.get('current_user')
+            if not user:
+                return jsonify({'error': 'Authentication required'}), 401
+
+            user_role = user.get('role')
+            if user_role not in allowed_roles:
+                return jsonify({'error': 'Insufficient permissions'}), 403
+
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+
+def require_minimum_role(minimum_role):
+    """
+    Decorator to require a minimum role level.
+
+    Allows the specified role and all higher roles in the hierarchy.
+
+    Args:
+        minimum_role: Minimum required role (e.g., 'compliance_officer')
+
+    Usage:
+        @require_minimum_role('compliance_officer')
+        def my_endpoint():
+            # Allows: compliance_officer, admin, owner
+            ...
+    """
+    if minimum_role not in ROLE_HIERARCHY:
+        raise ValueError(f"Invalid role: {minimum_role}")
+
+    min_index = ROLE_HIERARCHY.index(minimum_role)
+    allowed = set(ROLE_HIERARCHY[min_index:])
+    return require_role(*allowed)
+
+
+@app.before_request
+def load_current_user():
+    """Load current user into request context (g.current_user)."""
+    g.current_user = _get_current_user()
 
 
 @app.before_request
