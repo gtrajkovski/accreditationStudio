@@ -8,16 +8,14 @@ AI-powered platform for managing the entire accreditation lifecycle of post-seco
 
 Institutions can achieve and maintain accreditation compliance with minimal manual effort through autonomous AI agents that audit, remediate, and prepare submission materials.
 
-## Current State: v1.7.0 - Performance & Efficiency
+## Current State: v2.0.0 - Productivity Tools
 
-**Released:** 2026-03-27
+**Released:** 2026-03-29
 
 **Delivered:**
-- 2-3x faster page loads via HTTP caching and gzip compression
-- 73-90% AI cost savings via multi-model routing (Haiku for simple tasks)
-- Real-time cost tracking dashboard with budget alerts
-- 50% discount on bulk operations via Anthropic Batch API
-- WCAG 2.1 AA accessibility improvements (skip-to-main, ARIA live, toast management)
+- **v1.8**: Operational intelligence (autopilot, work queue, change detection, evidence contracts, audit reproducibility)
+- **v1.9**: Regulatory intelligence (accreditor packages, federal regulations library)
+- **v2.0**: Productivity tools (bulk remediation wizard, packet studio wizard, document workbench IDE)
 
 ## Requirements
 
@@ -31,6 +29,9 @@ Institutions can achieve and maintain accreditation compliance with minimal manu
 - v1.5: Operational intelligence (autopilot, evidence contracts, change detection, reproducibility, standards harvester)
 - v1.6: Context-sensitive search (scoped search, 8 sources, scope badge UI)
 - v1.7: Performance & efficiency (caching, gzip, multi-model routing, cost tracking, accessibility)
+- v1.8: Operational intelligence extended (autopilot service, work queue, change detection, evidence contracts, audit reproducibility)
+- v1.9: Regulatory intelligence (accreditor package system, federal regulations library)
+- v2.0: Productivity tools (bulk remediation wizard, packet studio wizard, document workbench IDE)
 
 ### Active
 
@@ -45,12 +46,13 @@ Next milestone requirements to be defined via `/gsd:new-milestone`.
 ## Context
 
 - Flask + Jinja2 + vanilla JS + Anthropic SDK
-- 24-agent tiered architecture with registry pattern
-- 35+ API blueprints registered
-- SQLite database with 36 migrations
+- 34-agent tiered architecture with registry pattern
+- 55 API blueprints registered
+- SQLite database with 45 migrations
 - ChromaDB for semantic search + FTS5 for full-text
 - Docker deployment with gunicorn
-- 102,399 lines of code
+- ~129,000 lines of code
+- 37 service modules
 - Multi-model support: Claude Sonnet (reasoning) + Haiku (fast tasks)
 - Anthropic Batch API integration for bulk operations
 
@@ -90,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after v1.7 milestone completion*
+*Last updated: 2026-03-29 after v2.0 milestone completion*

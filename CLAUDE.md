@@ -430,5 +430,34 @@ def test_agent_executes_task(mock_anthropic):
 - ✅ Compliance Heatmap API (3 endpoints: matrix, cell details, document summary)
 - ✅ Compliance Heatmap UI (CSS Grid matrix, sticky headers, filters, detail panel)
 
-**Registered Blueprints** (32 total):
-`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`, `timeline_planner_bp`, `site_visit_bp`, `coverage_map_bp`, `simulation_bp`, `portfolios_bp`, `evidence_highlighting_bp`, `compliance_heatmap_bp`
+**v1.8 (Operational Intelligence):** ✅ Complete (retroactively documented)
+- ✅ Autopilot Service (31K LOC) with autonomous workflow execution
+- ✅ Work Queue Service with priority scheduling
+- ✅ Change Detection Service (24K LOC) for document monitoring
+- ✅ Evidence Contract Service for coverage tracking
+- ✅ Audit Reproducibility Service for deterministic reruns
+
+**v1.9 (Regulatory Intelligence):** ✅ Complete
+- ✅ Phase 36: Accreditor Package System (standards bundling, version control)
+- ✅ Phase 37: Federal Regulations Library (CFR integration, cross-references)
+
+**v2.0 (Productivity Tools):** ✅ Complete
+- ✅ Phase 38: Bulk Remediation Wizard (scope selection, SSE progress, batch approval)
+- ✅ Phase 39: Packet Studio Wizard (5-step wizard, drag-drop evidence, AI narratives)
+- ✅ Phase 40: Document Workbench IDE (three-panel layout, inline findings, fix preview)
+
+---
+
+## Codebase Metrics
+
+| Metric | Count |
+|--------|-------|
+| Lines of Code | ~129,000 |
+| Database Migrations | 45 |
+| Agents | 34 |
+| Services | 37 |
+| API Blueprints | 55 |
+| i18n Locales | 2 (en-US, es-PR) |
+
+**Registered Blueprints** (35 total):
+`chat_bp`, `agents_bp`, `institutions_bp`, `standards_bp`, `settings_bp`, `readiness_bp`, `work_queue_bp`, `autopilot_bp`, `audits_bp`, `remediation_bp`, `checklists_bp`, `packets_bp`, `action_plans_bp`, `faculty_bp`, `catalog_bp`, `exhibits_bp`, `achievements_bp`, `interview_prep_bp`, `ser_bp`, `team_reports_bp`, `compliance_calendar_bp`, `document_reviews_bp`, `documents_bp`, `impact_analysis_bp`, `knowledge_graph_bp`, `timeline_planner_bp`, `site_visit_bp`, `coverage_map_bp`, `simulation_bp`, `portfolios_bp`, `evidence_highlighting_bp`, `compliance_heatmap_bp`, `bulk_remediation_bp`, `packet_wizard_bp`, `workbench_ide_bp`
