@@ -1,0 +1,11 @@
+{
+  "id": "abhes",
+  "name": "Accrediting Bureau of Health Education Schools",
+  "code": "ABHES",
+  "type": "programmatic",
+  "scope": "national",
+  "default_language": "en-US",
+  "recognized_by": ["USDE"],
+  "website": "https://www.abhes.org",
+  "notes": "Programmatic accreditor for health education schools and programs."
+}

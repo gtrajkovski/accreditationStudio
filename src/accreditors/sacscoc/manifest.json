@@ -1,0 +1,11 @@
+{
+  "id": "sacscoc",
+  "name": "Southern Association of Colleges and Schools Commission on Colleges",
+  "code": "SACSCOC",
+  "type": "institutional",
+  "scope": "regional",
+  "default_language": "en-US",
+  "recognized_by": ["USDE"],
+  "website": "https://sacscoc.org",
+  "notes": "Regional accreditor for the Southern states. Degree-granting institutions offering associate, baccalaureate, master's, or doctoral degrees."
+}

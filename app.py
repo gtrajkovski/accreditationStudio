@@ -48,6 +48,7 @@ from src.api.exhibits import exhibits_bp, init_exhibits_bp
 from src.api.achievements import achievements_bp, init_achievements_bp
 from src.api.interview_prep import interview_prep_bp, init_interview_prep_bp
 from src.api.ser import ser_bp, init_ser_bp
+from src.api.accreditors import accreditors_bp
 from src.api.team_reports import team_reports_bp, init_team_reports_bp
 from src.api.compliance_calendar import compliance_calendar_bp, init_compliance_calendar_bp
 from src.api.document_reviews import document_reviews_bp, init_document_reviews_bp
@@ -331,6 +332,7 @@ app.register_blueprint(costs_bp)
 app.register_blueprint(state_regulatory_bp)
 app.register_blueprint(standards_importer_bp)
 app.register_blueprint(observability_bp)
+app.register_blueprint(accreditors_bp)
 
 
 # =============================================================================

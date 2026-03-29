@@ -1,0 +1,11 @@
+{
+  "id": "hlc",
+  "name": "Higher Learning Commission",
+  "code": "HLC",
+  "type": "institutional",
+  "scope": "regional",
+  "default_language": "en-US",
+  "recognized_by": ["USDE"],
+  "website": "https://www.hlcommission.org",
+  "notes": "Regional accreditor for the North Central region. Degree-granting institutions in 19 states."
+}
