@@ -1,0 +1,565 @@
+================================================================================
+                       ACCREDITAI - COMPREHENSIVE PROJECT DOCUMENTATION
+================================================================================
+                         AI-Powered Accreditation Management Platform
+                              Version 2.0 (Complete) | March 2026
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1. PROJECT OVERVIEW
+2. CORE VALUE PROPOSITION
+3. TARGET USERS & SUCCESS METRICS
+4. ARCHITECTURE OVERVIEW
+5. 24-AGENT TIER SYSTEM
+6. DATABASE SCHEMA
+7. KEY FEATURES & FUNCTIONALITY
+8. USER INTERACTION WORKFLOWS
+9. DEVELOPMENT PHASES (1-40)
+10. QUALITY & SAFETY GUARDRAILS
+11. TECHNICAL STACK
+12. CURRENT STATUS
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+AccreditAI is an AI-powered platform for managing the ENTIRE accreditation
+lifecycle of post-secondary educational institutions:
+
+  - Self-evaluation
+  - Document preparation
+  - Exhibit collection
+  - On-site visit readiness
+  - Post-visit response
+
+It audits against the FULL REGULATORY STACK:
+  - Accreditor standards (ACCSC, SACSCOC, HLC, ABHES, COE)
+  - Federal regulations (Title IV, DOE requirements)
+  - State requirements
+  - Professional licensure expectations
+
+Deployment Model: Standalone Flask app, single-user localhost tool
+Code Base: 121,194+ lines of code across Python, JavaScript, HTML/CSS
+
+================================================================================
+2. CORE VALUE PROPOSITION
+================================================================================
+
+"Institutions can achieve and maintain accreditation compliance with minimal
+manual effort through autonomous AI agents that audit, remediate, and prepare
+submission materials."
+
+THREE PILLARS:
+--------------
+| Pillar              | Description                                          |
+|---------------------|------------------------------------------------------|
+| Workflow Clarity    | Users always know where they are in the cycle        |
+| Decision Support    | System answers "Are we compliant?" instantly         |
+| Evidence Traceability| Every claim links to document, page, and standard   |
+
+================================================================================
+3. TARGET USERS & SUCCESS METRICS
+================================================================================
+
+TARGET USERS:
+-------------
+- Accreditation Director / Compliance Officer
+  (manages findings, evidence, responses, deadlines, final packets)
+
+- Accreditation Consultant
+  (audits documents for multiple institutions, prepares OSE materials)
+
+- Campus President / Executive
+  (sees dashboards, risk, and readiness scores)
+
+- Department Owners (Admissions, Financial Aid, Academics, Career Services)
+  (upload documents, fix gaps, complete action items)
+
+SUCCESS METRICS:
+----------------
+| Metric          | Target                                               |
+|-----------------|------------------------------------------------------|
+| Time saved      | 80%+ reduction (40 hrs manual -> 4 hrs with AI)      |
+| Gaps closed     | Zero undiscovered compliance gaps at visit time      |
+| Consistency     | Zero cross-document mismatches in submissions        |
+| Readiness score | Measure visit-readiness 0-100% at any time           |
+| Response time   | Finding letter -> complete response in days not weeks|
+
+================================================================================
+4. ARCHITECTURE OVERVIEW
+================================================================================
+
+DIRECTORY STRUCTURE:
+--------------------
+src/core/       - Domain layer: models, workspace manager, task queue, standards store
+src/agents/     - 24-agent tiered architecture with registry pattern
+src/api/        - Flask Blueprints with init_*_bp(dependencies...) DI pattern
+src/ai/         - AIClient wrapper for Anthropic SDK
+src/db/         - SQLite database with migration system (42+ migrations)
+src/services/   - Business logic services (34+ services)
+src/i18n/       - Internationalization (en-US, es-PR) with JSON string files
+src/importers/  - Document parsing, PII detection, OCR, chunking
+src/search/     - Semantic search with embeddings + ChromaDB vector store
+
+ENTRY POINT: app.py
+  - Initializes WorkspaceManager, AIClient, StandardsStore
+  - Registers 35+ blueprints
+  - Injects i18n context
+
+FRONTEND: Jinja2 templates + vanilla JS
+THEME: Dark mode (#1a1a2e primary), theme switching supported
+
+LOCAL WORKSPACE STRUCTURE (per institution):
+--------------------------------------------
+workspace/{institution_id}/
+├── institution.json
+├── truth_index.json              # Single Source of Truth
+├── programs/{program_id}/
+│   ├── originals/                # Never modified (read-only)
+│   ├── audits/
+│   ├── redlines/
+│   ├── finals/                   # The working truth
+│   ├── crossrefs/
+│   └── checklists/
+├── catalog/
+├── policies/
+├── exhibits/
+├── faculty/
+├── achievements/
+├── visit_prep/
+├── responses/
+├── submissions/
+└── agent_sessions/               # Full audit trail
+
+================================================================================
+5. 24-AGENT TIER SYSTEM
+================================================================================
+
+Agents are organized into 7 tiers:
+
+TIER 0 - Runtime & Governance:
+  - ORCHESTRATOR: Workflow coordination and task dispatch
+  - POLICY_SAFETY: Safety and policy enforcement
+  - EVIDENCE_GUARDIAN: Evidence integrity protection
+
+TIER 1 - Intake & Retrieval:
+  - DOCUMENT_INTAKE: Document upload, parsing, indexing
+  - PARSING_STRUCTURE: Section detection, structuring
+  - PII_REDACTION: PII detection and redaction
+  - RETRIEVAL_TUNING: Search optimization
+
+TIER 2 - Standards & Regulatory:
+  - STANDARDS_CURATOR: Standards library management
+  - REGULATORY_STACK: Federal/state regulation tracking
+  - STANDARDS_TRANSLATOR: Plain English explanations
+
+TIER 3 - Compliance & Quality:
+  - COMPLIANCE_AUDIT: Multi-pass compliance auditing (5 passes)
+  - CONSISTENCY: Cross-document contradiction detection
+  - RISK_SCORER: Risk prioritization, readiness scores
+  - GAP_FINDER: Evidence gap identification
+
+TIER 4 - Remediation & Authoring:
+  - REMEDIATION: Generate redlines and finals
+  - POLICY_AUTHOR: Policy document generation
+  - EXHIBIT_BUILDER: Exhibit preparation
+  - CHANGE_IMPACT: Change propagation analysis
+
+TIER 5 - Submission & Defense:
+  - NARRATIVE: Write issue narratives
+  - CROSSWALK: Build compliance crosswalks
+  - PACKET: Create submission packages
+  - SITE_VISIT_COACH: Interview preparation
+
+TIER 6 - Product Experience:
+  - WORKFLOW_COACH: User guidance
+  - LOCALIZATION_QA: Translation quality
+
+Each agent:
+  - Has defined tools (5-12 tools per agent)
+  - Returns confidence scores (0-1)
+  - Cites evidence for every claim
+  - Triggers human checkpoints when confidence < 0.7
+
+================================================================================
+6. DATABASE SCHEMA
+================================================================================
+
+CORE ENTITIES:
+--------------
+institutions      - Institution profiles, accreditor settings, locale preferences
+programs          - Academic programs with credentials and delivery modes
+documents         - Document metadata, types, status, file paths
+document_parses   - Extracted text, structured JSON, PII-redacted versions
+document_chunks   - Searchable chunks with embeddings
+
+STANDARDS & REGULATORY:
+-----------------------
+accreditors       - ACCSC, COE, HLC, SACSCOC, ABHES
+standards         - Hierarchical standards tree
+checklists        - Per doc-type audit checklists
+regulatory_stacks - Federal/state/licensure requirements
+
+AUDITS & EVIDENCE:
+------------------
+audit_runs        - Audit sessions with status tracking
+audit_findings    - Individual findings with severity, confidence, citations
+evidence_refs     - Document-to-finding evidence mappings
+human_checkpoints - Approval gates for low-confidence decisions
+
+REMEDIATION:
+------------
+truth_index       - Canonical institutional facts
+consistency_checks- Cross-document contradiction detection
+remediation_fixes - Generated fixes with before/after text
+remediation_jobs  - Batch remediation tracking
+
+SUBMISSIONS:
+------------
+submission_packets- Self-study, response, teach-out packages
+packet_items      - Narratives, crosswalks, exhibits, TOC
+
+AGENT SESSIONS:
+---------------
+agent_sessions    - Workflow execution tracking
+agent_events      - Tool calls, progress events, artifacts
+
+================================================================================
+7. KEY FEATURES & FUNCTIONALITY
+================================================================================
+
+DASHBOARDS & VISUALIZATION:
+---------------------------
+- Compliance Command Center (Flight Deck) with readiness score
+- Evidence Coverage Map (D3.js treemap, drill-down)
+- Compliance Heatmap (document x standard matrix)
+- Knowledge Graph (D3.js force-directed graph)
+- Accreditation Simulation (Quick Scan/Deep Audit modes)
+- Timeline Planner (D3.js Gantt chart, 4 templates)
+
+AI-POWERED FEATURES:
+--------------------
+- Explain This Standard (plain English explanations)
+- AI Accreditation Assistant (persistent chat)
+- Evidence Assistant ("Show evidence for X")
+- Accreditation Simulation (mock audit with predictions)
+- Multi-model routing (Sonnet for reasoning, Haiku for fast tasks)
+
+REMEDIATION & WORKFLOW:
+-----------------------
+- Bulk Remediation Wizard (scope selection, priority queue, SSE progress)
+- Fix It workflow (one-click remediation with approval)
+- Document Workbench IDE (three-panel layout, inline findings)
+- Impact Analysis (change propagation tracking)
+
+SUBMISSION TOOLS:
+-----------------
+- Packet Studio Wizard (5-step visual workflow)
+- Submission Packet Builder (preview + export)
+- Crosswalk generator
+- Exhibit management
+
+SITE VISIT SUPPORT:
+-------------------
+- Site Visit Mode (F2 shortcut, instant evidence lookup)
+- Interview Prep Agent (9 roles, questions, talking points)
+- Mock evaluation support
+
+OPERATIONAL:
+------------
+- Autopilot (scheduled compliance checks)
+- Work Queue (all pending items in one place)
+- Compliance Calendar (deadlines, reminders)
+- Document Reviews (scheduled review cycles)
+- Change Detection (version tracking)
+
+================================================================================
+8. USER INTERACTION WORKFLOWS
+================================================================================
+
+IDEAL USER WORKFLOW:
+--------------------
+1. Create Institution
+       |
+2. Upload Documents (catalog, agreement, policies)
+       |
+3. Run Full Compliance Audit [One Click]
+       |
+4. Review Findings (Critical -> Advisory)
+       |
+5. Click "Fix It" -> Approve Redlines
+       |
+6. Re-run Audit -> Score Improves
+       |
+7. Generate Submission Packet
+       |
+8. Site Visit Prep with Evidence Explorer
+
+STANDARD WORKFLOWS:
+-------------------
+1. Audit Enrollment Agreement (ACCSC):
+   Ingestion -> Standards Librarian -> Evidence Mapper ->
+   Compliance Audit -> Remediation -> Packet Assembly
+
+2. Self-Study Preparation:
+   Standards Librarian -> Evidence Mapper -> Crosswalk Builder ->
+   Compliance Audit -> Narrative -> Packet Assembly
+
+3. Site Visit Prep:
+   Evidence Mapper -> Compliance Audit -> Risk Scorer ->
+   Site Visit Prep
+
+4. Substantive Change Filing:
+   Substantive Change -> Evidence Mapper -> Narrative ->
+   Packet Assembly
+
+5. Annual Compliance Check:
+   Ingestion (new docs) -> Policy Consistency ->
+   Compliance Audit -> Risk Scorer -> Calendar Update
+
+BULK REMEDIATION WIZARD FLOW:
+-----------------------------
+1. Select scope (all documents, by type, by program, by severity)
+2. Preview affected documents and finding counts
+3. Start bulk processing with SSE progress streaming
+4. Review generated remediations with batch approval
+5. Apply approved fixes, reject others
+
+PACKET STUDIO WIZARD FLOW:
+--------------------------
+Step 1: Select submission type (self-study, response, teach-out, annual)
+Step 2: Select accreditor and standards to address
+Step 3: Map evidence to standards (drag-drop with coverage validation)
+Step 4: Generate/review narratives (AI-assisted)
+Step 5: Preview + Export (with blocking issue validation)
+
+DOCUMENT WORKBENCH IDE:
+-----------------------
+- Left panel (20%): Document list with severity badges
+- Center panel (50%): Document viewer with page navigation
+  - Inline highlights for findings
+  - View modes: Original, Remediated, Side-by-side Diff
+- Right panel (30%): Findings list with details and actions
+  - Click finding -> scrolls to position in document
+  - Fix button -> preview modal -> apply remediation
+
+================================================================================
+9. DEVELOPMENT PHASES (1-40)
+================================================================================
+
+PHASE 1 (Foundation): COMPLETE
+- Project setup, Flask app, basic models
+- Workspace manager, file persistence
+
+PHASE 2 (Ingestion + Standards): COMPLETE
+- Document parser, PII detector, chunking pipeline
+- Ingestion Agent with 7 tools
+- Standards Library with ACCSC/SACSCOC/HLC/ABHES/COE presets
+- Semantic search (embeddings + ChromaDB)
+- i18n system (en-US, es-PR)
+- Theme switching
+
+PHASE 3 (Audit Engine + Readiness): COMPLETE
+- 24-agent tiered architecture
+- Agent registry with dynamic dispatch
+- Evidence Guardian (Tier 0 governance)
+- Readiness Score service with sub-scores
+- Database migrations (20 migrations)
+- Compliance Audit Agent (5-pass multi-tool audit engine)
+- Audit API with SSE streaming
+- Document upload and audit trigger UI
+- Compliance findings display with filters
+
+PHASE 4 (Remediation): COMPLETE
+- Remediation Agent (7 tools, redlines, finals, truth index)
+- Document Workbench UI (remediation review, diff view, approvals)
+- Consistency Agent (8 policy categories, cross-doc checking)
+- Checklist Auto-Fill Agent (12 tools, evidence search, validation, DOCX export)
+
+PHASE 5 (Findings + Packets): COMPLETE
+- Findings Agent (aggregation, prioritization, action items)
+- Narrative Agent (issue responses, self-study sections)
+- Packet Agent (10 tools, validation, DOCX/ZIP export)
+- Submission Organizer UI (packet builder, validation, export)
+- Action Plan Tracking (items, deadlines, progress)
+
+PHASE 6 (Catalog + Exhibits + Faculty): COMPLETE
+- Faculty Agent (8 tools)
+- Catalog Agent (8 tools)
+- Evidence Agent (8 tools)
+- Achievement Agent (7 tools)
+
+PHASE 7 (Visit Prep + Interview + Checklists): COMPLETE
+- Interview Prep Agent (7 tools: 9 roles, questions, talking points)
+- SER Drafting Agent (8 tools)
+- UI Redesign ("Certified Authority" theme)
+- Enhanced Checklist Agent
+- Visit readiness page
+
+PHASE 8 (Post-Visit + Ongoing): COMPLETE
+- Team Report Response Agent
+- Compliance Calendar Agent
+- Document Review Agent
+
+POST-MVP FEATURES (All Complete):
+---------------------------------
+- Impact Analysis (fact scanning, change simulation)
+- Knowledge Graph (entity extraction, graph traversal)
+- Timeline Planner (Gantt chart, templates)
+- Site Visit Mode (unified search, F2 shortcut)
+- Evidence Coverage Map (D3.js treemap)
+- Accreditation Simulation (mock audits, predictions)
+- Multi-Institution Mode (portfolio management)
+- Evidence Highlighting (inline highlights)
+- Compliance Heatmap (document x standard matrix)
+
+v1.8 - Operational Intelligence: COMPLETE (retroactively documented)
+- Autopilot Service + UI
+- Work Queue Service + UI
+- Change Detection Service + UI
+- Evidence Coverage Service + UI
+- Audit Reproducibility Service + UI
+
+v1.9 - Regulatory Intelligence: COMPLETE
+- Phase 36: Accreditor Package System
+- Phase 37: Federal Regulations Library
+
+v2.0 - Power User Features: COMPLETE
+- Phase 38: Bulk Remediation Wizard
+- Phase 39: Packet Studio Wizard
+- Phase 40: Document Workbench IDE
+
+================================================================================
+10. QUALITY & SAFETY GUARDRAILS
+================================================================================
+
+AI SAFETY RULES:
+----------------
+1. NEVER fabricate evidence, policy text, or compliance claims
+2. ALWAYS cite sources for every claim
+3. ALWAYS label uncertainty (confidence < 0.7 requires human review)
+4. REQUIRE human confirmation for compliance determinations
+5. NEVER store student PII in embeddings or AI context
+6. ALWAYS preserve original documents (originals/ folder is read-only)
+
+CONFIDENCE THRESHOLD:
+---------------------
+- Agents check confidence against AGENT_CONFIDENCE_THRESHOLD (default 0.7)
+- Below threshold triggers HumanCheckpoint for review
+- All decisions logged in audit trail
+
+EVIDENCE REQUIREMENTS:
+----------------------
+No claim accepted without:
+- Confidence score (0-1)
+- Evidence pointers (document_id, chunk_id, page)
+- Standard citations
+
+HUMAN CHECKPOINTS:
+------------------
+Triggered by:
+- Low confidence (< 0.7)
+- Legal/compliance determinations
+- Final submissions
+- Truth index changes
+
+================================================================================
+11. TECHNICAL STACK
+================================================================================
+
+BACKEND:
+--------
+- Python 3.11+
+- Flask (APIFlask with OpenAPI)
+- SQLite with FTS5 full-text search
+- ChromaDB for vector embeddings
+- Anthropic Claude API (Sonnet + Haiku)
+- APScheduler for background tasks
+- WeasyPrint for PDF generation
+
+FRONTEND:
+---------
+- Jinja2 templates
+- Vanilla JavaScript (no React/Vue)
+- D3.js for visualizations
+- Chart.js for charts
+- CSS with custom properties (variables)
+
+DEPLOYMENT:
+-----------
+- Single-user localhost tool
+- Docker optional (gunicorn)
+- SQLite database
+- File-based workspace per institution
+
+CURRENT METRICS:
+----------------
+| Metric          | Current   |
+|-----------------|-----------|
+| Python LOC      | 73,188+   |
+| Template LOC    | 27,748+   |
+| JS/CSS LOC      | 20,258+   |
+| Total LOC       | 121,194+  |
+| Agent files     | 34        |
+| API blueprints  | 50+       |
+| Services        | 34+       |
+| Migrations      | 42+       |
+
+================================================================================
+12. CURRENT STATUS
+================================================================================
+
+PROJECT STATUS: v2.0 COMPLETE (100%)
+------------------------------------
+Milestone: v2.0 - Power User Features
+Phase: 40 (workbench-ide) - COMPLETE
+Progress: [##########] 100%
+
+COMPLETED MILESTONES:
+---------------------
+- v1.0: Core platform (workspace, agents, standards, audit, remediation)
+- v1.1: Analytics & visualization (heatmaps, knowledge graph, simulation)
+- v1.2: Productivity (bulk operations, global search, UX polish)
+- v1.3: AI & reporting (explainers, evidence assistant, PDF reports, scheduling)
+- v1.4: Enterprise & polish (report enhancements, API docs, audit trails)
+- v1.5: Operational intelligence (autopilot, evidence contracts, change detection)
+- v1.6: Context-sensitive search (scoped search, 8 sources, scope badge UI)
+- v1.7: Performance & efficiency (caching, gzip, multi-model routing, cost tracking)
+- v1.8: Operational intelligence (already implemented - documented retroactively)
+- v1.9: Regulatory Intelligence (accreditor packages, federal library)
+- v2.0: Power User Features (bulk remediation, packet wizard, workbench IDE)
+
+REGISTERED BLUEPRINTS (35+):
+----------------------------
+chat_bp, agents_bp, institutions_bp, standards_bp, settings_bp, readiness_bp,
+work_queue_bp, autopilot_bp, audits_bp, remediation_bp, checklists_bp,
+packets_bp, action_plans_bp, faculty_bp, catalog_bp, exhibits_bp,
+achievements_bp, interview_prep_bp, ser_bp, team_reports_bp,
+compliance_calendar_bp, document_reviews_bp, documents_bp, impact_analysis_bp,
+knowledge_graph_bp, timeline_planner_bp, site_visit_bp, coverage_map_bp,
+simulation_bp, portfolios_bp, evidence_highlighting_bp, compliance_heatmap_bp,
+bulk_remediation_bp, packet_wizard_bp, workbench_ide_bp
+
+NEXT STEPS:
+-----------
+1. Run /gsd:complete-milestone to archive v2.0
+2. Plan next milestone (v2.1)
+3. Run /gsd:verify-work to validate all features
+
+FUTURE MILESTONES (v2.1+):
+--------------------------
+- Multi-tenancy (user authentication, role-based access)
+- PostgreSQL migration (from SQLite for scale)
+- CI/CD pipeline (automated testing and deployment)
+- Offline mode (local LLM fallback for air-gapped use)
+- API v2 (public API for integrations)
+
+================================================================================
+                              END OF DOCUMENTATION
+================================================================================
+Generated: March 29, 2026
+Total Phases Completed: 40
+Total Plans Executed: 66
+Project Health: EXCELLENT
+================================================================================
