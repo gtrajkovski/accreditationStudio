@@ -65,7 +65,12 @@
     "view": "View",
     "download": "Download",
     "upload": "Upload",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "severity": {
+      "critical": "Critical",
+      "significant": "Significant",
+      "minor": "Minor"
+    }
   },
   "loading": {
     "skeleton_loading": "Loading...",
@@ -814,5 +819,23 @@
     "error_enter_name": "Please enter a packet name",
     "error_select_standards": "Please select at least one standard",
     "validation_required": "Please complete the following:"
+  },
+  "workbench_ide": {
+    "title": "Document Workbench",
+    "documents": "Documents",
+    "findings": "Findings",
+    "select_document": "Select Document",
+    "select_document_prompt": "Select a document from the list to view findings and apply remediations",
+    "search_documents": "Search documents...",
+    "no_findings": "No findings for this document",
+    "view_original": "Original",
+    "view_remediated": "Remediated",
+    "view_diff": "Diff",
+    "all_severities": "All Severities",
+    "preview_fix": "Preview Fix",
+    "original_text": "Original Text",
+    "remediated_text": "Remediated Text",
+    "change_description": "Change Description",
+    "apply_fix": "Apply Fix"
   }
 }

@@ -65,7 +65,12 @@
     "view": "Ver",
     "download": "Descargar",
     "upload": "Subir",
-    "refresh": "Actualizar"
+    "refresh": "Actualizar",
+    "severity": {
+      "critical": "Crítico",
+      "significant": "Significativo",
+      "minor": "Menor"
+    }
   },
   "loading": {
     "skeleton_loading": "Cargando...",
@@ -814,5 +819,23 @@
     "error_enter_name": "Por favor ingrese un nombre de paquete",
     "error_select_standards": "Por favor seleccione al menos un estándar",
     "validation_required": "Por favor complete lo siguiente:"
+  },
+  "workbench_ide": {
+    "title": "Banco de Documentos",
+    "documents": "Documentos",
+    "findings": "Hallazgos",
+    "select_document": "Seleccionar Documento",
+    "select_document_prompt": "Seleccione un documento de la lista para ver hallazgos y aplicar remediaciones",
+    "search_documents": "Buscar documentos...",
+    "no_findings": "No hay hallazgos para este documento",
+    "view_original": "Original",
+    "view_remediated": "Remediado",
+    "view_diff": "Diferencias",
+    "all_severities": "Todas las Severidades",
+    "preview_fix": "Vista Previa de Corrección",
+    "original_text": "Texto Original",
+    "remediated_text": "Texto Remediado",
+    "change_description": "Descripción del Cambio",
+    "apply_fix": "Aplicar Corrección"
   }
 }
