@@ -44,7 +44,7 @@
                 <select id="program-select" class="form-control" disabled>
                     <option value="">{{ t('bulk.select_program') }}</option>
                     {% for prog in programs %}
-                    <option value="{{ prog.id }}">{{ prog.name }}</option>
+                    <option value="{{ prog.id }}">{{ prog.name_en }}</option>
                     {% endfor %}
                 </select>
             </label>
