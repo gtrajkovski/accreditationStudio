@@ -1,0 +1,630 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - AccreditAI{% endblock %}
+{% block header_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="users-page">
+    <!-- Header with Invite Button -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Users</h1>
+            <p class="page-subtitle">Manage user access and roles for this institution</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="invite-user-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; margin-right: 8px;">
+                <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <path d="M20 8v6M23 11h-6"/>
+            </svg>
+            Invite User
+        </button>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <h2 class="card-title">Active Users</h2>
+        <div class="table-container">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Last Login</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <tr class="loading-row">
+                        <td colspan="6">
+                            <div class="loading-spinner"></div>
+                            Loading users...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pending Invitations -->
+    <div class="card">
+        <h2 class="card-title">Pending Invitations</h2>
+        <div class="table-container">
+            <table class="invitations-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Invited</th>
+                        <th>Expires</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="invitations-table-body">
+                    <tr class="loading-row">
+                        <td colspan="5">
+                            <div class="loading-spinner"></div>
+                            Loading invitations...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Invite User Modal -->
+<div class="modal" id="invite-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Invite User</h3>
+            <button type="button" class="modal-close" id="close-invite-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="invite-email">Email Address</label>
+                <input type="email" id="invite-email" class="form-input" placeholder="user@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="invite-role">Role</label>
+                <select id="invite-role" class="form-select">
+                    <option value="viewer">Viewer - Read-only access</option>
+                    <option value="department_head">Department Head - Upload documents, complete tasks</option>
+                    <option value="compliance_officer">Compliance Officer - Run audits, approve remediation</option>
+                    <option value="admin">Admin - Full access except deletion</option>
+                    <option value="owner">Owner - Full access including deletion</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancel-invite">Cancel</button>
+            <button type="button" class="btn btn-primary" id="send-invite">Send Invitation</button>
+        </div>
+    </div>
+</div>
+
+<!-- Remove User Confirmation Modal -->
+<div class="modal" id="remove-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Remove User</h3>
+            <button type="button" class="modal-close" id="close-remove-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to remove <strong id="remove-user-name"></strong>?</p>
+            <p class="warning-text">This will revoke all their access to this institution.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancel-remove">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirm-remove">Remove User</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.users-page {
+    padding: var(--spacing-lg);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0 0 var(--spacing-xs);
+    color: var(--text-primary);
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.users-table,
+.invitations-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table th,
+.invitations-table th,
+.users-table td,
+.invitations-table td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.users-table th,
+.invitations-table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.users-table td,
+.invitations-table td {
+    color: var(--text-primary);
+}
+
+.loading-row {
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: var(--spacing-sm);
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.role-select {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.role-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background: rgba(74, 222, 128, 0.2);
+    color: var(--success);
+}
+
+.status-badge.inactive {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+}
+
+.btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-icon {
+    padding: var(--spacing-xs);
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+}
+
+.btn-icon:hover {
+    color: var(--danger);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.modal-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.form-input:focus,
+.form-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
+.warning-text {
+    color: var(--danger);
+    font-size: 0.875rem;
+}
+</style>
+
+<script>
+const institutionId = '{{ institution_id }}';
+let currentRemoveUserId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadUsers();
+    loadInvitations();
+
+    // Invite user modal
+    document.getElementById('invite-user-btn').addEventListener('click', showInviteModal);
+    document.getElementById('close-invite-modal').addEventListener('click', hideInviteModal);
+    document.getElementById('cancel-invite').addEventListener('click', hideInviteModal);
+    document.getElementById('send-invite').addEventListener('click', sendInvitation);
+
+    // Remove user modal
+    document.getElementById('close-remove-modal').addEventListener('click', hideRemoveModal);
+    document.getElementById('cancel-remove').addEventListener('click', hideRemoveModal);
+    document.getElementById('confirm-remove').addEventListener('click', removeUser);
+});
+
+async function loadUsers() {
+    try {
+        const response = await fetch(`/api/users?institution_id=${institutionId}`);
+        const data = await response.json();
+
+        const tbody = document.getElementById('users-table-body');
+        if (data.users && data.users.length > 0) {
+            tbody.innerHTML = data.users.map(user => `
+                <tr>
+                    <td>${escapeHtml(user.name)}</td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td>
+                        <select class="role-select" data-user-id="${user.id}" ${user.role === 'owner' ? 'disabled' : ''}>
+                            <option value="viewer" ${user.role === 'viewer' ? 'selected' : ''}>Viewer</option>
+                            <option value="department_head" ${user.role === 'department_head' ? 'selected' : ''}>Department Head</option>
+                            <option value="compliance_officer" ${user.role === 'compliance_officer' ? 'selected' : ''}>Compliance Officer</option>
+                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            <option value="owner" ${user.role === 'owner' ? 'selected' : ''}>Owner</option>
+                        </select>
+                    </td>
+                    <td>${user.last_login ? formatDate(user.last_login) : 'Never'}</td>
+                    <td>
+                        <span class="status-badge ${user.active ? 'active' : 'inactive'}">
+                            ${user.active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-icon" onclick="confirmRemoveUser('${user.id}', '${escapeHtml(user.name)}')" ${user.role === 'owner' ? 'disabled' : ''}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Add change listeners for role selects
+            document.querySelectorAll('.role-select').forEach(select => {
+                select.addEventListener('change', async (e) => {
+                    await updateUserRole(e.target.dataset.userId, e.target.value);
+                });
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No users found</td></tr>';
+        }
+    } catch (error) {
+        console.error('Failed to load users:', error);
+        document.getElementById('users-table-body').innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger);">Failed to load users</td></tr>';
+    }
+}
+
+async function loadInvitations() {
+    try {
+        const response = await fetch(`/api/users/invitations?institution_id=${institutionId}`);
+        const data = await response.json();
+
+        const tbody = document.getElementById('invitations-table-body');
+        if (data.invitations && data.invitations.length > 0) {
+            tbody.innerHTML = data.invitations.map(inv => `
+                <tr>
+                    <td>${escapeHtml(inv.email)}</td>
+                    <td>${inv.role}</td>
+                    <td>${formatDate(inv.created_at)}</td>
+                    <td>${formatDate(inv.expires_at)}</td>
+                    <td>
+                        <button class="btn-icon" onclick="cancelInvitation('${inv.id}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No pending invitations</td></tr>';
+        }
+    } catch (error) {
+        console.error('Failed to load invitations:', error);
+        document.getElementById('invitations-table-body').innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--danger);">Failed to load invitations</td></tr>';
+    }
+}
+
+function showInviteModal() {
+    document.getElementById('invite-modal').classList.add('active');
+    document.getElementById('invite-email').value = '';
+    document.getElementById('invite-role').value = 'viewer';
+}
+
+function hideInviteModal() {
+    document.getElementById('invite-modal').classList.remove('active');
+}
+
+async function sendInvitation() {
+    const email = document.getElementById('invite-email').value;
+    const role = document.getElementById('invite-role').value;
+
+    if (!email) {
+        alert('Please enter an email address');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/users/invite', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, role, institution_id: institutionId })
+        });
+
+        if (response.ok) {
+            hideInviteModal();
+            loadInvitations();
+            alert('Invitation sent successfully');
+        } else {
+            const error = await response.json();
+            alert(`Failed to send invitation: ${error.error}`);
+        }
+    } catch (error) {
+        console.error('Failed to send invitation:', error);
+        alert('Failed to send invitation');
+    }
+}
+
+async function updateUserRole(userId, newRole) {
+    try {
+        const response = await fetch(`/api/users/${userId}/role`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: newRole, institution_id: institutionId })
+        });
+
+        if (response.ok) {
+            alert('Role updated successfully');
+        } else {
+            const error = await response.json();
+            alert(`Failed to update role: ${error.error}`);
+            loadUsers(); // Reload to reset select
+        }
+    } catch (error) {
+        console.error('Failed to update role:', error);
+        alert('Failed to update role');
+        loadUsers();
+    }
+}
+
+function confirmRemoveUser(userId, userName) {
+    currentRemoveUserId = userId;
+    document.getElementById('remove-user-name').textContent = userName;
+    document.getElementById('remove-modal').classList.add('active');
+}
+
+function hideRemoveModal() {
+    document.getElementById('remove-modal').classList.remove('active');
+    currentRemoveUserId = null;
+}
+
+async function removeUser() {
+    if (!currentRemoveUserId) return;
+
+    try {
+        const response = await fetch(`/api/users/${currentRemoveUserId}?institution_id=${institutionId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            hideRemoveModal();
+            loadUsers();
+            alert('User removed successfully');
+        } else {
+            const error = await response.json();
+            alert(`Failed to remove user: ${error.error}`);
+        }
+    } catch (error) {
+        console.error('Failed to remove user:', error);
+        alert('Failed to remove user');
+    }
+}
+
+async function cancelInvitation(invitationId) {
+    if (!confirm('Cancel this invitation?')) return;
+
+    try {
+        const response = await fetch(`/api/users/invitations/${invitationId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            loadInvitations();
+            alert('Invitation cancelled');
+        } else {
+            const error = await response.json();
+            alert(`Failed to cancel invitation: ${error.error}`);
+        }
+    } catch (error) {
+        console.error('Failed to cancel invitation:', error);
+        alert('Failed to cancel invitation');
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(isoString) {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+</script>
+{% endblock %}
