@@ -29,8 +29,8 @@ def mock_institution():
         name="Test University"
     )
     inst.programs = [
-        Program(id="prog_1", name="Program A"),
-        Program(id="prog_2", name="Program B")
+        Program(id="prog_1", name_en="Program A"),
+        Program(id="prog_2", name_en="Program B")
     ]
     return inst
 
@@ -39,7 +39,7 @@ def test_bulk_remediation_page_loads(client, mock_institution):
     """Verify bulk remediation page renders for valid institution."""
     with patch('app.workspace_manager') as mock_wm:
         mock_wm.load_institution.return_value = mock_institution
-        with patch('app.get_conn') as mock_conn:
+        with patch('src.db.connection.get_conn') as mock_conn:
             mock_cursor = MagicMock()
             mock_cursor.fetchall.return_value = [
                 {'doc_type': 'policy'},
@@ -66,7 +66,7 @@ def test_bulk_remediation_page_has_scope_options(client, mock_institution):
     """Verify page includes scope selection options."""
     with patch('app.workspace_manager') as mock_wm:
         mock_wm.load_institution.return_value = mock_institution
-        with patch('app.get_conn') as mock_conn:
+        with patch('src.db.connection.get_conn') as mock_conn:
             mock_cursor = MagicMock()
             mock_cursor.fetchall.return_value = []
             mock_conn.return_value.execute.return_value = mock_cursor
@@ -83,7 +83,7 @@ def test_bulk_remediation_page_includes_programs(client, mock_institution):
     """Verify page includes program options for scope selection."""
     with patch('app.workspace_manager') as mock_wm:
         mock_wm.load_institution.return_value = mock_institution
-        with patch('app.get_conn') as mock_conn:
+        with patch('src.db.connection.get_conn') as mock_conn:
             mock_cursor = MagicMock()
             mock_cursor.fetchall.return_value = []
             mock_conn.return_value.execute.return_value = mock_cursor
