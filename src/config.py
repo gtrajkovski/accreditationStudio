@@ -36,6 +36,9 @@ class Config:
     PORT = int(os.getenv("PORT", "5003"))
     SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_hex(32)
 
+    # Authentication (Phase 41)
+    AUTH_ENABLED = os.getenv("AUTH_ENABLED", "false").lower() == "true"
+
     # Directory Paths
     BASE_DIR = Path(__file__).parent.parent
     WORKSPACE_DIR = Path(os.getenv("WORKSPACE_DIR", BASE_DIR / "workspace"))

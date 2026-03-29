@@ -36,6 +36,7 @@ from src.api import (
     audit_trails_bp,
     init_audit_trails_bp,
 )
+from src.api.auth import auth_bp, init_auth_bp
 from src.api.readiness import readiness_bp, init_readiness_bp
 from src.api.audits import audits_bp, init_audits_bp
 from src.api.remediation import remediation_bp, init_remediation_bp
@@ -97,6 +98,11 @@ app = APIFlask(
 )
 app.secret_key = Config.SECRET_KEY
 app.config["TEMPLATES_AUTO_RELOAD"] = Config.ENVIRONMENT != "production"
+
+# Authentication configuration (Phase 41)
+# Set to True to require login for all pages (except auth/health/static)
+# In development, defaults to False to preserve single-user workflow
+app.config["AUTH_ENABLED"] = Config.AUTH_ENABLED
 
 # =========================================================================
 # Response Compression (Phase 28 - Performance)
@@ -232,6 +238,7 @@ except ValueError as e:
 chat_service = ChatContextService(ai_client=ai_client)
 
 # Initialize and register blueprints
+init_auth_bp()
 init_chat_bp(workspace_manager, ai_client, chat_service)
 init_agents_bp(workspace_manager)
 init_institutions_bp(workspace_manager)
@@ -293,6 +300,7 @@ init_standards_importer_bp(
     standards_store=standards_store,
 )
 
+app.register_blueprint(auth_bp)
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
 app.register_blueprint(institutions_bp)
@@ -350,6 +358,93 @@ app.register_blueprint(workbench_ide_bp)
 
 
 # =============================================================================
+# Authentication Middleware (Phase 41)
+# =============================================================================
+
+from functools import wraps
+from src.services import auth_service
+
+
+def _get_current_user():
+    """Get current authenticated user from session/token."""
+    if not app.config.get("AUTH_ENABLED", False):
+        return None
+
+    # Check Authorization header (for API)
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        return auth_service.validate_session(token)
+
+    # Check session cookie (for pages)
+    # Note: Session cookie implementation would go here in production
+    # For now, API token is sufficient for v2.1
+
+    return None
+
+
+def login_required(f):
+    """
+    Decorator to require authentication.
+
+    For API endpoints: Checks Authorization header
+    For page routes: Redirects to /auth/login
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not app.config.get("AUTH_ENABLED", False):
+            # Auth disabled - allow through
+            return f(*args, **kwargs)
+
+        user = _get_current_user()
+        if not user:
+            # Check if this is an API request
+            if request.path.startswith("/api/"):
+                from flask import jsonify
+                return jsonify({"error": "Authentication required"}), 401
+            else:
+                # Redirect to login page
+                return redirect(url_for('auth_login_page'))
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+@app.before_request
+def check_first_run():
+    """Check if this is first run (no users) and redirect to registration."""
+    if not app.config.get("AUTH_ENABLED", False):
+        return None
+
+    # Exempt paths that don't require auth
+    exempt_paths = [
+        '/auth/login', '/auth/register', '/auth/forgot-password',
+        '/api/auth/', '/api/health', '/static/'
+    ]
+
+    if any(request.path.startswith(path) for path in exempt_paths):
+        return None
+
+    # Check if any users exist
+    from src.db.connection import get_conn
+    conn = get_conn()
+    user_count = conn.execute("SELECT COUNT(*) as count FROM users").fetchone()["count"]
+
+    if user_count == 0:
+        # First run - redirect to registration
+        return redirect(url_for('auth_register_page'))
+
+    # Check if user is authenticated
+    user = _get_current_user()
+    if not user:
+        if request.path.startswith("/api/"):
+            from flask import jsonify
+            return jsonify({"error": "Authentication required"}), 401
+        else:
+            return redirect(url_for('auth_login_page'))
+
+
+# =============================================================================
 # Security Headers
 # =============================================================================
 
@@ -393,12 +488,16 @@ def inject_i18n():
         locale = DEFAULT_LOCALE
         theme = "system"
 
+    # Get current user (Phase 41)
+    current_user = _get_current_user() if app.config.get("AUTH_ENABLED", False) else None
+
     return {
         't': lambda key, params=None: t(key, locale, params),
         'locale': locale,
         'theme': theme,
         'supported_locales': get_supported_locales(),
         'i18n_strings': get_all_strings(locale),
+        'current_user': current_user,
     }
 
 # Start task queue
@@ -411,6 +510,25 @@ atexit.register(shutdown_task_queue)
 # =============================================================================
 # Page Routes
 # =============================================================================
+
+# Auth Pages (Phase 41)
+@app.route('/auth/login')
+def auth_login_page():
+    """Login page."""
+    return render_template('auth/login.html')
+
+
+@app.route('/auth/register')
+def auth_register_page():
+    """Registration page."""
+    return render_template('auth/register.html')
+
+
+@app.route('/auth/forgot-password')
+def auth_forgot_password_page():
+    """Forgot password page."""
+    return render_template('auth/forgot_password.html')
+
 
 @app.route('/')
 def index():
