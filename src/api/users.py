@@ -5,7 +5,7 @@ Users API blueprint for user management and role assignment.
 from flask import Blueprint, request, jsonify, g
 from typing import Optional
 
-from src.services import rbac_service
+from src.services import rbac_service, activity_service
 
 
 users_bp = Blueprint("users", __name__, url_prefix="/api/users")
@@ -111,6 +111,18 @@ def invite_user_endpoint():
             invited_by=current_user_id
         )
 
+        # Log activity
+        current_user = g.get('current_user')
+        if current_user:
+            activity_service.log_activity(
+                user_id=current_user.get('id'),
+                user_name=current_user.get('name') or current_user.get('email'),
+                institution_id=institution_id,
+                action='user.invite',
+                details=f"Invited {email} as {role}",
+                ip_address=request.remote_addr
+            )
+
         return jsonify({'invitation': invitation}), 200
 
     except ValueError as e:
@@ -153,6 +165,20 @@ def update_user_role_endpoint(user_id: str):
             institution_id=institution_id,
             assigned_by=current_user_id
         )
+
+        # Log activity
+        current_user = g.get('current_user')
+        if current_user:
+            activity_service.log_activity(
+                user_id=current_user.get('id'),
+                user_name=current_user.get('name') or current_user.get('email'),
+                institution_id=institution_id,
+                action='user.role_change',
+                entity_type='user',
+                entity_id=user_id,
+                details=f"Changed role to {role}",
+                ip_address=request.remote_addr
+            )
 
         return jsonify(result), 200
 

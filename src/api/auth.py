@@ -5,7 +5,7 @@ Authentication API blueprint.
 from flask import Blueprint, request, jsonify
 from typing import Dict, Any
 
-from src.services import auth_service
+from src.services import auth_service, activity_service
 
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
@@ -117,6 +117,18 @@ def login():
         # Authenticate
         result = _auth_service.authenticate(email, password)
 
+        # Log activity
+        user = result.get("user")
+        if user:
+            activity_service.log_activity(
+                user_id=user.get("id"),
+                user_name=user.get("name") or user.get("email"),
+                institution_id=user.get("institution_id"),
+                action="user.login",
+                details=f"Login via email: {email}",
+                ip_address=request.remote_addr
+            )
+
         return jsonify(result), 200
 
     except ValueError as e:
@@ -147,6 +159,16 @@ def logout():
         user = _auth_service.validate_session(token)
         if not user:
             return jsonify({"error": "Invalid or expired session"}), 401
+
+        # Log activity before logout
+        activity_service.log_activity(
+            user_id=user.get("id"),
+            user_name=user.get("name") or user.get("email"),
+            institution_id=user.get("institution_id"),
+            action="user.logout",
+            details="User logged out",
+            ip_address=request.remote_addr
+        )
 
         # Logout
         _auth_service.logout(token)

@@ -25,6 +25,8 @@ from src.services.change_detection_service import (
     store_previous_text,
 )
 from src.db.connection import get_conn
+from src.services import activity_service
+from flask import g
 
 
 # Create Blueprint
@@ -238,6 +240,20 @@ def upload_document(institution_id: str):
             for m in pii_matches
         ]
         response["file_sha256"] = new_hash
+
+        # Log activity
+        user = g.get('current_user')
+        if user:
+            activity_service.log_activity(
+                user_id=user.get('id'),
+                user_name=user.get('name') or user.get('email'),
+                institution_id=institution_id,
+                action='document.upload',
+                entity_type='document',
+                entity_id=document.id,
+                details=f"Uploaded {file.filename}",
+                ip_address=request.remote_addr
+            )
 
         return jsonify(response), 201
 

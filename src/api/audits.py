@@ -11,7 +11,7 @@ import json
 import logging
 import time
 from typing import Dict, Any, Optional
-from flask import Blueprint, request, jsonify, Response, stream_with_context, current_app
+from flask import Blueprint, request, jsonify, Response, stream_with_context, current_app, g
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ from src.services.audit_reproducibility_service import (
     get_audit_snapshot,
     verify_audit_reproducibility,
 )
+from src.services import activity_service
 
 
 # Create Blueprint
@@ -141,6 +142,20 @@ def start_audit(institution_id: str):
         "standards_library_id": standards_library_id,
     }
 
+    # Log activity
+    user = g.get('current_user')
+    if user:
+        activity_service.log_activity(
+            user_id=user.get('id'),
+            user_name=user.get('name') or user.get('email'),
+            institution_id=institution_id,
+            action='audit.start',
+            entity_type='audit',
+            entity_id=audit_id,
+            details=f"Started audit on document {document_id}",
+            ip_address=request.remote_addr
+        )
+
     return jsonify({
         "audit_id": audit_id,
         "session_id": session.id,
@@ -247,6 +262,20 @@ def run_audit_sync(institution_id: str, audit_id: str):
         result4 = agent._tool_assess_severity({"audit_id": audit_id})
         result5 = agent._tool_generate_remediation({"audit_id": audit_id})
         final_result = agent._tool_finalize_audit({"audit_id": audit_id})
+
+        # Log activity
+        user = g.get('current_user')
+        if user:
+            activity_service.log_activity(
+                user_id=user.get('id'),
+                user_name=user.get('name') or user.get('email'),
+                institution_id=institution_id,
+                action='audit.complete',
+                entity_type='audit',
+                entity_id=audit_id,
+                details=f"Completed audit",
+                ip_address=request.remote_addr
+            )
 
         # Clean up
         if audit_id in _active_audits:
