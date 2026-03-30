@@ -259,6 +259,37 @@
             </div>
         </div>
     </div>
+
+    <!-- My Tasks (Phase 44) -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">My Tasks</h2>
+            <a href="{{ url_for('tasks_page') }}" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+
+        <div id="tasks-container">
+            <div class="skeleton-content loading" aria-label="Loading tasks">
+                <div class="skeleton-list-item">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text-short"></div>
+                </div>
+                <div class="skeleton-list-item">
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text-short"></div>
+                </div>
+            </div>
+
+            <div class="real-content">
+                <div id="tasks-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="empty-state" id="tasks-empty" style="display: none;">
+            <p>No tasks assigned</p>
+        </div>
+    </div>
 </div>
 
 <!-- Quick Actions -->
@@ -1168,6 +1199,52 @@ async function loadCostSummary() {
 }
 
 document.addEventListener('DOMContentLoaded', loadCostSummary);
+
+// Load My Tasks (Phase 44)
+async function loadMyTasks() {
+    try {
+        const resp = await fetch('/api/tasks/my');
+        const data = await resp.json();
+        const tasks = data.tasks || [];
+        const listEl = document.getElementById('tasks-list');
+        const emptyEl = document.getElementById('tasks-empty');
+
+        if (tasks.length === 0) {
+            if (listEl) listEl.style.display = 'none';
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+        }
+
+        if (listEl) {
+            listEl.innerHTML = tasks.slice(0, 5).map(task => {
+                const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
+                const priorityClass = `task-priority-${task.priority}`;
+                return `
+                    <div class="flex items-center justify-between py-2 border-b" style="border-color: var(--border-color);">
+                        <div class="flex-1">
+                            <a href="/tasks?task=${task.id}" class="text-primary hover:underline font-medium">
+                                ${task.title}
+                            </a>
+                            <div class="text-secondary text-sm">
+                                ${task.due_date ? `Due: ${new Date(task.due_date).toLocaleDateString()}` : 'No due date'}
+                                ${isOverdue ? '<span style="color: var(--danger); font-weight: 600;"> (Overdue)</span>' : ''}
+                            </div>
+                        </div>
+                        <span class="task-priority ${priorityClass}" style="padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;">
+                            ${task.priority}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        if (emptyEl) emptyEl.style.display = 'none';
+    } catch (e) {
+        console.error('Failed to load tasks:', e);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadMyTasks);
 
 // Hide skeleton loaders and show real content on window load
 window.addEventListener('load', () => {

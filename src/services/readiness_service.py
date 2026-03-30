@@ -303,6 +303,35 @@ def _compute_compliance_score(
                 finding_id=row["id"]
             ))
 
+    # Factor in overdue tasks (Phase 44)
+    overdue_tasks = 0
+    task_penalty = 0
+    try:
+        cursor = conn.execute("""
+            SELECT COUNT(*) as count FROM tasks
+            WHERE institution_id = ?
+              AND due_date < datetime('now')
+              AND status != 'completed'
+        """, (institution_id,))
+        row = cursor.fetchone()
+        if row:
+            overdue_tasks = row["count"]
+            # Penalty: 2 points per overdue task (cap at 20 points)
+            task_penalty = min(overdue_tasks * 2, 20)
+            score -= task_penalty
+
+            if overdue_tasks > 5:
+                blockers.append(Blocker(
+                    type="overdue_tasks",
+                    severity="high",
+                    message=f"{overdue_tasks} overdue tasks blocking compliance",
+                    action="Complete or reassign overdue tasks",
+                    link="/tasks?filter=overdue"
+                ))
+    except Exception:
+        # Tasks table may not exist yet (Phase 44 not deployed)
+        pass
+
     breakdown = {
         "audit_id": audit_id,
         "audit_completed_at": latest_audit["completed_at"],
@@ -311,6 +340,8 @@ def _compute_compliance_score(
         "moderate_open": by_severity.get("significant", 0) + by_severity.get("moderate", 0),
         "advisory_open": by_severity.get("advisory", 0),
         "by_severity": by_severity,
+        "overdue_tasks": overdue_tasks,
+        "task_penalty": task_penalty,
     }
 
     return max(0, min(100, score)), breakdown, blockers

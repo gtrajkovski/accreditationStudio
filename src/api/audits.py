@@ -855,3 +855,78 @@ def get_finding_provenance(institution_id: str, audit_id: str, finding_id: str):
         "evidence_hashes": json.loads(row["evidence_chunk_hashes"] or "[]"),
         "reasoning_steps": json.loads(row["reasoning_steps"] or "[]"),
     }), 200
+
+
+@audits_bp.route('/api/institutions/<institution_id>/audits/<audit_id>/create-tasks', methods=['POST'])
+def create_tasks_from_audit(institution_id: str, audit_id: str):
+    """Create tasks from audit findings (Phase 44 integration).
+
+    Request body:
+        {
+            "finding_ids": ["find_xxx", ...] (optional - if not provided, creates for all non-compliant)
+        }
+
+    Returns:
+        {"success": true, "task_ids": [...], "count": N}
+    """
+    from src.services import task_service
+    from src.db.connection import get_conn
+
+    # Verify institution exists
+    institution = _workspace_manager.load_institution(institution_id)
+    if not institution:
+        return jsonify({"error": "Institution not found"}), 404
+
+    data = request.get_json() or {}
+    finding_ids = data.get("finding_ids")
+
+    conn = get_conn()
+
+    # Get findings to create tasks for
+    if finding_ids:
+        # Specific findings selected
+        placeholders = ",".join(["?"] * len(finding_ids))
+        cursor = conn.execute(f"""
+            SELECT id, summary, details, severity, recommendation
+            FROM audit_findings
+            WHERE audit_run_id = ?
+              AND id IN ({placeholders})
+        """, [audit_id] + finding_ids)
+    else:
+        # All non-compliant findings
+        cursor = conn.execute("""
+            SELECT id, summary, details, severity, recommendation
+            FROM audit_findings
+            WHERE audit_run_id = ?
+              AND status IN ('non_compliant', 'needs_info')
+        """, (audit_id,))
+
+    findings = []
+    for row in cursor.fetchall():
+        findings.append({
+            "id": row["id"],
+            "title": row["summary"] or "Compliance Finding",
+            "description": row["details"],
+            "severity": row["severity"],
+            "recommendation": row["recommendation"]
+        })
+
+    if not findings:
+        return jsonify({"error": "No findings to create tasks for"}), 400
+
+    # Create tasks
+    try:
+        task_ids = task_service.create_tasks_from_findings(
+            institution_id=institution_id,
+            findings=findings,
+            assigned_by=None  # TODO: Get from auth context
+        )
+
+        return jsonify({
+            "success": True,
+            "task_ids": task_ids,
+            "count": len(task_ids)
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
