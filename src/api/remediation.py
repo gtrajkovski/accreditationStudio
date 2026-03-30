@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 from src.agents.remediation_agent import RemediationAgent
 from src.core.models import AgentSession, RemediationStatus, generate_id
 from src.services.batch_service import BatchService, estimate_batch_cost
+from src.services import activity_service
 
 
 # Create Blueprint
@@ -132,6 +133,19 @@ def start_remediation(institution_id: str):
         "audit_id": audit_id,
         "max_findings": max_findings,
     }
+
+    # Log activity
+    from flask import g
+    user = g.get('current_user')
+    if user:
+        activity_service.log_activity(
+            user_id=user.get('id'),
+            institution_id=institution_id,
+            action='remediation.start',
+            entity_type='remediation',
+            entity_id=remediation_id,
+            details=f"Started remediation for audit {audit_id}"
+        )
 
     return jsonify({
         "remediation_id": remediation_id,

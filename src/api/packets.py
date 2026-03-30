@@ -21,6 +21,7 @@ from src.services.packet_service import (
     check_force_export_override,
     create_finalize_checkpoint,
 )
+from src.services import activity_service
 
 packets_bp = Blueprint("packets", __name__, url_prefix="/api/institutions/<institution_id>/packets")
 
