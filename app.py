@@ -85,6 +85,7 @@ from src.api.standards_importer_bp import standards_importer_bp, init_standards_
 from src.api.bulk_remediation import bulk_remediation_bp, init_bulk_remediation_bp
 from src.api.packet_wizard import packet_wizard_bp, init_packet_wizard_bp
 from src.api.workbench_ide import workbench_ide_bp, init_workbench_ide_bp
+from src.api.tasks import tasks_bp
 from src.services.standards_import_service import get_import_service
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
@@ -361,6 +362,7 @@ app.register_blueprint(accreditors_bp)
 app.register_blueprint(bulk_remediation_bp)
 app.register_blueprint(packet_wizard_bp)
 app.register_blueprint(workbench_ide_bp)
+app.register_blueprint(tasks_bp)
 
 
 # =============================================================================
@@ -1365,6 +1367,12 @@ def admin_activity_page():
     """Activity log page for compliance officers and admins."""
     institution_id = request.args.get("institution_id", "")
     return render_template('admin/activity.html', institution_id=institution_id)
+
+
+@app.route('/tasks')
+def tasks_page():
+    """Task management page."""
+    return render_template('tasks.html')
 
 
 # =============================================================================

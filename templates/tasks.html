@@ -1,0 +1,893 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks - AccreditAI{% endblock %}
+{% block header_title %}Task Management{% endblock %}
+
+{% block extra_head %}
+<style>
+.tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.tasks-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.view-toggle {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--bg-card);
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+}
+
+.view-toggle button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 0.25rem;
+    transition: all 0.2s;
+}
+
+.view-toggle button.active {
+    background: var(--accent);
+    color: white;
+}
+
+.filters-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.filter-group label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.filter-group select {
+    padding: 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    color: var(--text-primary);
+}
+
+/* Board View */
+.task-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.board-column {
+    background: var(--bg-card);
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.board-column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.board-column-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.board-column-count {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+}
+
+.task-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.task-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.task-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 0.5rem;
+}
+
+.task-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.task-priority {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.task-priority-critical {
+    background: var(--danger);
+    color: white;
+}
+
+.task-priority-high {
+    background: var(--warning);
+    color: var(--bg-primary);
+}
+
+.task-priority-normal {
+    background: var(--text-secondary);
+    color: white;
+}
+
+.task-priority-low {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.task-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.task-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.task-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.task-overdue {
+    border-left: 3px solid var(--danger);
+}
+
+/* List View */
+.task-list {
+    background: var(--bg-card);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.task-list-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.task-list-item:hover {
+    background: var(--bg-primary);
+}
+
+.task-list-item:last-child {
+    border-bottom: none;
+}
+
+.task-checkbox {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+}
+
+.task-info {
+    flex: 1;
+}
+
+.task-assignee {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.task-due {
+    color: var(--text-secondary);
+}
+
+.task-due.overdue {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: 0.5rem;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 2rem;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    color: var(--text-primary);
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.task-comments {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.comment {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border-radius: 0.5rem;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.comment-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.comment-content {
+    color: var(--text-secondary);
+}
+
+.comment-form {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.comment-form input {
+    flex: 1;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card-small {
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+
+.stat-value-small {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.stat-label-small {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tasks-header">
+    <div>
+        <h1>Tasks</h1>
+        <p class="text-secondary">Manage and track assigned tasks</p>
+    </div>
+    <div class="tasks-actions">
+        <div class="view-toggle">
+            <button id="boardViewBtn" class="active">Board</button>
+            <button id="listViewBtn">List</button>
+        </div>
+        <button class="btn btn-primary" id="createTaskBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1rem; height: 1rem;">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            New Task
+        </button>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card-small">
+        <div class="stat-value-small" id="totalTasks">0</div>
+        <div class="stat-label-small">Total</div>
+    </div>
+    <div class="stat-card-small">
+        <div class="stat-value-small" id="pendingTasks">0</div>
+        <div class="stat-label-small">Pending</div>
+    </div>
+    <div class="stat-card-small">
+        <div class="stat-value-small" id="inProgressTasks">0</div>
+        <div class="stat-label-small">In Progress</div>
+    </div>
+    <div class="stat-card-small">
+        <div class="stat-value-small" id="completedTasks">0</div>
+        <div class="stat-label-small">Completed</div>
+    </div>
+    <div class="stat-card-small">
+        <div class="stat-value-small" id="overdueTasks" style="color: var(--danger);">0</div>
+        <div class="stat-label-small">Overdue</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-bar">
+    <div class="filter-group">
+        <label>Priority:</label>
+        <select id="filterPriority">
+            <option value="">All</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="normal">Normal</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Category:</label>
+        <select id="filterCategory">
+            <option value="">All</option>
+            <option value="documentation">Documentation</option>
+            <option value="compliance">Compliance</option>
+            <option value="evidence">Evidence</option>
+            <option value="faculty">Faculty</option>
+            <option value="outcomes">Outcomes</option>
+            <option value="visit_prep">Visit Prep</option>
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>
+            <input type="checkbox" id="filterMyTasks"> My Tasks Only
+        </label>
+    </div>
+    <div class="filter-group">
+        <label>
+            <input type="checkbox" id="filterOverdue"> Overdue Only
+        </label>
+    </div>
+</div>
+
+<!-- Board View -->
+<div id="boardView" class="task-board">
+    <div class="board-column">
+        <div class="board-column-header">
+            <span class="board-column-title">Pending</span>
+            <span class="board-column-count" id="pendingCount">0</span>
+        </div>
+        <div id="pendingColumn"></div>
+    </div>
+    <div class="board-column">
+        <div class="board-column-header">
+            <span class="board-column-title">In Progress</span>
+            <span class="board-column-count" id="inProgressCount">0</span>
+        </div>
+        <div id="inProgressColumn"></div>
+    </div>
+    <div class="board-column">
+        <div class="board-column-header">
+            <span class="board-column-title">Completed</span>
+            <span class="board-column-count" id="completedCount">0</span>
+        </div>
+        <div id="completedColumn"></div>
+    </div>
+</div>
+
+<!-- List View -->
+<div id="listView" class="task-list" style="display: none;"></div>
+
+<!-- Create/Edit Task Modal -->
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modalTitle">New Task</h2>
+            <button class="modal-close" id="closeModal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1.5rem; height: 1.5rem;">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <form id="taskForm">
+            <input type="hidden" id="taskId" name="task_id">
+            <div class="form-group">
+                <label for="taskTitle">Title *</label>
+                <input type="text" id="taskTitle" name="title" required>
+            </div>
+            <div class="form-group">
+                <label for="taskDescription">Description</label>
+                <textarea id="taskDescription" name="description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="taskPriority">Priority</label>
+                <select id="taskPriority" name="priority">
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="taskCategory">Category</label>
+                <select id="taskCategory" name="category">
+                    <option value="">None</option>
+                    <option value="documentation">Documentation</option>
+                    <option value="compliance">Compliance</option>
+                    <option value="evidence">Evidence</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="outcomes">Outcomes</option>
+                    <option value="visit_prep">Visit Prep</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="taskDueDate">Due Date</label>
+                <input type="date" id="taskDueDate" name="due_date">
+            </div>
+            <div class="form-group">
+                <label for="taskAssignee">Assign To</label>
+                <select id="taskAssignee" name="assigned_to">
+                    <option value="">Unassigned</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Save Task</button>
+                <button type="button" class="btn" id="cancelTask">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Task Detail Modal -->
+<div id="taskDetailModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title" id="detailTitle">Task Details</h2>
+            <button class="modal-close" id="closeDetailModal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 1.5rem; height: 1.5rem;">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div id="taskDetailContent"></div>
+        <div class="task-comments">
+            <h3>Comments</h3>
+            <div id="commentsContainer"></div>
+            <form class="comment-form" id="commentForm">
+                <input type="hidden" id="commentTaskId">
+                <input type="text" id="commentContent" placeholder="Add a comment...">
+                <button type="submit" class="btn btn-primary">Post</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentInstitution = null;
+let allTasks = [];
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    loadInstitution();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    document.getElementById('boardViewBtn').addEventListener('click', () => switchView('board'));
+    document.getElementById('listViewBtn').addEventListener('click', () => switchView('list'));
+    document.getElementById('createTaskBtn').addEventListener('click', openCreateModal);
+    document.getElementById('closeModal').addEventListener('click', closeTaskModal);
+    document.getElementById('closeDetailModal').addEventListener('click', closeDetailModal);
+    document.getElementById('cancelTask').addEventListener('click', closeTaskModal);
+    document.getElementById('taskForm').addEventListener('submit', saveTask);
+    document.getElementById('commentForm').addEventListener('submit', postComment);
+
+    // Filters
+    document.getElementById('filterPriority').addEventListener('change', applyFilters);
+    document.getElementById('filterCategory').addEventListener('change', applyFilters);
+    document.getElementById('filterMyTasks').addEventListener('change', applyFilters);
+    document.getElementById('filterOverdue').addEventListener('change', applyFilters);
+}
+
+function switchView(view) {
+    if (view === 'board') {
+        document.getElementById('boardView').style.display = 'grid';
+        document.getElementById('listView').style.display = 'none';
+        document.getElementById('boardViewBtn').classList.add('active');
+        document.getElementById('listViewBtn').classList.remove('active');
+    } else {
+        document.getElementById('boardView').style.display = 'none';
+        document.getElementById('listView').style.display = 'block';
+        document.getElementById('boardViewBtn').classList.remove('active');
+        document.getElementById('listViewBtn').classList.add('active');
+    }
+}
+
+async function loadInstitution() {
+    try {
+        const response = await fetch('/api/institutions');
+        const institutions = await response.json();
+        if (institutions.length > 0) {
+            currentInstitution = institutions[0];
+            loadTasks();
+            loadStats();
+        }
+    } catch (error) {
+        console.error('Failed to load institution:', error);
+    }
+}
+
+async function loadTasks() {
+    if (!currentInstitution) return;
+
+    try {
+        const response = await fetch(`/api/tasks?institution_id=${currentInstitution.id}`);
+        const data = await response.json();
+        allTasks = data.tasks || [];
+        renderTasks(allTasks);
+    } catch (error) {
+        console.error('Failed to load tasks:', error);
+    }
+}
+
+async function loadStats() {
+    if (!currentInstitution) return;
+
+    try {
+        const response = await fetch(`/api/tasks/stats?institution_id=${currentInstitution.id}`);
+        const data = await response.json();
+        const stats = data.stats;
+
+        document.getElementById('totalTasks').textContent = stats.total;
+        document.getElementById('pendingTasks').textContent = stats.pending;
+        document.getElementById('inProgressTasks').textContent = stats.in_progress;
+        document.getElementById('completedTasks').textContent = stats.completed;
+        document.getElementById('overdueTasks').textContent = stats.overdue;
+    } catch (error) {
+        console.error('Failed to load stats:', error);
+    }
+}
+
+function renderTasks(tasks) {
+    // Board view
+    const pending = tasks.filter(t => t.status === 'pending');
+    const inProgress = tasks.filter(t => t.status === 'in_progress');
+    const completed = tasks.filter(t => t.status === 'completed');
+
+    document.getElementById('pendingCount').textContent = pending.length;
+    document.getElementById('inProgressCount').textContent = inProgress.length;
+    document.getElementById('completedCount').textContent = completed.length;
+
+    document.getElementById('pendingColumn').innerHTML = pending.map(renderTaskCard).join('');
+    document.getElementById('inProgressColumn').innerHTML = inProgress.map(renderTaskCard).join('');
+    document.getElementById('completedColumn').innerHTML = completed.map(renderTaskCard).join('');
+
+    // List view
+    document.getElementById('listView').innerHTML = tasks.map(renderTaskListItem).join('');
+
+    // Attach click handlers
+    document.querySelectorAll('.task-card, .task-list-item').forEach(el => {
+        el.addEventListener('click', () => showTaskDetail(el.dataset.taskId));
+    });
+}
+
+function renderTaskCard(task) {
+    const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
+    return `
+        <div class="task-card ${isOverdue ? 'task-overdue' : ''}" data-task-id="${task.id}">
+            <div class="task-card-header">
+                <div class="task-title">${task.title}</div>
+                <div class="task-priority task-priority-${task.priority}">${task.priority}</div>
+            </div>
+            ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+            <div class="task-meta">
+                ${task.due_date ? `<div class="task-meta-item">📅 ${formatDate(task.due_date)}</div>` : ''}
+                ${task.assigned_to ? `<div class="task-meta-item">👤 Assigned</div>` : ''}
+                ${task.category ? `<div class="task-meta-item">🏷️ ${task.category}</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function renderTaskListItem(task) {
+    const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'completed';
+    return `
+        <div class="task-list-item" data-task-id="${task.id}">
+            <input type="checkbox" class="task-checkbox" ${task.status === 'completed' ? 'checked' : ''}>
+            <div class="task-info">
+                <div class="task-title">${task.title}</div>
+                <div class="task-description">${task.description || ''}</div>
+            </div>
+            <div class="task-priority task-priority-${task.priority}">${task.priority}</div>
+            <div class="task-assignee">${task.assigned_to || 'Unassigned'}</div>
+            <div class="task-due ${isOverdue ? 'overdue' : ''}">${task.due_date ? formatDate(task.due_date) : 'No due date'}</div>
+            <div class="task-status">${task.status}</div>
+        </div>
+    `;
+}
+
+function applyFilters() {
+    const priority = document.getElementById('filterPriority').value;
+    const category = document.getElementById('filterCategory').value;
+    const myTasks = document.getElementById('filterMyTasks').checked;
+    const overdue = document.getElementById('filterOverdue').checked;
+
+    let filtered = allTasks;
+
+    if (priority) {
+        filtered = filtered.filter(t => t.priority === priority);
+    }
+
+    if (category) {
+        filtered = filtered.filter(t => t.category === category);
+    }
+
+    if (myTasks) {
+        // TODO: Filter by current user
+        // filtered = filtered.filter(t => t.assigned_to === currentUser.id);
+    }
+
+    if (overdue) {
+        const now = new Date();
+        filtered = filtered.filter(t => t.due_date && new Date(t.due_date) < now && t.status !== 'completed');
+    }
+
+    renderTasks(filtered);
+}
+
+function openCreateModal() {
+    document.getElementById('modalTitle').textContent = 'New Task';
+    document.getElementById('taskForm').reset();
+    document.getElementById('taskId').value = '';
+    document.getElementById('taskModal').classList.add('active');
+}
+
+function closeTaskModal() {
+    document.getElementById('taskModal').classList.remove('active');
+}
+
+function closeDetailModal() {
+    document.getElementById('taskDetailModal').classList.remove('active');
+}
+
+async function saveTask(e) {
+    e.preventDefault();
+
+    const taskId = document.getElementById('taskId').value;
+    const formData = {
+        institution_id: currentInstitution.id,
+        title: document.getElementById('taskTitle').value,
+        description: document.getElementById('taskDescription').value,
+        priority: document.getElementById('taskPriority').value,
+        category: document.getElementById('taskCategory').value,
+        due_date: document.getElementById('taskDueDate').value,
+        assigned_to: document.getElementById('taskAssignee').value || null
+    };
+
+    try {
+        const url = taskId ? `/api/tasks/${taskId}` : '/api/tasks';
+        const method = taskId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+            closeTaskModal();
+            loadTasks();
+            loadStats();
+        }
+    } catch (error) {
+        console.error('Failed to save task:', error);
+        alert('Failed to save task');
+    }
+}
+
+async function showTaskDetail(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`);
+        const data = await response.json();
+        const task = data.task;
+
+        document.getElementById('detailTitle').textContent = task.title;
+        document.getElementById('taskDetailContent').innerHTML = `
+            <div class="form-group">
+                <label>Status</label>
+                <p>${task.status}</p>
+            </div>
+            <div class="form-group">
+                <label>Priority</label>
+                <p class="task-priority task-priority-${task.priority}">${task.priority}</p>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <p>${task.description || 'No description'}</p>
+            </div>
+            <div class="form-group">
+                <label>Due Date</label>
+                <p>${task.due_date ? formatDate(task.due_date) : 'No due date'}</p>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <p>${task.category || 'None'}</p>
+            </div>
+        `;
+
+        document.getElementById('commentTaskId').value = taskId;
+        loadComments(taskId);
+        document.getElementById('taskDetailModal').classList.add('active');
+    } catch (error) {
+        console.error('Failed to load task details:', error);
+    }
+}
+
+async function loadComments(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}/comments`);
+        const data = await response.json();
+        const comments = data.comments || [];
+
+        document.getElementById('commentsContainer').innerHTML = comments.map(c => `
+            <div class="comment">
+                <div class="comment-header">
+                    <span class="comment-author">${c.user_name}</span>
+                    <span class="comment-time">${formatDate(c.created_at)}</span>
+                </div>
+                <div class="comment-content">${c.content}</div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Failed to load comments:', error);
+    }
+}
+
+async function postComment(e) {
+    e.preventDefault();
+
+    const taskId = document.getElementById('commentTaskId').value;
+    const content = document.getElementById('commentContent').value;
+
+    if (!content.trim()) return;
+
+    try {
+        const response = await fetch(`/api/tasks/${taskId}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+        });
+
+        if (response.ok) {
+            document.getElementById('commentContent').value = '';
+            loadComments(taskId);
+        }
+    } catch (error) {
+        console.error('Failed to post comment:', error);
+    }
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+</script>
+{% endblock %}
