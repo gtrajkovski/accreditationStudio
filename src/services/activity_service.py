@@ -8,7 +8,7 @@ from io import StringIO
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
 from src.db.connection import get_conn
-from src.core.utils import generate_id, now_iso
+from src.core.models import generate_id, now_iso
 
 
 def log_activity(
