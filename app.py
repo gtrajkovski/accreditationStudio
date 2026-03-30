@@ -1359,6 +1359,14 @@ def admin_users_page():
     return render_template('admin/users.html', institution_id=institution_id)
 
 
+@app.route('/admin/activity')
+@require_minimum_role('compliance_officer')
+def admin_activity_page():
+    """Activity log page for compliance officers and admins."""
+    institution_id = request.args.get("institution_id", "")
+    return render_template('admin/activity.html', institution_id=institution_id)
+
+
 # =============================================================================
 # Error Handlers
 # =============================================================================

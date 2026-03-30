@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Log{% endblock %}
+
+{% block content %}
+<div class="activity-log-page">
+    <div class="page-header">
+        <h1>Activity Log</h1>
+        <p class="subtitle">Track all user actions and system events</p>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label for="date-range-start">Start Date</label>
+            <input type="date" id="date-range-start" class="filter-input">
+        </div>
+
+        <div class="filter-group">
+            <label for="date-range-end">End Date</label>
+            <input type="date" id="date-range-end" class="filter-input">
+        </div>
+
+        <div class="filter-group">
+            <label for="user-filter">User</label>
+            <select id="user-filter" class="filter-input">
+                <option value="">All Users</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="action-filter">Action Type</label>
+            <select id="action-filter" class="filter-input">
+                <option value="">All Actions</option>
+            </select>
+        </div>
+
+        <div class="filter-actions">
+            <button id="apply-filters" class="btn btn-primary">Apply Filters</button>
+            <button id="reset-filters" class="btn btn-secondary">Reset</button>
+            <button id="refresh-btn" class="btn btn-secondary">
+                <span class="icon">🔄</span> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Export Controls -->
+    <div class="export-bar">
+        <div class="auto-refresh">
+            <label>
+                <input type="checkbox" id="auto-refresh-toggle">
+                Auto-refresh (30s)
+            </label>
+        </div>
+        <button id="export-csv" class="btn btn-secondary">
+            <span class="icon">📥</span> Export CSV
+        </button>
+    </div>
+
+    <!-- Activity Table -->
+    <div class="table-container">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody id="activity-tbody">
+                <tr class="loading-row">
+                    <td colspan="6" class="loading-cell">
+                        <div class="spinner"></div>
+                        <span>Loading activity log...</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-controls">
+        <button id="prev-page" class="btn btn-secondary" disabled>Previous</button>
+        <span id="page-info">Page 1 of 1</span>
+        <button id="next-page" class="btn btn-secondary" disabled>Next</button>
+    </div>
+</div>
+
+<style>
+.activity-log-page {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+}
+
+.page-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.filter-input {
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    min-width: 150px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.export-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.auto-refresh {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.table-container {
+    overflow-x: auto;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.activity-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.activity-table th {
+    background: var(--bg-card);
+    color: var(--gold);
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.activity-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.activity-table tbody tr:hover {
+    background: var(--bg-card);
+}
+
+.loading-cell {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.action-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.action-badge.login { background: var(--success); color: #000; }
+.action-badge.logout { background: var(--text-secondary); color: #000; }
+.action-badge.upload { background: var(--info); color: #000; }
+.action-badge.delete { background: var(--danger); color: #fff; }
+.action-badge.audit { background: var(--accreditor); color: #000; }
+.action-badge.remediation { background: var(--warning); color: #000; }
+.action-badge.settings { background: var(--gold); color: #000; }
+
+.entity-link {
+    color: var(--link-color);
+    text-decoration: none;
+}
+
+.entity-link:hover {
+    text-decoration: underline;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+}
+
+#page-info {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: var(--gold);
+    color: #000;
+}
+
+.btn-primary:hover {
+    background: var(--gold-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-primary);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.icon {
+    margin-right: 0.25rem;
+}
+</style>
+
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let autoRefreshInterval = null;
+
+const institutionId = '{{ institution_id }}';
+
+// Initialize
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadUsers();
+    await loadActions();
+    await loadActivity();
+
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    document.getElementById('apply-filters').addEventListener('click', () => {
+        currentPage = 1;
+        loadActivity();
+    });
+
+    document.getElementById('reset-filters').addEventListener('click', () => {
+        document.getElementById('date-range-start').value = '';
+        document.getElementById('date-range-end').value = '';
+        document.getElementById('user-filter').value = '';
+        document.getElementById('action-filter').value = '';
+        currentPage = 1;
+        loadActivity();
+    });
+
+    document.getElementById('refresh-btn').addEventListener('click', () => {
+        loadActivity();
+    });
+
+    document.getElementById('export-csv').addEventListener('click', exportCSV);
+
+    document.getElementById('auto-refresh-toggle').addEventListener('change', (e) => {
+        if (e.target.checked) {
+            autoRefreshInterval = setInterval(loadActivity, 30000);
+        } else {
+            clearInterval(autoRefreshInterval);
+        }
+    });
+
+    document.getElementById('prev-page').addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            loadActivity();
+        }
+    });
+
+    document.getElementById('next-page').addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            loadActivity();
+        }
+    });
+}
+
+async function loadUsers() {
+    try {
+        const response = await fetch(`/api/activity/users?institution_id=${institutionId}`);
+        const data = await response.json();
+
+        const select = document.getElementById('user-filter');
+        data.users.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.name || user.id;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Failed to load users:', error);
+    }
+}
+
+async function loadActions() {
+    try {
+        const response = await fetch('/api/activity/actions');
+        const data = await response.json();
+
+        const select = document.getElementById('action-filter');
+        data.actions.forEach(action => {
+            const option = document.createElement('option');
+            option.value = action;
+            option.textContent = formatActionType(action);
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Failed to load actions:', error);
+    }
+}
+
+async function loadActivity() {
+    const tbody = document.getElementById('activity-tbody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6" class="loading-cell"><div class="spinner"></div><span>Loading...</span></td></tr>';
+
+    const params = new URLSearchParams({
+        institution_id: institutionId,
+        page: currentPage,
+        per_page: 50
+    });
+
+    const startDate = document.getElementById('date-range-start').value;
+    const endDate = document.getElementById('date-range-end').value;
+    const userId = document.getElementById('user-filter').value;
+    const action = document.getElementById('action-filter').value;
+
+    if (startDate) params.append('start_date', startDate + 'T00:00:00Z');
+    if (endDate) params.append('end_date', endDate + 'T23:59:59Z');
+    if (userId) params.append('user_id', userId);
+    if (action) params.append('action', action);
+
+    try {
+        const response = await fetch(`/api/activity/?${params}`);
+        const data = await response.json();
+
+        totalPages = data.pages;
+        renderActivity(data.items);
+        updatePagination();
+    } catch (error) {
+        console.error('Failed to load activity:', error);
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger);">Failed to load activity log</td></tr>';
+    }
+}
+
+function renderActivity(items) {
+    const tbody = document.getElementById('activity-tbody');
+
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No activity found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = items.map(item => `
+        <tr>
+            <td>${formatTimestamp(item.created_at)}</td>
+            <td>${item.user_name || '<em>System</em>'}</td>
+            <td>${formatAction(item.action)}</td>
+            <td>${formatEntity(item.entity_type, item.entity_id)}</td>
+            <td>${item.details || '-'}</td>
+            <td>${item.ip_address || '-'}</td>
+        </tr>
+    `).join('');
+}
+
+function updatePagination() {
+    document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById('prev-page').disabled = currentPage === 1;
+    document.getElementById('next-page').disabled = currentPage === totalPages;
+}
+
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+}
+
+function formatAction(action) {
+    const category = action.split('.')[0];
+    const badge = `<span class="action-badge ${category}">${formatActionType(action)}</span>`;
+    return badge;
+}
+
+function formatActionType(action) {
+    return action.split('.').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+}
+
+function formatEntity(type, id) {
+    if (!type || !id) return '-';
+    return `<span class="entity-link">${type}: ${id.substring(0, 12)}...</span>`;
+}
+
+async function exportCSV() {
+    const params = new URLSearchParams({
+        institution_id: institutionId
+    });
+
+    const startDate = document.getElementById('date-range-start').value;
+    const endDate = document.getElementById('date-range-end').value;
+
+    if (startDate) params.append('start_date', startDate + 'T00:00:00Z');
+    if (endDate) params.append('end_date', endDate + 'T23:59:59Z');
+
+    try {
+        const response = await fetch(`/api/activity/export?${params}`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `activity_log_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Failed to export CSV:', error);
+        alert('Failed to export activity log');
+    }
+}
+</script>
+{% endblock %}
