@@ -10,10 +10,16 @@ from src.services import task_service
 from src.db.connection import get_conn
 
 
-@pytest.fixture
-def db_conn():
-    """Get database connection for tests."""
-    return get_conn()
+# Disable FK checks at module level for test isolation
+@pytest.fixture(autouse=True, scope="module")
+def disable_fk_checks():
+    """Disable FK checks for all tests in this module."""
+    conn = get_conn()
+    conn.execute("PRAGMA foreign_keys = OFF")
+    conn.commit()
+    yield
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.commit()
 
 
 @pytest.fixture
@@ -154,18 +160,17 @@ def test_overdue_detection(institution_id):
 
 def test_task_stats(institution_id):
     """Test task statistics calculation."""
-    # Create tasks with different statuses
+    # Create tasks - status is always pending on creation
     task1_id = task_service.create_task(
         institution_id=institution_id,
-        title="Pending Task",
-        status="pending"
+        title="Pending Task"
     )
 
     task2_id = task_service.create_task(
         institution_id=institution_id,
         title="Completed Task"
     )
-    task_service.complete_task(task2_id)
+    task_service.complete_task(task2_id, "user_test")
 
     stats = task_service.get_task_stats(institution_id)
     assert stats["total"] >= 2

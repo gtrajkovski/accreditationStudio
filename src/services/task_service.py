@@ -7,7 +7,7 @@ Manages task lifecycle: creation, assignment, completion, commenting.
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from src.db.connection import get_conn
-from src.core.utils import generate_id, now_iso
+from src.core.models.helpers import generate_id, now_iso
 
 
 # Task status values

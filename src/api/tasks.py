@@ -7,7 +7,7 @@ Endpoints for task management: CRUD, assignment, comments, bulk creation.
 from flask import Blueprint, request, jsonify
 from typing import Optional
 from src.services import task_service
-from src.api.auth import require_auth, require_role
+from src.auth.decorators import require_auth, require_role
 
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/api/tasks")
