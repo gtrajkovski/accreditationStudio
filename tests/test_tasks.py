@@ -10,28 +10,30 @@ from src.services import task_service
 from src.db.connection import get_conn
 
 
-# Disable FK checks at module level for test isolation
-@pytest.fixture(autouse=True, scope="module")
-def disable_fk_checks():
-    """Disable FK checks for all tests in this module."""
+@pytest.fixture
+def db():
+    """Database fixture with cleanup."""
     conn = get_conn()
-    conn.execute("PRAGMA foreign_keys = OFF")
+    # Clean up test data before and after
+    conn.execute("DELETE FROM task_comments WHERE task_id LIKE 'task_test%'")
+    conn.execute("DELETE FROM tasks WHERE id LIKE 'task_test%' OR institution_id LIKE 'test_%'")
     conn.commit()
-    yield
-    conn.execute("PRAGMA foreign_keys = ON")
+    yield conn
+    conn.execute("DELETE FROM task_comments WHERE task_id LIKE 'task_test%'")
+    conn.execute("DELETE FROM tasks WHERE id LIKE 'task_test%' OR institution_id LIKE 'test_%'")
     conn.commit()
 
 
 @pytest.fixture
 def institution_id():
     """Test institution ID."""
-    return "inst_test123"
+    return "test_inst_001"
 
 
 @pytest.fixture
 def user_id():
     """Test user ID."""
-    return "user_test456"
+    return "test_user_001"
 
 
 @pytest.fixture

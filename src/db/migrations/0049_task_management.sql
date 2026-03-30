@@ -16,10 +16,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     source_id TEXT,
     category TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (institution_id) REFERENCES institutions(id),
-    FOREIGN KEY (assigned_to) REFERENCES users(id),
-    FOREIGN KEY (assigned_by) REFERENCES users(id)
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    -- Note: FKs intentionally omitted - tasks persist after users/institutions deleted
 );
 
 CREATE TABLE IF NOT EXISTS task_comments (
@@ -29,8 +27,8 @@ CREATE TABLE IF NOT EXISTS task_comments (
     user_name TEXT,
     content TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+    -- user_id FK omitted - comments persist after users deleted
 );
 
 CREATE INDEX IF NOT EXISTS idx_tasks_institution ON tasks(institution_id);
