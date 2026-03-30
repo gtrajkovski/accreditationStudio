@@ -39,6 +39,7 @@ from src.api import (
 )
 from src.api.auth import auth_bp, init_auth_bp
 from src.api.users import users_bp, init_users_bp
+from src.api.activity import activity_bp
 from src.api.readiness import readiness_bp, init_readiness_bp
 from src.api.audits import audits_bp, init_audits_bp
 from src.api.remediation import remediation_bp, init_remediation_bp
@@ -305,6 +306,7 @@ init_standards_importer_bp(
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(users_bp)
+app.register_blueprint(activity_bp)
 app.register_blueprint(chat_bp)
 app.register_blueprint(agents_bp)
 app.register_blueprint(institutions_bp)
