@@ -22,6 +22,7 @@ from src.core.models import (
     DocumentType,
 )
 from src.db.connection import get_conn
+from src.services import activity_service
 
 
 # Create Blueprint
@@ -121,6 +122,20 @@ def create_institution():
         _workspace_manager.create_institution_workspace(institution)
         _workspace_manager.save_institution(institution)
 
+        # Log activity
+        from flask import g
+        user = g.get('current_user')
+        if user:
+            activity_service.log_activity(
+                user_id=user.get('id'),
+                user_name=user.get('name') or user.get('email'),
+                institution_id=institution.id,
+                action='institution.create',
+                entity_type='institution',
+                entity_id=institution.id,
+                details=f"Created institution: {name}",
+            )
+
         return jsonify(institution.to_dict()), 201
 
     except Exception as e:
@@ -180,6 +195,21 @@ def update_institution(institution_id: str):
 
     try:
         _workspace_manager.save_institution(institution)
+
+        # Log activity
+        from flask import g
+        user = g.get('current_user')
+        if user:
+            activity_service.log_activity(
+                user_id=user.get('id'),
+                user_name=user.get('name') or user.get('email'),
+                institution_id=institution_id,
+                action='institution.update',
+                entity_type='institution',
+                entity_id=institution_id,
+                details=f"Updated institution: {institution.name}",
+            )
+
         return jsonify(institution.to_dict()), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

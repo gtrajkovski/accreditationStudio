@@ -5,6 +5,7 @@ Handles user preferences including locale and theme.
 
 from flask import Blueprint, request, jsonify, session, g
 from src.db import get_conn
+from src.services import activity_service
 from src.i18n import SUPPORTED_LOCALES, DEFAULT_LOCALE, get_supported_locales, t
 
 settings_bp = Blueprint('settings', __name__, url_prefix='/api/settings')
@@ -138,6 +139,22 @@ def update_settings():
     conn = get_conn()
     try:
         prefs = _update_user_preferences(conn, DEFAULT_USER_ID, locale, theme)
+
+        # Log activity
+        user = g.get('current_user')
+        if user:
+            changes = []
+            if locale:
+                changes.append(f"locale={locale}")
+            if theme:
+                changes.append(f"theme={theme}")
+            activity_service.log_activity(
+                user_id=user.get('id'),
+                user_name=user.get('name') or user.get('email'),
+                institution_id=user.get('institution_id'),
+                action='settings.change',
+                details=f"Changed settings: {', '.join(changes)}",
+            )
 
         return jsonify({
             "locale": prefs["locale"],

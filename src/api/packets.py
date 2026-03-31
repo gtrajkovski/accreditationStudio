@@ -124,6 +124,20 @@ def create_packet(institution_id: str):
     # Save immediately
     agent._tool_save({"packet_id": result["packet_id"]})
 
+    # Log activity
+    from flask import g
+    user = g.get('current_user')
+    if user:
+        activity_service.log_activity(
+            user_id=user.get('id'),
+            user_name=user.get('name') or user.get('email'),
+            institution_id=institution_id,
+            action='packet.create',
+            entity_type='packet',
+            entity_id=result["packet_id"],
+            details=f"Created packet: {name}",
+        )
+
     return jsonify(result), 201
 
 
@@ -368,6 +382,21 @@ def export_docx(institution_id: str, packet_id: str):
         return jsonify(result), 400
 
     agent._tool_save({"packet_id": packet_id})
+
+    # Log activity
+    from flask import g
+    user = g.get('current_user')
+    if user:
+        activity_service.log_activity(
+            user_id=user.get('id'),
+            user_name=user.get('name') or user.get('email'),
+            institution_id=institution_id,
+            action='packet.export',
+            entity_type='packet',
+            entity_id=packet_id,
+            details=f"Exported packet as DOCX",
+        )
+
     return jsonify(result)
 
 
@@ -425,6 +454,21 @@ def export_zip(institution_id: str, packet_id: str):
         return jsonify(result), 400
 
     agent._tool_save({"packet_id": packet_id})
+
+    # Log activity
+    from flask import g
+    user = g.get('current_user')
+    if user:
+        activity_service.log_activity(
+            user_id=user.get('id'),
+            user_name=user.get('name') or user.get('email'),
+            institution_id=institution_id,
+            action='packet.export',
+            entity_type='packet',
+            entity_id=packet_id,
+            details=f"Exported packet as ZIP",
+        )
+
     return jsonify(result)
 
 
