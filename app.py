@@ -87,6 +87,7 @@ from src.api.packet_wizard import packet_wizard_bp, init_packet_wizard_bp
 from src.api.workbench_ide import workbench_ide_bp, init_workbench_ide_bp
 from src.api.tasks import tasks_bp
 from src.api.executive import executive_bp, init_executive_bp
+from src.api.onboarding import onboarding_bp, init_onboarding_bp
 from src.services.standards_import_service import get_import_service
 from src.i18n import t, get_all_strings, get_supported_locales, DEFAULT_LOCALE, SUPPORTED_LOCALES
 from src.services.readiness_service import compute_readiness
@@ -366,6 +367,7 @@ app.register_blueprint(packet_wizard_bp)
 app.register_blueprint(workbench_ide_bp)
 app.register_blueprint(tasks_bp)
 app.register_blueprint(executive_bp)
+app.register_blueprint(onboarding_bp)
 
 
 # =============================================================================
@@ -1382,6 +1384,12 @@ def tasks_page():
 def executive_dashboard():
     """Executive dashboard page (admin+ only)."""
     return render_template('executive.html')
+
+
+@app.route('/onboarding')
+def onboarding_wizard():
+    """Onboarding wizard for new institutions."""
+    return render_template('onboarding.html')
 
 
 # =============================================================================
