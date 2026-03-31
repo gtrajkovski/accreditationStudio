@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="{{ locale }}" data-theme="{{ theme if theme != 'system' else '' }}" data-theme-preference="{{ theme }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to AccreditAI</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+
+    <!-- Google Fonts - "Certified Authority" Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Epilogue:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+    <!-- Preload theme -->
+    <script>
+        (function() {
+            const stored = localStorage.getItem('accreditai_theme');
+            const pref = stored || '{{ theme }}' || 'system';
+            let effective = pref;
+            if (pref === 'system') {
+                effective = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', effective);
+            document.documentElement.setAttribute('data-theme-preference', pref);
+        })();
+    </script>
+
+    <style>
+        /* Onboarding Wizard Styles */
+        .onboarding-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-base);
+        }
+
+        .onboarding-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .onboarding-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .onboarding-logo svg {
+            width: 32px;
+            height: 32px;
+            color: var(--accent);
+        }
+
+        .onboarding-logo span {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .skip-btn {
+            color: var(--text-secondary);
+            background: none;
+            border: none;
+            font-size: 0.875rem;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .skip-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-hover);
+        }
+
+        /* Step Indicator */
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0;
+            padding: 2rem;
+            background: var(--bg-panel);
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-subtle);
+            transition: all 0.3s;
+        }
+
+        .step.active .step-number {
+            background: var(--accent);
+            color: var(--bg-base);
+            border-color: var(--accent);
+        }
+
+        .step.completed .step-number {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .step-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .step-label {
+                display: block;
+            }
+        }
+
+        .step.active .step-label {
+            color: var(--accent);
+        }
+
+        .step.completed .step-label {
+            color: var(--success);
+        }
+
+        .step-connector {
+            width: 60px;
+            height: 2px;
+            background: var(--border-subtle);
+            margin: 0 0.5rem;
+        }
+
+        .step-connector.completed {
+            background: var(--success);
+        }
+
+        /* Content Area */
+        .onboarding-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .step-content {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .step-description {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-group .hint {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-muted);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        /* Programs List */
+        .programs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .program-item {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .program-item input {
+            flex: 1;
+        }
+
+        .program-item select {
+            width: 140px;
+        }
+
+        .remove-program-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+        }
+
+        .remove-program-btn:hover {
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .add-program-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: none;
+            border: 1px dashed var(--border-medium);
+            color: var(--text-secondary);
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .add-program-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border-medium);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-card);
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--accent);
+            background: var(--accent-muted);
+        }
+
+        .upload-area svg {
+            width: 48px;
+            height: 48px;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .upload-area h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-primary);
+        }
+
+        .upload-area p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .upload-types {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .upload-type-badge {
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-hover);
+            border-radius: 999px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Upload Progress */
+        .upload-progress-list {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .upload-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .upload-item-icon {
+            font-size: 1.5rem;
+        }
+
+        .upload-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .upload-item-name {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .upload-item-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .upload-item-progress {
+            width: 100px;
+            height: 4px;
+            background: var(--bg-hover);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .upload-item-progress-bar {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+
+        .upload-item-progress-bar.success {
+            background: var(--success);
+        }
+
+        .upload-item-progress-bar.error {
+            background: var(--danger);
+        }
+
+        .upload-item-status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            min-width: 70px;
+            text-align: right;
+        }
+
+        .upload-item-status.success {
+            color: var(--success);
+        }
+
+        .upload-item-status.error {
+            color: var(--danger);
+        }
+
+        /* Audit Section */
+        .audit-section {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .audit-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: var(--accent-muted);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .audit-icon svg {
+            width: 40px;
+            height: 40px;
+            color: var(--accent);
+        }
+
+        .audit-progress {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .audit-progress.active {
+            display: block;
+        }
+
+        .audit-progress-bar {
+            height: 8px;
+            background: var(--bg-hover);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .audit-progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .audit-progress-text {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .audit-results {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .audit-results.active {
+            display: block;
+        }
+
+        .audit-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .audit-stat {
+            padding: 1rem;
+            background: var(--bg-card);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .audit-stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .audit-stat-value.critical {
+            color: var(--danger);
+        }
+
+        .audit-stat-value.warning {
+            color: var(--warning);
+        }
+
+        .audit-stat-value.advisory {
+            color: var(--info);
+        }
+
+        .audit-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .top-findings {
+            text-align: left;
+        }
+
+        .top-findings h4 {
+            margin: 0 0 1rem 0;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .finding-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-card);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--danger);
+        }
+
+        .finding-item.significant {
+            border-left-color: var(--warning);
+        }
+
+        .finding-text {
+            flex: 1;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        /* Review Section */
+        .review-section {
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 1.5rem;
+            background: var(--success-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-icon svg {
+            width: 50px;
+            height: 50px;
+            color: var(--success);
+        }
+
+        .next-actions {
+            text-align: left;
+            margin-top: 2rem;
+        }
+
+        .next-actions h4 {
+            margin: 0 0 1rem 0;
+            color: var(--text-primary);
+        }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-card);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .action-item:hover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+
+        .action-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-muted);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-icon svg {
+            width: 20px;
+            height: 20px;
+            color: var(--accent);
+        }
+
+        .action-content {
+            flex: 1;
+            text-align: left;
+        }
+
+        .action-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .action-desc {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .action-arrow {
+            color: var(--text-muted);
+        }
+
+        /* Footer */
+        .onboarding-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-panel);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-medium);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+            color: var(--bg-base);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-large {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+        }
+
+        /* Hidden file input */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="onboarding-container">
+        <!-- Header -->
+        <header class="onboarding-header">
+            <a href="/" class="onboarding-logo">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                <span>AccreditAI</span>
+            </a>
+            <button class="skip-btn" onclick="skipOnboarding()">Skip for now</button>
+        </header>
+
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step active" data-step="1">
+                <div class="step-number">1</div>
+                <span class="step-label">Profile</span>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step" data-step="2">
+                <div class="step-number">2</div>
+                <span class="step-label">Upload</span>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step" data-step="3">
+                <div class="step-number">3</div>
+                <span class="step-label">Audit</span>
+            </div>
+            <div class="step-connector"></div>
+            <div class="step" data-step="4">
+                <div class="step-number">4</div>
+                <span class="step-label">Review</span>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <main class="onboarding-content">
+            <!-- Step 1: Institution Profile -->
+            <div class="step-content active" id="step1">
+                <h2 class="step-title">Let's set up your institution</h2>
+                <p class="step-description">Tell us about your institution so we can configure AccreditAI for your accreditation needs.</p>
+
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label for="institutionName">Institution Name *</label>
+                        <input type="text" id="institutionName" class="form-control" placeholder="e.g., Apex Technical Institute" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="accreditor">Primary Accreditor *</label>
+                        <select id="accreditor" class="form-control" required>
+                            <option value="">Select accrediting body...</option>
+                            <option value="ACCSC">ACCSC - Accrediting Commission of Career Schools and Colleges</option>
+                            <option value="ABHES">ABHES - Accrediting Bureau of Health Education Schools</option>
+                            <option value="COE">COE - Council on Occupational Education</option>
+                            <option value="SACSCOC">SACSCOC - Southern Association of Colleges and Schools</option>
+                            <option value="HLC">HLC - Higher Learning Commission</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="state">State/Territory *</label>
+                        <select id="state" class="form-control" required>
+                            <option value="">Select state...</option>
+                            <option value="AL">Alabama</option>
+                            <option value="AK">Alaska</option>
+                            <option value="AZ">Arizona</option>
+                            <option value="AR">Arkansas</option>
+                            <option value="CA">California</option>
+                            <option value="CO">Colorado</option>
+                            <option value="CT">Connecticut</option>
+                            <option value="DE">Delaware</option>
+                            <option value="FL">Florida</option>
+                            <option value="GA">Georgia</option>
+                            <option value="HI">Hawaii</option>
+                            <option value="ID">Idaho</option>
+                            <option value="IL">Illinois</option>
+                            <option value="IN">Indiana</option>
+                            <option value="IA">Iowa</option>
+                            <option value="KS">Kansas</option>
+                            <option value="KY">Kentucky</option>
+                            <option value="LA">Louisiana</option>
+                            <option value="ME">Maine</option>
+                            <option value="MD">Maryland</option>
+                            <option value="MA">Massachusetts</option>
+                            <option value="MI">Michigan</option>
+                            <option value="MN">Minnesota</option>
+                            <option value="MS">Mississippi</option>
+                            <option value="MO">Missouri</option>
+                            <option value="MT">Montana</option>
+                            <option value="NE">Nebraska</option>
+                            <option value="NV">Nevada</option>
+                            <option value="NH">New Hampshire</option>
+                            <option value="NJ">New Jersey</option>
+                            <option value="NM">New Mexico</option>
+                            <option value="NY">New York</option>
+                            <option value="NC">North Carolina</option>
+                            <option value="ND">North Dakota</option>
+                            <option value="OH">Ohio</option>
+                            <option value="OK">Oklahoma</option>
+                            <option value="OR">Oregon</option>
+                            <option value="PA">Pennsylvania</option>
+                            <option value="PR">Puerto Rico</option>
+                            <option value="RI">Rhode Island</option>
+                            <option value="SC">South Carolina</option>
+                            <option value="SD">South Dakota</option>
+                            <option value="TN">Tennessee</option>
+                            <option value="TX">Texas</option>
+                            <option value="UT">Utah</option>
+                            <option value="VT">Vermont</option>
+                            <option value="VA">Virginia</option>
+                            <option value="WA">Washington</option>
+                            <option value="WV">West Virginia</option>
+                            <option value="WI">Wisconsin</option>
+                            <option value="WY">Wyoming</option>
+                            <option value="DC">District of Columbia</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Programs</label>
+                        <p class="hint">Add your institution's programs. You can add more later.</p>
+                        <div class="programs-list" id="programsList">
+                            <div class="program-item">
+                                <input type="text" class="form-control program-name" placeholder="Program name">
+                                <select class="form-control program-level">
+                                    <option value="certificate">Certificate</option>
+                                    <option value="diploma">Diploma</option>
+                                    <option value="associate">Associate</option>
+                                    <option value="bachelor">Bachelor's</option>
+                                    <option value="master">Master's</option>
+                                </select>
+                                <button type="button" class="remove-program-btn" onclick="removeProgram(this)" title="Remove">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 6L6 18M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="add-program-btn" onclick="addProgram()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            Add another program
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nextVisit">Approximate Next Visit Date</label>
+                        <input type="month" id="nextVisit" class="form-control">
+                        <p class="hint">When is your next accreditation visit expected?</p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 2: Upload Documents -->
+            <div class="step-content" id="step2">
+                <h2 class="step-title">Upload your key documents</h2>
+                <p class="step-description">Upload your core compliance documents. AccreditAI will automatically classify and analyze them.</p>
+
+                <div class="upload-area" id="uploadArea">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <h4>Drag & drop files here</h4>
+                    <p>or click to browse</p>
+                    <div class="upload-types">
+                        <span class="upload-type-badge">Enrollment Agreement</span>
+                        <span class="upload-type-badge">Catalog</span>
+                        <span class="upload-type-badge">Student Handbook</span>
+                        <span class="upload-type-badge">Faculty Credentials</span>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" class="hidden" multiple accept=".pdf,.docx,.doc,.txt,.md">
+
+                <div class="upload-progress-list" id="uploadProgressList"></div>
+
+                <p class="hint" style="margin-top: 1rem; text-align: center;">
+                    Supported formats: PDF, DOCX, DOC, TXT, MD (max 50MB each)
+                </p>
+            </div>
+
+            <!-- Step 3: Initial Audit -->
+            <div class="step-content" id="step3">
+                <h2 class="step-title">Run your first audit</h2>
+                <p class="step-description">Let AccreditAI analyze your documents against your accreditor's standards. This is where the magic happens.</p>
+
+                <div class="audit-section">
+                    <div class="audit-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                        </svg>
+                    </div>
+
+                    <div id="auditStart">
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            Our AI will perform a comprehensive 5-pass compliance audit, checking your documents against accreditor standards, federal regulations, and state requirements.
+                        </p>
+                        <button class="btn btn-primary btn-large" onclick="startInitialAudit()" id="startAuditBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                            Run Compliance Audit
+                        </button>
+                    </div>
+
+                    <div class="audit-progress" id="auditProgress">
+                        <div class="audit-progress-bar">
+                            <div class="audit-progress-fill" id="auditProgressFill"></div>
+                        </div>
+                        <p class="audit-progress-text" id="auditProgressText">Starting audit...</p>
+                    </div>
+
+                    <div class="audit-results" id="auditResults">
+                        <div class="audit-summary">
+                            <div class="audit-stat">
+                                <div class="audit-stat-value critical" id="criticalCount">0</div>
+                                <div class="audit-stat-label">Critical</div>
+                            </div>
+                            <div class="audit-stat">
+                                <div class="audit-stat-value warning" id="significantCount">0</div>
+                                <div class="audit-stat-label">Significant</div>
+                            </div>
+                            <div class="audit-stat">
+                                <div class="audit-stat-value advisory" id="advisoryCount">0</div>
+                                <div class="audit-stat-label">Advisory</div>
+                            </div>
+                        </div>
+
+                        <div class="top-findings" id="topFindings">
+                            <h4>Top Findings</h4>
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Review & Next Steps -->
+            <div class="step-content" id="step4">
+                <h2 class="step-title">You're all set!</h2>
+                <p class="step-description">Your institution is configured and your first audit is complete. Here's what to do next.</p>
+
+                <div class="review-section">
+                    <div class="success-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+
+                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                        AccreditAI is now monitoring your compliance. Explore the dashboard to see your readiness score, review findings, and start remediation.
+                    </p>
+
+                    <div class="next-actions">
+                        <h4>Recommended Next Steps</h4>
+
+                        <div class="action-item" onclick="window.location.href='/'">
+                            <div class="action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"/>
+                                    <rect x="14" y="3" width="7" height="7"/>
+                                    <rect x="14" y="14" width="7" height="7"/>
+                                    <rect x="3" y="14" width="7" height="7"/>
+                                </svg>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">Explore the Dashboard</div>
+                                <div class="action-desc">See your readiness score and compliance overview</div>
+                            </div>
+                            <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6"/>
+                            </svg>
+                        </div>
+
+                        <div class="action-item" onclick="window.location.href='/work-queue'">
+                            <div class="action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                </svg>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">Review Work Queue</div>
+                                <div class="action-desc">See prioritized tasks based on audit findings</div>
+                            </div>
+                            <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6"/>
+                            </svg>
+                        </div>
+
+                        <div class="action-item" onclick="window.location.href='/compliance-calendar'">
+                            <div class="action-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                    <line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8" y1="2" x2="8" y2="6"/>
+                                    <line x1="3" y1="10" x2="21" y2="10"/>
+                                </svg>
+                            </div>
+                            <div class="action-content">
+                                <div class="action-title">Set Up Compliance Calendar</div>
+                                <div class="action-desc">Track deadlines and reporting requirements</div>
+                            </div>
+                            <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="onboarding-footer">
+            <button class="btn btn-secondary" id="backBtn" onclick="prevStep()" style="visibility: hidden;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Back
+            </button>
+            <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                Continue
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        // State
+        let currentStep = 1;
+        let institutionId = null;
+        let uploadedDocs = [];
+        let auditComplete = false;
+
+        // Step Navigation
+        function updateStepUI() {
+            // Update step indicators
+            document.querySelectorAll('.step').forEach((step, idx) => {
+                const stepNum = idx + 1;
+                step.classList.remove('active', 'completed');
+                if (stepNum === currentStep) {
+                    step.classList.add('active');
+                } else if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                }
+            });
+
+            // Update connectors
+            document.querySelectorAll('.step-connector').forEach((conn, idx) => {
+                conn.classList.toggle('completed', idx < currentStep - 1);
+            });
+
+            // Update content visibility
+            document.querySelectorAll('.step-content').forEach((content, idx) => {
+                content.classList.toggle('active', idx + 1 === currentStep);
+            });
+
+            // Update buttons
+            document.getElementById('backBtn').style.visibility = currentStep > 1 ? 'visible' : 'hidden';
+
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentStep === 4) {
+                nextBtn.innerHTML = 'Go to Dashboard <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+            } else if (currentStep === 2) {
+                nextBtn.innerHTML = uploadedDocs.length > 0 ? 'Continue <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>' : 'Skip uploads <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+            } else if (currentStep === 3) {
+                nextBtn.innerHTML = 'Continue <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+                nextBtn.disabled = !auditComplete && uploadedDocs.length > 0;
+            } else {
+                nextBtn.innerHTML = 'Continue <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+            }
+        }
+
+        async function nextStep() {
+            if (currentStep === 1) {
+                const success = await saveProfile();
+                if (!success) return;
+            }
+
+            if (currentStep === 4) {
+                await completeOnboarding();
+                window.location.href = '/';
+                return;
+            }
+
+            // Mark current step complete via API
+            if (institutionId) {
+                try {
+                    await fetch(`/api/onboarding/step/${currentStep}?institution_id=${institutionId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                } catch (e) {
+                    console.error('Failed to update progress:', e);
+                }
+            }
+
+            currentStep++;
+            updateStepUI();
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepUI();
+            }
+        }
+
+        // Step 1: Profile
+        async function saveProfile() {
+            const name = document.getElementById('institutionName').value.trim();
+            const accreditor = document.getElementById('accreditor').value;
+            const state = document.getElementById('state').value;
+
+            if (!name || !accreditor || !state) {
+                alert('Please fill in all required fields.');
+                return false;
+            }
+
+            // Collect programs
+            const programs = [];
+            document.querySelectorAll('.program-item').forEach(item => {
+                const progName = item.querySelector('.program-name').value.trim();
+                const progLevel = item.querySelector('.program-level').value;
+                if (progName) {
+                    programs.push({ name: progName, credential_level: progLevel });
+                }
+            });
+
+            try {
+                // Create institution
+                const res = await fetch('/api/institutions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        accrediting_body: accreditor,
+                        state: state
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to create institution');
+
+                institutionId = data.id;
+
+                // Create programs
+                for (const prog of programs) {
+                    await fetch(`/api/institutions/${institutionId}/programs`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(prog)
+                    });
+                }
+
+                // Start onboarding tracking
+                await fetch(`/api/onboarding/progress?institution_id=${institutionId}`);
+
+                return true;
+            } catch (err) {
+                alert('Error: ' + err.message);
+                return false;
+            }
+        }
+
+        function addProgram() {
+            const list = document.getElementById('programsList');
+            const item = document.createElement('div');
+            item.className = 'program-item';
+            item.innerHTML = `
+                <input type="text" class="form-control program-name" placeholder="Program name">
+                <select class="form-control program-level">
+                    <option value="certificate">Certificate</option>
+                    <option value="diploma">Diploma</option>
+                    <option value="associate">Associate</option>
+                    <option value="bachelor">Bachelor's</option>
+                    <option value="master">Master's</option>
+                </select>
+                <button type="button" class="remove-program-btn" onclick="removeProgram(this)" title="Remove">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            `;
+            list.appendChild(item);
+        }
+
+        function removeProgram(btn) {
+            const items = document.querySelectorAll('.program-item');
+            if (items.length > 1) {
+                btn.closest('.program-item').remove();
+            }
+        }
+
+        // Step 2: Upload
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const progressList = document.getElementById('uploadProgressList');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        ['dragenter', 'dragover'].forEach(evt => {
+            uploadArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(evt => {
+            uploadArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            const files = Array.from(e.dataTransfer.files);
+            uploadFiles(files);
+        });
+
+        fileInput.addEventListener('change', () => {
+            const files = Array.from(fileInput.files);
+            uploadFiles(files);
+            fileInput.value = '';
+        });
+
+        function detectDocType(filename) {
+            const lower = filename.toLowerCase();
+            if (lower.includes('policy') || lower.includes('procedure')) return 'policy';
+            if (lower.includes('catalog')) return 'catalog';
+            if (lower.includes('syllab')) return 'syllabus';
+            if (lower.includes('credential') || lower.includes('faculty') || lower.includes('resume') || lower.includes('cv')) return 'faculty_credential';
+            if (lower.includes('enrollment') || lower.includes('agreement')) return 'enrollment_agreement';
+            if (lower.includes('handbook')) return 'handbook';
+            return 'other';
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            return { pdf: '📄', docx: '📝', doc: '📝', txt: '📃', md: '📃' }[ext] || '📎';
+        }
+
+        async function uploadFiles(files) {
+            if (!institutionId) {
+                alert('Please complete the profile step first.');
+                return;
+            }
+
+            const validExts = ['pdf', 'docx', 'doc', 'txt', 'md'];
+            const validFiles = files.filter(f => {
+                const ext = f.name.split('.').pop().toLowerCase();
+                return validExts.includes(ext);
+            });
+
+            if (validFiles.length === 0) {
+                alert('No valid files. Supported: PDF, DOCX, DOC, TXT, MD');
+                return;
+            }
+
+            for (const file of validFiles) {
+                uploadFile(file);
+            }
+        }
+
+        async function uploadFile(file) {
+            const itemId = `upload-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            const docType = detectDocType(file.name);
+            const icon = getFileIcon(file.name);
+            const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+
+            progressList.innerHTML += `
+                <div class="upload-item" id="${itemId}">
+                    <div class="upload-item-icon">${icon}</div>
+                    <div class="upload-item-info">
+                        <div class="upload-item-name">${file.name}</div>
+                        <div class="upload-item-meta">
+                            <span>${sizeMB} MB</span>
+                            <span>Type: ${docType.replace('_', ' ')}</span>
+                        </div>
+                    </div>
+                    <div class="upload-item-progress">
+                        <div class="upload-item-progress-bar" style="width: 10%"></div>
+                    </div>
+                    <div class="upload-item-status">Uploading...</div>
+                </div>
+            `;
+
+            const item = document.getElementById(itemId);
+            const progressBar = item.querySelector('.upload-item-progress-bar');
+            const statusEl = item.querySelector('.upload-item-status');
+
+            try {
+                progressBar.style.width = '40%';
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('doc_type', docType);
+
+                const res = await fetch(`/api/institutions/${institutionId}/documents/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                progressBar.style.width = '80%';
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+                progressBar.style.width = '100%';
+                progressBar.classList.add('success');
+                statusEl.textContent = 'Done';
+                statusEl.classList.add('success');
+
+                uploadedDocs.push(data);
+                updateStepUI();
+
+            } catch (err) {
+                progressBar.classList.add('error');
+                statusEl.textContent = 'Failed';
+                statusEl.classList.add('error');
+            }
+        }
+
+        // Step 3: Audit
+        async function startInitialAudit() {
+            if (!institutionId) {
+                alert('No institution created yet.');
+                return;
+            }
+
+            if (uploadedDocs.length === 0) {
+                // No documents - show results with zeros
+                auditComplete = true;
+                document.getElementById('auditStart').style.display = 'none';
+                document.getElementById('auditResults').classList.add('active');
+                document.getElementById('topFindings').innerHTML = '<h4>No documents to audit</h4><p style="color: var(--text-muted);">Upload documents to run a compliance audit.</p>';
+                updateStepUI();
+                return;
+            }
+
+            document.getElementById('auditStart').style.display = 'none';
+            document.getElementById('auditProgress').classList.add('active');
+
+            const progressFill = document.getElementById('auditProgressFill');
+            const progressText = document.getElementById('auditProgressText');
+
+            try {
+                // Get first document to audit
+                const docId = uploadedDocs[0].id;
+
+                // Start audit
+                const startRes = await fetch(`/api/institutions/${institutionId}/audits`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ document_id: docId })
+                });
+
+                const startData = await startRes.json();
+                if (!startRes.ok) throw new Error(startData.error || 'Failed to start audit');
+
+                const auditId = startData.audit_id;
+                progressFill.style.width = '10%';
+
+                // SSE stream
+                const evtSource = new EventSource(`/api/institutions/${institutionId}/audits/${auditId}/stream`);
+
+                evtSource.onmessage = function(e) {
+                    const data = JSON.parse(e.data);
+
+                    if (data.type === 'pass_started') {
+                        progressFill.style.width = (10 + data.pass * 15) + '%';
+                        progressText.textContent = `Pass ${data.pass}: ${data.name}`;
+                    } else if (data.type === 'audit_completed') {
+                        progressFill.style.width = '100%';
+                        progressText.textContent = 'Complete!';
+                        evtSource.close();
+
+                        setTimeout(() => {
+                            showAuditResults(data.results || {});
+                        }, 500);
+                    } else if (data.type === 'error') {
+                        evtSource.close();
+                        throw new Error(data.error);
+                    }
+                };
+
+                evtSource.onerror = function() {
+                    evtSource.close();
+                    progressText.textContent = 'Connection lost - audit may still be running';
+                };
+
+            } catch (err) {
+                progressText.textContent = 'Error: ' + err.message;
+            }
+        }
+
+        function showAuditResults(results) {
+            document.getElementById('auditProgress').classList.remove('active');
+            document.getElementById('auditResults').classList.add('active');
+
+            const findings = results.findings || [];
+            const critical = findings.filter(f => f.severity === 'critical').length;
+            const significant = findings.filter(f => f.severity === 'significant').length;
+            const advisory = findings.filter(f => f.severity === 'advisory').length;
+
+            document.getElementById('criticalCount').textContent = critical;
+            document.getElementById('significantCount').textContent = significant;
+            document.getElementById('advisoryCount').textContent = advisory;
+
+            // Top 5 critical/significant findings
+            const topFindings = document.getElementById('topFindings');
+            const top5 = findings.filter(f => f.severity === 'critical' || f.severity === 'significant').slice(0, 5);
+
+            if (top5.length > 0) {
+                topFindings.innerHTML = '<h4>Top Findings</h4>' + top5.map(f => `
+                    <div class="finding-item ${f.severity}">
+                        <div class="finding-text">${f.description || f.issue || 'Finding'}</div>
+                    </div>
+                `).join('');
+            } else {
+                topFindings.innerHTML = '<h4>No Critical Findings</h4><p style="color: var(--text-muted);">Great start! Review advisory items in the dashboard.</p>';
+            }
+
+            auditComplete = true;
+            updateStepUI();
+        }
+
+        // Skip & Complete
+        async function skipOnboarding() {
+            if (confirm('Skip onboarding? You can set up your institution later from the dashboard.')) {
+                if (institutionId) {
+                    await fetch(`/api/onboarding/skip?institution_id=${institutionId}`, { method: 'POST' });
+                }
+                window.location.href = '/';
+            }
+        }
+
+        async function completeOnboarding() {
+            if (institutionId) {
+                await fetch(`/api/onboarding/step/4?institution_id=${institutionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+        }
+
+        // Initialize
+        updateStepUI();
+    </script>
+</body>
+</html>
