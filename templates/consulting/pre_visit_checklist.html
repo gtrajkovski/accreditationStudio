@@ -1,0 +1,539 @@
+{% extends "base.html" %}
+
+{% block title %}Pre-Visit Checklist - AccreditAI{% endblock %}
+{% block header_title %}Pre-Visit Checklist{% endblock %}
+
+{% block extra_head %}
+<style>
+.checklist-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.progress-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.progress-stat {
+    background: var(--bg-card);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.progress-stat-value {
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.progress-stat-value.met {
+    color: var(--success);
+}
+
+.progress-stat-value.partial {
+    color: var(--warning);
+}
+
+.progress-stat-value.not-met {
+    color: var(--danger);
+}
+
+.progress-stat-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+.progress-bar-container {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    height: 24px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.progress-bar {
+    display: flex;
+    height: 100%;
+}
+
+.progress-bar-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    transition: width 0.5s ease;
+}
+
+.progress-bar-segment.met {
+    background: var(--success);
+}
+
+.progress-bar-segment.partial {
+    background: var(--warning);
+}
+
+.progress-bar-segment.not-met {
+    background: var(--danger);
+}
+
+.section-tabs {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--bg-secondary);
+}
+
+.section-tab {
+    padding: 0.75rem 1.5rem;
+    background: var(--bg-card);
+    border: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+}
+
+.section-tab:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.section-tab.active {
+    background: var(--accent);
+    color: white;
+}
+
+.section-tab-badge {
+    display: inline-block;
+    background: var(--bg-primary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-left: 0.5rem;
+}
+
+.checklist-table {
+    width: 100%;
+    background: var(--bg-card);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.checklist-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.checklist-table thead {
+    background: var(--bg-secondary);
+}
+
+.checklist-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.checklist-table td {
+    padding: 1rem;
+    border-top: 1px solid var(--bg-secondary);
+}
+
+.checklist-table tbody tr:hover {
+    background: rgba(233, 69, 96, 0.05);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.met {
+    background: var(--success);
+    color: white;
+}
+
+.status-badge.partial {
+    background: var(--warning);
+    color: #1a1a2e;
+}
+
+.status-badge.not_met {
+    background: var(--danger);
+    color: white;
+}
+
+.requirement-cell {
+    max-width: 400px;
+}
+
+.requirement-text {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.standard-code {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+
+.evidence-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.evidence-link:hover {
+    text-decoration: underline;
+}
+
+.action-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.section-progress-bar {
+    margin: 1.5rem 0;
+}
+
+.section-progress-label {
+    font-size: 14px;
+    margin-bottom: 0.5rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    justify-content: center;
+}
+
+.btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-export:hover {
+    background: #ff6b82;
+}
+
+.btn-export svg {
+    width: 20px;
+    height: 20px;
+}
+
+.print-hint {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-top: 1rem;
+}
+
+@media print {
+    .section-tabs, .action-buttons, .print-hint {
+        display: none;
+    }
+
+    .checklist-table {
+        page-break-inside: avoid;
+    }
+
+    .checklist-table tbody tr {
+        page-break-inside: avoid;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checklist-header">
+    <h1>Pre-Visit Checklist</h1>
+    <p id="institution-info">Loading...</p>
+
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="overall-progress-bar"></div>
+    </div>
+
+    <div class="progress-overview" id="progress-overview">
+        <!-- Populated by JavaScript -->
+    </div>
+</div>
+
+<div class="section-tabs" id="section-tabs">
+    <!-- Populated by JavaScript -->
+</div>
+
+<div id="section-content">
+    <div class="section-progress-bar">
+        <div class="section-progress-label" id="section-progress-label">Loading...</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="section-progress-bar"></div>
+        </div>
+    </div>
+
+    <div class="checklist-table">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40px;"></th>
+                    <th style="width: 50%;">Requirement</th>
+                    <th style="width: 100px;">Status</th>
+                    <th style="width: 150px;">Evidence</th>
+                    <th>Action Needed</th>
+                </tr>
+            </thead>
+            <tbody id="checklist-body">
+                <!-- Populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="action-buttons">
+    <button class="btn-export" id="btn-export-docx">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+        Export as DOCX
+    </button>
+    <button class="btn-export" id="btn-print" style="background: var(--success);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Print Checklist
+    </button>
+</div>
+
+<div class="print-hint">
+    This checklist is print-optimized. Use the Print button for a clean printout.
+</div>
+
+<script>
+let checklistData = null;
+let currentSection = 'admin';
+const institutionId = window.location.pathname.split('/')[3] || 'inst_001';
+
+const sectionOrder = ['admin', 'academics', 'admissions', 'student_services', 'financial', 'facilities', 'catalog', 'achievement'];
+
+async function loadChecklist() {
+    try {
+        const response = await fetch(`/api/consulting/pre-visit-checklist/${institutionId}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load checklist');
+        }
+
+        checklistData = data.checklist;
+        renderChecklist(checklistData);
+    } catch (error) {
+        console.error('Error loading checklist:', error);
+        alert('Failed to load pre-visit checklist. Please try again.');
+    }
+}
+
+function renderChecklist(checklist) {
+    // Header info
+    document.getElementById('institution-info').textContent =
+        `Institution: ${checklist.institution_id} | Accreditor: ${checklist.accreditor_code} | Generated: ${checklist.generated_at.split('T')[0]}`;
+
+    // Overall progress
+    const overall = checklist.overall_progress;
+    const progressBar = document.getElementById('overall-progress-bar');
+
+    const metPercent = (overall.met / overall.total) * 100;
+    const partialPercent = (overall.partial / overall.total) * 100;
+    const notMetPercent = (overall.not_met / overall.total) * 100;
+
+    progressBar.innerHTML = `
+        <div class="progress-bar-segment met" style="width: ${metPercent}%">${overall.met > 0 ? overall.met : ''}</div>
+        <div class="progress-bar-segment partial" style="width: ${partialPercent}%">${overall.partial > 0 ? overall.partial : ''}</div>
+        <div class="progress-bar-segment not-met" style="width: ${notMetPercent}%">${overall.not_met > 0 ? overall.not_met : ''}</div>
+    `;
+
+    // Progress stats
+    const overview = document.getElementById('progress-overview');
+    overview.innerHTML = `
+        <div class="progress-stat">
+            <div class="progress-stat-value met">${overall.met}</div>
+            <div class="progress-stat-label">Complete</div>
+        </div>
+        <div class="progress-stat">
+            <div class="progress-stat-value partial">${overall.partial}</div>
+            <div class="progress-stat-label">Partial</div>
+        </div>
+        <div class="progress-stat">
+            <div class="progress-stat-value not-met">${overall.not_met}</div>
+            <div class="progress-stat-label">Not Met</div>
+        </div>
+        <div class="progress-stat">
+            <div class="progress-stat-value">${overall.percent_complete}%</div>
+            <div class="progress-stat-label">Overall</div>
+        </div>
+    `;
+
+    // Section tabs
+    const tabsContainer = document.getElementById('section-tabs');
+    tabsContainer.innerHTML = sectionOrder
+        .filter(code => checklist.sections[code])
+        .map(code => {
+            const items = checklist.sections[code];
+            const progress = checklist.section_progress[code];
+            return `
+                <button class="section-tab ${code === currentSection ? 'active' : ''}" data-section="${code}">
+                    ${getSectionName(code)}
+                    <span class="section-tab-badge">${progress.met}/${progress.total}</span>
+                </button>
+            `;
+        }).join('');
+
+    // Add tab click handlers
+    document.querySelectorAll('.section-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            currentSection = tab.dataset.section;
+            renderSection(currentSection);
+
+            // Update active tab
+            document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+        });
+    });
+
+    // Render first section
+    renderSection(currentSection);
+}
+
+function renderSection(sectionCode) {
+    const section = checklistData.sections[sectionCode];
+    const progress = checklistData.section_progress[sectionCode];
+
+    if (!section) return;
+
+    // Section progress
+    const metPercent = (progress.met / progress.total) * 100;
+    const partialPercent = (progress.partial / progress.total) * 100;
+    const notMetPercent = (progress.not_met / progress.total) * 100;
+
+    document.getElementById('section-progress-label').textContent =
+        `${getSectionName(sectionCode)} - ${progress.met}/${progress.total} Complete (${Math.round(metPercent)}%)`;
+
+    const sectionBar = document.getElementById('section-progress-bar');
+    sectionBar.innerHTML = `
+        <div class="progress-bar-segment met" style="width: ${metPercent}%">${progress.met > 0 ? progress.met : ''}</div>
+        <div class="progress-bar-segment partial" style="width: ${partialPercent}%">${progress.partial > 0 ? progress.partial : ''}</div>
+        <div class="progress-bar-segment not-met" style="width: ${notMetPercent}%">${progress.not_met > 0 ? progress.not_met : ''}</div>
+    `;
+
+    // Checklist items
+    const tbody = document.getElementById('checklist-body');
+    tbody.innerHTML = section.map((item, index) => {
+        const checkbox = item.status === 'met'
+            ? '<input type="checkbox" checked disabled>'
+            : '<input type="checkbox" disabled>';
+
+        return `
+            <tr>
+                <td>${checkbox}</td>
+                <td class="requirement-cell">
+                    <div class="requirement-text">${item.requirement}</div>
+                    ${item.standard_code ? `<div class="standard-code">${item.standard_code}</div>` : ''}
+                </td>
+                <td>
+                    <span class="status-badge ${item.status}">${item.status.toUpperCase().replace('_', ' ')}</span>
+                </td>
+                <td>
+                    ${item.evidence_reference
+                        ? `<a href="#" class="evidence-link">${item.evidence_reference}</a>`
+                        : '<span style="color: var(--text-secondary);">N/A</span>'
+                    }
+                </td>
+                <td>
+                    ${item.action_needed
+                        ? `<div class="action-text">${item.action_needed}</div>`
+                        : '<span style="color: var(--text-secondary);">None</span>'
+                    }
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function getSectionName(code) {
+    const names = {
+        'admin': 'Administration & Management',
+        'academics': 'Academics',
+        'admissions': 'Admissions',
+        'student_services': 'Student Services',
+        'financial': 'Financial Stability',
+        'facilities': 'Facilities & Equipment',
+        'catalog': 'Catalog & Publications',
+        'achievement': 'Student Achievement',
+    };
+    return names[code] || code;
+}
+
+// Export DOCX
+document.getElementById('btn-export-docx').addEventListener('click', async () => {
+    try {
+        const response = await fetch(`/api/consulting/pre-visit-checklist/${institutionId}/export`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({format: 'docx'})
+        });
+
+        if (!response.ok) throw new Error('Export failed');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pre_visit_checklist_${institutionId}.docx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export DOCX. Please try again.');
+    }
+});
+
+// Print
+document.getElementById('btn-print').addEventListener('click', () => {
+    window.print();
+});
+
+// Load on page load
+loadChecklist();
+</script>
+{% endblock %}
