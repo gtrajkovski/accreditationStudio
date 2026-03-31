@@ -943,6 +943,18 @@ def get_or_compute_readiness(
     # Persist snapshot
     persist_snapshot(institution_id, readiness)
 
+    # Record trend snapshot for executive dashboard (Phase 45)
+    record_readiness_snapshot(
+        institution_id,
+        readiness.total,
+        sub_scores={
+            "documents_score": readiness.documents,
+            "compliance_score": readiness.compliance,
+            "evidence_score": readiness.evidence,
+            "consistency_score": readiness.consistency,
+        }
+    )
+
     return readiness.to_dict()
 
 
