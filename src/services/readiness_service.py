@@ -944,3 +944,112 @@ def get_or_compute_readiness(
     persist_snapshot(institution_id, readiness)
 
     return readiness.to_dict()
+
+
+# =============================================================================
+# Phase 45: Executive Dashboard - Readiness Trend Tracking
+# =============================================================================
+
+def record_readiness_snapshot(
+    institution_id: str,
+    score: float,
+    sub_scores: Optional[Dict[str, float]] = None,
+    conn: Optional[sqlite3.Connection] = None
+) -> str:
+    """Record a readiness snapshot for trend tracking.
+
+    This function stores timestamped readiness scores in the readiness_snapshots
+    table (Phase 45) for historical trending and executive dashboard visualization.
+
+    Args:
+        institution_id: Institution ID
+        score: Total readiness score (0-100)
+        sub_scores: Optional dict with keys: documents_score, compliance_score,
+                    evidence_score, consistency_score
+        conn: Optional database connection
+
+    Returns:
+        Snapshot ID
+    """
+    should_close = conn is None
+    if conn is None:
+        conn = get_conn()
+
+    try:
+        snapshot_id = f"snap_{uuid4().hex[:12]}"
+
+        # Extract sub-scores if provided
+        documents_score = sub_scores.get("documents_score") if sub_scores else None
+        compliance_score = sub_scores.get("compliance_score") if sub_scores else None
+        evidence_score = sub_scores.get("evidence_score") if sub_scores else None
+        consistency_score = sub_scores.get("consistency_score") if sub_scores else None
+
+        conn.execute("""
+            INSERT INTO readiness_snapshots (
+                id, institution_id, score, documents_score,
+                compliance_score, evidence_score, consistency_score
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            snapshot_id,
+            institution_id,
+            score,
+            documents_score,
+            compliance_score,
+            evidence_score,
+            consistency_score
+        ))
+
+        conn.commit()
+        return snapshot_id
+
+    finally:
+        if should_close:
+            conn.close()
+
+
+def get_readiness_trend(
+    institution_id: str,
+    days: int = 90,
+    conn: Optional[sqlite3.Connection] = None
+) -> List[Dict[str, Any]]:
+    """Get readiness trend data for the specified time period.
+
+    Returns chronological list of readiness snapshots for trend visualization
+    in the executive dashboard.
+
+    Args:
+        institution_id: Institution ID
+        days: Number of days to look back (default 90)
+        conn: Optional database connection
+
+    Returns:
+        List of dicts with keys: date, score, documents_score, compliance_score,
+        evidence_score, consistency_score
+    """
+    should_close = conn is None
+    if conn is None:
+        conn = get_conn()
+
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+        cursor = conn.execute("""
+            SELECT
+                DATE(recorded_at) as date,
+                score,
+                documents_score,
+                compliance_score,
+                evidence_score,
+                consistency_score,
+                recorded_at
+            FROM readiness_snapshots
+            WHERE institution_id = ?
+              AND recorded_at >= ?
+            ORDER BY recorded_at ASC
+        """, (institution_id, cutoff))
+
+        return [dict(row) for row in cursor.fetchall()]
+
+    finally:
+        if should_close:
+            conn.close()
