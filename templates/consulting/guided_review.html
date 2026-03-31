@@ -1,0 +1,581 @@
+{% extends "base.html" %}
+
+{% block title %}Guided Self-Assessment - AccreditAI{% endblock %}
+{% block header_title %}Guided Self-Assessment{% endblock %}
+
+{% block extra_head %}
+<style>
+.wizard-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.section-selector {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.section-selector h2 {
+    margin-top: 0;
+}
+
+.section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.section-card {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.section-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+.section-card.completed {
+    border-color: var(--success);
+}
+
+.section-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.section-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.wizard-view {
+    display: none;
+}
+
+.wizard-view.active {
+    display: block;
+}
+
+.wizard-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.wizard-progress {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.wizard-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.wizard-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+}
+
+.wizard-progress-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.question-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.question-number {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.requirement-text {
+    font-size: 16px;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+}
+
+.guidance-section {
+    margin: 1.5rem 0;
+}
+
+.guidance-section h4 {
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.guidance-content {
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    line-height: 1.6;
+}
+
+.evidence-list {
+    list-style: none;
+    padding: 0;
+}
+
+.evidence-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--bg-primary);
+}
+
+.evidence-list li:last-child {
+    border-bottom: none;
+}
+
+.evidence-list li:before {
+    content: "✓";
+    color: var(--success);
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+.deficiency-list {
+    list-style: none;
+    padding: 0;
+}
+
+.deficiency-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--bg-primary);
+}
+
+.deficiency-list li:last-child {
+    border-bottom: none;
+}
+
+.deficiency-list li:before {
+    content: "⚠";
+    color: var(--warning);
+    margin-right: 0.5rem;
+}
+
+.ai-assessment {
+    background: linear-gradient(135deg, rgba(233, 69, 96, 0.1) 0%, rgba(233, 69, 96, 0.05) 100%);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.ai-assessment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.ai-assessment-header svg {
+    width: 24px;
+    height: 24px;
+    color: var(--accent);
+}
+
+.ai-assessment-header h4 {
+    margin: 0;
+    color: var(--accent);
+}
+
+.ai-status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 1rem;
+}
+
+.ai-status-badge.compliant {
+    background: var(--success);
+    color: white;
+}
+
+.ai-status-badge.partial {
+    background: var(--warning);
+    color: #1a1a2e;
+}
+
+.ai-status-badge.non_compliant {
+    background: var(--danger);
+    color: white;
+}
+
+.ai-status-badge.unknown {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.wizard-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-top: 2rem;
+}
+
+.btn-wizard {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-wizard-primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-wizard-primary:hover {
+    background: #ff6b82;
+}
+
+.btn-wizard-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.btn-wizard-secondary:hover {
+    background: var(--bg-card);
+}
+
+.btn-wizard:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.completion-summary {
+    background: linear-gradient(135deg, var(--success) 0%, #3ac074 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 3rem;
+    text-align: center;
+}
+
+.completion-summary h2 {
+    margin: 0 0 1rem 0;
+}
+
+.completion-summary svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 1rem;
+}
+
+.btn-back-to-sections {
+    margin-top: 2rem;
+    background: white;
+    color: var(--success);
+}
+
+.btn-back-to-sections:hover {
+    background: #f0f0f0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wizard-container">
+    <!-- Section Selection View -->
+    <div id="section-selection-view" class="wizard-view active">
+        <div class="section-selector">
+            <h2>Select an Evaluation Area to Review</h2>
+            <p style="color: var(--text-secondary);">Step through each section with expert guidance on what evaluators look for.</p>
+
+            <div class="section-grid" id="section-grid">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Review View -->
+    <div id="question-review-view" class="wizard-view">
+        <div class="wizard-header">
+            <h1 id="section-title">Loading...</h1>
+            <div class="wizard-progress">
+                <div class="wizard-progress-bar">
+                    <div class="wizard-progress-fill" id="wizard-progress-fill" style="width: 0%;"></div>
+                </div>
+                <div class="wizard-progress-text" id="wizard-progress-text">0 / 0</div>
+            </div>
+        </div>
+
+        <div id="question-container">
+            <!-- Populated by JavaScript -->
+        </div>
+
+        <div class="wizard-actions">
+            <div>
+                <button class="btn-wizard btn-wizard-secondary" id="btn-back-to-sections">
+                    ← Back to Sections
+                </button>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn-wizard btn-wizard-secondary" id="btn-prev" disabled>
+                    ← Previous
+                </button>
+                <button class="btn-wizard btn-wizard-primary" id="btn-next">
+                    Next →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion View -->
+    <div id="completion-view" class="wizard-view">
+        <div class="completion-summary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <h2>Section Review Complete!</h2>
+            <p id="completion-message">You've reviewed all requirements in this section.</p>
+            <button class="btn-wizard btn-back-to-sections" id="btn-complete-back">
+                Back to Section Selection
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let sections = [];
+let currentSectionCode = null;
+let questions = [];
+let currentQuestionIndex = 0;
+const institutionId = window.location.pathname.split('/')[3] || 'inst_001';
+
+async function loadSections() {
+    try {
+        const response = await fetch(`/api/consulting/self-assessment/${institutionId}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load sections');
+        }
+
+        sections = data.sections;
+        renderSectionGrid();
+    } catch (error) {
+        console.error('Error loading sections:', error);
+        alert('Failed to load self-assessment sections. Please try again.');
+    }
+}
+
+function renderSectionGrid() {
+    const grid = document.getElementById('section-grid');
+    grid.innerHTML = sections.map(section => `
+        <div class="section-card ${section.completed ? 'completed' : ''}" data-section="${section.code}">
+            <div class="section-name">${section.name}</div>
+            <div class="section-meta">
+                ${section.question_count} requirements
+                ${section.completed ? '<br>✓ Reviewed' : ''}
+            </div>
+        </div>
+    `).join('');
+
+    // Add click handlers
+    document.querySelectorAll('.section-card').forEach(card => {
+        card.addEventListener('click', () => {
+            startSection(card.dataset.section);
+        });
+    });
+}
+
+async function startSection(sectionCode) {
+    currentSectionCode = sectionCode;
+    currentQuestionIndex = 0;
+
+    try {
+        const response = await fetch(`/api/consulting/self-assessment/${institutionId}/${sectionCode}?with_ai=true`);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load section');
+        }
+
+        questions = data.questions;
+
+        if (questions.length === 0) {
+            alert('No questions available for this section.');
+            return;
+        }
+
+        // Switch to question view
+        document.getElementById('section-selection-view').classList.remove('active');
+        document.getElementById('question-review-view').classList.add('active');
+
+        // Set section title
+        document.getElementById('section-title').textContent = data.section.name;
+
+        // Render first question
+        renderQuestion(currentQuestionIndex);
+    } catch (error) {
+        console.error('Error loading section:', error);
+        alert('Failed to load section questions. Please try again.');
+    }
+}
+
+function renderQuestion(index) {
+    const question = questions[index];
+
+    // Update progress
+    const progress = ((index + 1) / questions.length) * 100;
+    document.getElementById('wizard-progress-fill').style.width = `${progress}%`;
+    document.getElementById('wizard-progress-text').textContent = `${index + 1} / ${questions.length}`;
+
+    // Render question card
+    const container = document.getElementById('question-container');
+    container.innerHTML = `
+        <div class="question-card">
+            <div class="question-number">Question ${index + 1} of ${questions.length}</div>
+            <div class="requirement-text">${question.requirement_text}</div>
+
+            ${question.ai_assessment ? `
+                <div class="ai-assessment">
+                    <div class="ai-assessment-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <h4>AccreditAI Assessment</h4>
+                        <span class="ai-status-badge ${question.ai_assessment_status || 'unknown'}">
+                            ${(question.ai_assessment_status || 'unknown').toUpperCase().replace('_', ' ')}
+                        </span>
+                    </div>
+                    <p style="margin: 0;">${question.ai_assessment}</p>
+                </div>
+            ` : ''}
+
+            <div class="guidance-section">
+                <h4>What Evaluators Look For</h4>
+                <div class="guidance-content">
+                    ${question.what_to_look_for}
+                </div>
+            </div>
+
+            <div class="guidance-section">
+                <h4>Evidence to Prepare</h4>
+                <div class="guidance-content">
+                    <ul class="evidence-list">
+                        ${question.evidence_to_prepare.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="guidance-section">
+                <h4>Common Deficiencies</h4>
+                <div class="guidance-content">
+                    <ul class="deficiency-list">
+                        ${question.common_deficiencies.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Update button states
+    document.getElementById('btn-prev').disabled = index === 0;
+    document.getElementById('btn-next').textContent = index === questions.length - 1 ? 'Complete Section →' : 'Next →';
+}
+
+// Navigation
+document.getElementById('btn-prev').addEventListener('click', () => {
+    if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        renderQuestion(currentQuestionIndex);
+    }
+});
+
+document.getElementById('btn-next').addEventListener('click', () => {
+    if (currentQuestionIndex < questions.length - 1) {
+        currentQuestionIndex++;
+        renderQuestion(currentQuestionIndex);
+    } else {
+        completeSection();
+    }
+});
+
+document.getElementById('btn-back-to-sections').addEventListener('click', () => {
+    backToSectionSelection();
+});
+
+document.getElementById('btn-complete-back').addEventListener('click', () => {
+    backToSectionSelection();
+});
+
+async function completeSection() {
+    try {
+        // Mark section as complete
+        await fetch(`/api/consulting/self-assessment/${institutionId}/${currentSectionCode}/complete`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                reviewed_by: 'current_user',
+                notes: 'Section reviewed via guided self-assessment'
+            })
+        });
+
+        // Show completion view
+        document.getElementById('question-review-view').classList.remove('active');
+        document.getElementById('completion-view').classList.add('active');
+
+        const sectionName = sections.find(s => s.code === currentSectionCode)?.name || currentSectionCode;
+        document.getElementById('completion-message').textContent =
+            `You've reviewed all ${questions.length} requirements in ${sectionName}.`;
+
+    } catch (error) {
+        console.error('Error completing section:', error);
+        // Still show completion even if marking failed
+        document.getElementById('question-review-view').classList.remove('active');
+        document.getElementById('completion-view').classList.add('active');
+    }
+}
+
+function backToSectionSelection() {
+    document.getElementById('question-review-view').classList.remove('active');
+    document.getElementById('completion-view').classList.remove('active');
+    document.getElementById('section-selection-view').classList.add('active');
+
+    // Reload sections to update completion status
+    loadSections();
+}
+
+// Load on page load
+loadSections();
+</script>
+{% endblock %}
