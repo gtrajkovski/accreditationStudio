@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Dashboard - AccreditAI{% endblock %}
+{% block header_title %}Executive Dashboard{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+    .executive-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .metric-card {
+        background: var(--bg-card);
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .metric-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .metric-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent);
+        opacity: 0.15;
+    }
+
+    .metric-icon svg {
+        width: 24px;
+        height: 24px;
+        stroke: var(--accent);
+    }
+
+    .metric-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-trend {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    .metric-trend.up {
+        color: var(--success);
+    }
+
+    .metric-trend.down {
+        color: var(--danger);
+    }
+
+    .metric-trend.stable {
+        color: var(--text-secondary);
+    }
+
+    .metric-trend svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .chart-container {
+        background: var(--bg-card);
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    .chart-container h3 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        font-size: 1.125rem;
+        color: var(--text-primary);
+    }
+
+    .chart-wrapper {
+        position: relative;
+        height: 300px;
+    }
+
+    .attention-card {
+        background: linear-gradient(135deg, rgba(233, 69, 96, 0.1) 0%, rgba(16, 33, 62, 0.3) 100%);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .attention-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .attention-icon {
+        width: 32px;
+        height: 32px;
+        color: var(--accent);
+    }
+
+    .attention-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .attention-summary {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--text-primary);
+    }
+
+    .deadlines-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .deadlines-table th {
+        text-align: left;
+        padding: 0.75rem;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .deadlines-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .deadline-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .deadline-badge.urgent {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--danger);
+    }
+
+    .deadline-badge.soon {
+        background: rgba(251, 191, 36, 0.2);
+        color: var(--warning);
+    }
+
+    .deadline-badge.ok {
+        background: rgba(74, 222, 128, 0.2);
+        color: var(--success);
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .quick-action-btn {
+        flex: 1;
+        min-width: 200px;
+        padding: 1rem;
+        background: var(--bg-card);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .quick-action-btn:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+    }
+
+    .loading-spinner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.1);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="loading-state" class="loading-spinner">
+    <div class="spinner"></div>
+</div>
+
+<div id="dashboard-content" style="display: none;">
+    <!-- Top Metrics Row -->
+    <div class="executive-grid">
+        <div class="metric-card">
+            <div class="metric-card-header">
+                <div class="metric-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                        <line x1="9" y1="9" x2="9.01" y2="9"/>
+                        <line x1="15" y1="9" x2="15.01" y2="9"/>
+                    </svg>
+                </div>
+                <div class="metric-label">Readiness Score</div>
+            </div>
+            <div class="metric-value" id="readiness-score">--</div>
+            <div class="metric-trend" id="readiness-trend">
+                <span>Loading...</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-card-header">
+                <div class="metric-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+                    </svg>
+                </div>
+                <div class="metric-label">Documents Audited</div>
+            </div>
+            <div class="metric-value"><span id="docs-audited">--</span> / <span id="docs-total">--</span></div>
+            <div class="metric-trend stable">
+                <span id="docs-compliant">--</span> compliant
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-card-header">
+                <div class="metric-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 8v4M12 16h.01"/>
+                    </svg>
+                </div>
+                <div class="metric-label">Open Findings</div>
+            </div>
+            <div class="metric-value" id="open-findings">--</div>
+            <div class="metric-trend" id="findings-breakdown">
+                <span>Loading...</span>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-card-header">
+                <div class="metric-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                    </svg>
+                </div>
+                <div class="metric-label">Task Completion</div>
+            </div>
+            <div class="metric-value"><span id="tasks-completed">--</span>%</div>
+            <div class="metric-trend" id="tasks-breakdown">
+                <span>Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- What Needs Attention Card -->
+    <div class="attention-card">
+        <div class="attention-header">
+            <svg class="attention-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <h3 class="attention-title">What Needs Attention</h3>
+        </div>
+        <p class="attention-summary" id="attention-summary">Loading AI summary...</p>
+    </div>
+
+    <!-- Readiness Trend Chart -->
+    <div class="chart-container">
+        <h3>Readiness Trend (90 Days)</h3>
+        <div class="chart-wrapper">
+            <canvas id="readiness-trend-chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Two-column layout for deadlines and findings -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+        <!-- Upcoming Deadlines -->
+        <div class="chart-container">
+            <h3>Upcoming Deadlines</h3>
+            <table class="deadlines-table">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="deadlines-table-body">
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--text-secondary);">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Findings by Severity Chart -->
+        <div class="chart-container">
+            <h3>Findings by Severity</h3>
+            <div class="chart-wrapper" style="height: 200px;">
+                <canvas id="findings-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="chart-container">
+        <h3>Quick Actions</h3>
+        <div class="quick-actions">
+            <a href="/compliance" class="quick-action-btn">Run Full Audit</a>
+            <a href="/tasks?filter=overdue" class="quick-action-btn">View Overdue Tasks</a>
+            <a href="/packets/new" class="quick-action-btn">Generate Report</a>
+        </div>
+    </div>
+</div>
+
+<script>
+let trendChart = null;
+let findingsChart = null;
+
+async function loadExecutiveDashboard() {
+    const institutionId = localStorage.getItem('selected_institution_id');
+    if (!institutionId) {
+        document.getElementById('loading-state').innerHTML = '<p>Please select an institution first.</p>';
+        return;
+    }
+
+    try {
+        // Load overview data
+        const overviewResponse = await fetch(`/api/executive/overview?institution_id=${institutionId}`);
+        if (!overviewResponse.ok) throw new Error('Failed to load overview');
+        const overview = await overviewResponse.json();
+
+        // Update metrics
+        updateMetrics(overview);
+
+        // Load trend data
+        const trendsResponse = await fetch(`/api/executive/trends?institution_id=${institutionId}&days=90`);
+        if (!trendsResponse.ok) throw new Error('Failed to load trends');
+        const trends = await trendsResponse.json();
+
+        // Render trend chart
+        renderTrendChart(trends.trends);
+
+        // Render findings chart
+        renderFindingsChart(overview.findings);
+
+        // Load AI attention summary
+        const attentionResponse = await fetch(`/api/executive/attention?institution_id=${institutionId}`);
+        if (!attentionResponse.ok) throw new Error('Failed to load attention summary');
+        const attention = await attentionResponse.json();
+
+        document.getElementById('attention-summary').textContent = attention.summary;
+
+        // Show dashboard
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('dashboard-content').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error loading executive dashboard:', error);
+        document.getElementById('loading-state').innerHTML =
+            `<p style="color: var(--danger);">Error: ${error.message}</p>`;
+    }
+}
+
+function updateMetrics(overview) {
+    // Readiness score
+    const readiness = overview.readiness;
+    document.getElementById('readiness-score').textContent = readiness.current + '%';
+
+    const trendEl = document.getElementById('readiness-trend');
+    if (readiness.previous !== null) {
+        const delta = readiness.current - readiness.previous;
+        const arrow = readiness.trend === 'up' ? '↑' : readiness.trend === 'down' ? '↓' : '→';
+        trendEl.innerHTML = `<span>${arrow} ${Math.abs(delta)} points from last week</span>`;
+        trendEl.className = 'metric-trend ' + readiness.trend;
+    } else {
+        trendEl.innerHTML = '<span>No previous data</span>';
+        trendEl.className = 'metric-trend stable';
+    }
+
+    // Documents
+    const docs = overview.documents;
+    document.getElementById('docs-audited').textContent = docs.audited;
+    document.getElementById('docs-total').textContent = docs.total;
+    document.getElementById('docs-compliant').textContent = docs.compliant;
+
+    // Findings
+    const findings = overview.findings;
+    const openCount = findings.open_critical + findings.open_major + findings.open_minor;
+    document.getElementById('open-findings').textContent = openCount;
+    document.getElementById('findings-breakdown').innerHTML =
+        `<span style="color: var(--danger);">${findings.open_critical} critical</span>, ` +
+        `<span style="color: var(--warning);">${findings.open_major} major</span>`;
+
+    // Tasks
+    const tasks = overview.tasks;
+    const completionRate = tasks.total > 0 ? Math.round((tasks.completed / tasks.total) * 100) : 0;
+    document.getElementById('tasks-completed').textContent = completionRate;
+    document.getElementById('tasks-breakdown').innerHTML =
+        `<span style="color: var(--danger);">${tasks.overdue} overdue</span>, ` +
+        `<span style="color: var(--warning);">${tasks.due_this_week} due this week</span>`;
+
+    // Deadlines table
+    const deadlinesBody = document.getElementById('deadlines-table-body');
+    if (overview.upcoming_deadlines.length === 0) {
+        deadlinesBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">No upcoming deadlines</td></tr>';
+    } else {
+        deadlinesBody.innerHTML = overview.upcoming_deadlines.map(deadline => {
+            let badgeClass = 'ok';
+            if (deadline.days_remaining <= 7) badgeClass = 'urgent';
+            else if (deadline.days_remaining <= 30) badgeClass = 'soon';
+
+            return `
+                <tr>
+                    <td>${deadline.title}</td>
+                    <td>${deadline.due}</td>
+                    <td><span class="deadline-badge ${badgeClass}">${deadline.days_remaining} days</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
+}
+
+function renderTrendChart(trends) {
+    const ctx = document.getElementById('readiness-trend-chart').getContext('2d');
+
+    if (trendChart) {
+        trendChart.destroy();
+    }
+
+    const dates = trends.map(t => t.date);
+    const scores = trends.map(t => t.score);
+
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Readiness Score',
+                data: scores,
+                borderColor: '#e94560',
+                backgroundColor: 'rgba(233, 69, 96, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: '#b3b3b3'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#b3b3b3',
+                        maxRotation: 45,
+                        minRotation: 45
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderFindingsChart(findings) {
+    const ctx = document.getElementById('findings-chart').getContext('2d');
+
+    if (findingsChart) {
+        findingsChart.destroy();
+    }
+
+    findingsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Critical', 'Major', 'Minor', 'Resolved'],
+            datasets: [{
+                data: [
+                    findings.open_critical,
+                    findings.open_major,
+                    findings.open_minor,
+                    findings.resolved
+                ],
+                backgroundColor: [
+                    '#ef4444',
+                    '#fbbf24',
+                    '#fb923c',
+                    '#4ade80'
+                ]
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#b3b3b3'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)'
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: '#b3b3b3'
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Load dashboard on page load
+document.addEventListener('DOMContentLoaded', loadExecutiveDashboard);
+</script>
+{% endblock %}

@@ -1378,6 +1378,12 @@ def tasks_page():
     return render_template('tasks.html')
 
 
+@app.route('/executive')
+def executive_dashboard():
+    """Executive dashboard page (admin+ only)."""
+    return render_template('executive.html')
+
+
 # =============================================================================
 # Error Handlers
 # =============================================================================
