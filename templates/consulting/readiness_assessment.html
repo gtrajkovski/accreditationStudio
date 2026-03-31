@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+
+{% block title %}Readiness Assessment - AccreditAI{% endblock %}
+{% block header_title %}Readiness Assessment{% endblock %}
+
+{% block extra_head %}
+<style>
+.assessment-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.readiness-ring-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.readiness-ring {
+    position: relative;
+    width: 200px;
+    height: 200px;
+}
+
+.ring-background {
+    fill: none;
+    stroke: var(--bg-primary);
+    stroke-width: 20;
+}
+
+.ring-progress {
+    fill: none;
+    stroke-width: 20;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+    transition: stroke-dashoffset 1s ease-in-out;
+}
+
+.ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.ring-score {
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ring-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.rating-badge {
+    display: inline-block;
+    padding: 0.5rem 1.5rem;
+    border-radius: 24px;
+    font-weight: 600;
+    font-size: 18px;
+    margin: 1rem 0;
+}
+
+.rating-badge.ready {
+    background: var(--success);
+    color: white;
+}
+
+.rating-badge.conditionally_ready {
+    background: var(--warning);
+    color: #1a1a2e;
+}
+
+.rating-badge.not_ready {
+    background: var(--danger);
+    color: white;
+}
+
+.timeline-box {
+    background: var(--bg-card);
+    border-left: 4px solid var(--accent);
+    padding: 1.5rem;
+    margin: 2rem 0;
+    border-radius: 8px;
+}
+
+.timeline-box h3 {
+    margin-top: 0;
+    color: var(--accent);
+}
+
+.effort-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.effort-indicator.low {
+    border-left: 4px solid var(--success);
+}
+
+.effort-indicator.medium {
+    border-left: 4px solid var(--warning);
+}
+
+.effort-indicator.high {
+    border-left: 4px solid var(--danger);
+}
+
+.sections-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.section-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.section-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.section-score {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.section-rating {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.section-rating.compliant {
+    background: var(--success);
+    color: white;
+}
+
+.section-rating.conditionally_ready {
+    background: var(--warning);
+    color: #1a1a2e;
+}
+
+.section-rating.not_ready {
+    background: var(--danger);
+    color: white;
+}
+
+.section-summary {
+    color: var(--text-secondary);
+    margin: 0.5rem 0;
+}
+
+.section-gaps {
+    margin-top: 1rem;
+    display: none;
+}
+
+.section-card.expanded .section-gaps {
+    display: block;
+}
+
+.gap-item {
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 0.5rem 0;
+    border-left: 4px solid var(--danger);
+}
+
+.gap-severity {
+    font-weight: 600;
+    color: var(--danger);
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.gap-summary {
+    margin: 0.5rem 0;
+}
+
+.critical-gaps-section {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+    border: 2px solid var(--danger);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.critical-gaps-section h2 {
+    color: var(--danger);
+    margin-top: 0;
+}
+
+.gap-list {
+    list-style: none;
+    padding: 0;
+}
+
+.gap-list li {
+    background: var(--bg-card);
+    padding: 1rem;
+    margin: 0.5rem 0;
+    border-radius: 8px;
+    border-left: 4px solid var(--danger);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    justify-content: center;
+}
+
+.btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-export:hover {
+    background: #ff6b82;
+}
+
+.btn-export svg {
+    width: 20px;
+    height: 20px;
+}
+
+.executive-summary {
+    background: var(--bg-card);
+    padding: 2rem;
+    border-radius: 12px;
+    margin: 2rem 0;
+    line-height: 1.8;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="assessment-header">
+    <h1 id="institution-name">Loading...</h1>
+    <div class="readiness-ring-container">
+        <div class="readiness-ring">
+            <svg width="200" height="200">
+                <circle class="ring-background" cx="100" cy="100" r="90"></circle>
+                <circle class="ring-progress" id="ring-progress" cx="100" cy="100" r="90"></circle>
+            </svg>
+            <div class="ring-text">
+                <div class="ring-score" id="ring-score">--</div>
+                <div class="ring-label">Readiness Score</div>
+            </div>
+        </div>
+    </div>
+    <div class="rating-badge" id="rating-badge">Loading...</div>
+</div>
+
+<div class="executive-summary">
+    <h2>Executive Summary</h2>
+    <p id="executive-summary-text">Loading assessment...</p>
+</div>
+
+<div class="timeline-box">
+    <h3>Timeline Recommendation</h3>
+    <p id="timeline-recommendation">Loading...</p>
+    <div class="effort-indicator" id="effort-indicator">
+        <span>Estimated Remediation Effort:</span>
+        <strong id="effort-level">--</strong>
+    </div>
+</div>
+
+<div id="critical-gaps-section" style="display: none;">
+    <div class="critical-gaps-section">
+        <h2>Critical Gaps Requiring Immediate Attention</h2>
+        <ul class="gap-list" id="critical-gaps-list"></ul>
+    </div>
+</div>
+
+<h2>Section-by-Section Analysis</h2>
+<div class="sections-grid" id="sections-grid">
+    <!-- Sections populated by JavaScript -->
+</div>
+
+<div class="action-buttons">
+    <button class="btn-export" id="btn-export-pdf">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+        Export as PDF
+    </button>
+    <button class="btn-export" id="btn-share" style="background: var(--success);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        Share with Leadership
+    </button>
+</div>
+
+<script>
+let assessmentData = null;
+const institutionId = window.location.pathname.split('/')[3] || 'inst_001';
+
+async function loadAssessment() {
+    try {
+        const response = await fetch(`/api/consulting/readiness-assessment/${institutionId}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load assessment');
+        }
+
+        assessmentData = data.assessment;
+        renderAssessment(assessmentData);
+    } catch (error) {
+        console.error('Error loading assessment:', error);
+        alert('Failed to load readiness assessment. Please try again.');
+    }
+}
+
+function renderAssessment(assessment) {
+    // Header
+    document.getElementById('institution-name').textContent = assessment.institution_name;
+
+    // Readiness ring
+    const score = assessment.readiness_score;
+    const circumference = 2 * Math.PI * 90;
+    const offset = circumference - (score / 100) * circumference;
+
+    const ringProgress = document.getElementById('ring-progress');
+    ringProgress.style.strokeDasharray = circumference;
+    ringProgress.style.strokeDashoffset = offset;
+
+    // Color based on score
+    let color;
+    if (score >= 90) color = 'var(--success)';
+    else if (score >= 70) color = 'var(--warning)';
+    else color = 'var(--danger)';
+
+    ringProgress.style.stroke = color;
+    document.getElementById('ring-score').textContent = score;
+
+    // Rating badge
+    const badge = document.getElementById('rating-badge');
+    badge.textContent = formatRating(assessment.overall_rating);
+    badge.className = `rating-badge ${assessment.overall_rating}`;
+
+    // Executive summary
+    document.getElementById('executive-summary-text').textContent = assessment.executive_summary;
+
+    // Timeline
+    document.getElementById('timeline-recommendation').textContent = assessment.timeline_recommendation;
+
+    // Effort
+    const effortIndicator = document.getElementById('effort-indicator');
+    effortIndicator.className = `effort-indicator ${assessment.remediation_effort}`;
+    document.getElementById('effort-level').textContent = assessment.remediation_effort.toUpperCase();
+
+    // Critical gaps
+    if (assessment.critical_gaps && assessment.critical_gaps.length > 0) {
+        document.getElementById('critical-gaps-section').style.display = 'block';
+        const gapsList = document.getElementById('critical-gaps-list');
+        gapsList.innerHTML = assessment.critical_gaps.map(gap => `
+            <li>
+                <strong style="color: var(--danger);">${gap.severity.toUpperCase()}:</strong>
+                ${gap.message}
+                ${gap.action ? `<br><em>Action: ${gap.action}</em>` : ''}
+            </li>
+        `).join('');
+    }
+
+    // Sections
+    const sectionsGrid = document.getElementById('sections-grid');
+    sectionsGrid.innerHTML = assessment.sections.map(section => {
+        let scoreColor;
+        if (section.score >= 90) scoreColor = 'var(--success)';
+        else if (section.score >= 70) scoreColor = 'var(--warning)';
+        else scoreColor = 'var(--danger)';
+
+        const gapsHtml = section.critical_gaps.length > 0 ? `
+            <div class="section-gaps">
+                <h4>Critical Gaps:</h4>
+                ${section.critical_gaps.map(gap => `
+                    <div class="gap-item">
+                        <div class="gap-severity">${gap.severity}</div>
+                        <div class="gap-summary">${gap.summary}</div>
+                        ${gap.recommendation ? `<div><em>Recommendation: ${gap.recommendation}</em></div>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        ` : '';
+
+        return `
+            <div class="section-card" data-section="${section.section_code}">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">${section.section}</div>
+                        <div class="section-summary">${section.findings_summary}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="section-score" style="color: ${scoreColor};">${section.score}</div>
+                        <div class="section-rating ${section.rating}">${formatRating(section.rating)}</div>
+                    </div>
+                </div>
+                ${gapsHtml}
+            </div>
+        `;
+    }).join('');
+
+    // Add click handlers for expand/collapse
+    document.querySelectorAll('.section-card').forEach(card => {
+        card.addEventListener('click', () => {
+            card.classList.toggle('expanded');
+        });
+    });
+}
+
+function formatRating(rating) {
+    const labels = {
+        'ready': 'READY',
+        'conditionally_ready': 'CONDITIONALLY READY',
+        'not_ready': 'NOT READY',
+        'compliant': 'COMPLIANT',
+        'unknown': 'UNKNOWN'
+    };
+    return labels[rating] || rating.toUpperCase();
+}
+
+// Export PDF
+document.getElementById('btn-export-pdf').addEventListener('click', async () => {
+    try {
+        const response = await fetch(`/api/consulting/readiness-assessment/${institutionId}/export`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({format: 'pdf'})
+        });
+
+        if (!response.ok) throw new Error('Export failed');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `readiness_assessment_${institutionId}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export PDF. Please try again.');
+    }
+});
+
+// Share (placeholder - would integrate with email/report system)
+document.getElementById('btn-share').addEventListener('click', () => {
+    alert('Share functionality will integrate with the reporting system (Phase 30).');
+});
+
+// Load on page load
+loadAssessment();
+</script>
+{% endblock %}
