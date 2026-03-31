@@ -1230,6 +1230,51 @@ def institution_packet_wizard(id):
     )
 
 
+@app.route('/institutions/<id>/readiness-assessment')
+def institution_readiness_assessment(id):
+    """Consulting readiness assessment page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'consulting/readiness_assessment.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
+@app.route('/institutions/<id>/pre-visit-checklist')
+def institution_pre_visit_checklist(id):
+    """Consulting pre-visit checklist page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'consulting/pre_visit_checklist.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
+@app.route('/institutions/<id>/self-assessment')
+def institution_self_assessment(id):
+    """Consulting guided self-assessment page."""
+    institution = workspace_manager.load_institution(id)
+    if not institution:
+        return render_template('404.html'), 404
+
+    return render_template(
+        'consulting/guided_review.html',
+        institution=institution,
+        current_institution=institution,
+        readiness_score=_get_readiness_score(id),
+    )
+
+
 @app.route('/chat')
 def chat():
     """AI chat interface page."""
