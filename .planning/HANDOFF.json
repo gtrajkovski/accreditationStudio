@@ -1,56 +1,36 @@
 {
   "version": "1.0",
-  "timestamp": "2026-03-31T21:43:56.051Z",
-  "phase": "v2.0",
-  "phase_name": "v2.0-milestone",
-  "phase_dir": ".planning/phases/v2.0-milestone",
-  "plan": null,
-  "task": null,
-  "total_tasks": 20,
+  "timestamp": "2026-04-06T13:21:21.294Z",
+  "phase": "execution-prompt",
+  "phase_name": "v2.1-verification-qa-system",
+  "phase_dir": ".planning",
+  "plan": 1,
+  "task": 2,
+  "total_tasks": 10,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Cold Start Smoke Test", "status": "done", "commit": null}
+    {"id": 1, "name": "Task 1-01: Inventory Audit", "status": "done", "commit": "a46ebcd"},
+    {"id": 2, "name": "Task 1-02: Fix Test Failures", "status": "in_progress", "progress": "Added session-scoped test DB fixture, test_auth.py passes (24/24)"}
   ],
   "remaining_tasks": [
-    {"id": 2, "name": "Bulk Remediation Page Loads", "status": "not_started"},
-    {"id": 3, "name": "Bulk Remediation Scope Preview", "status": "not_started"},
-    {"id": 4, "name": "Bulk Remediation Job Start", "status": "not_started"},
-    {"id": 5, "name": "Bulk Remediation Approval", "status": "not_started"},
-    {"id": 6, "name": "Packet Wizard Page Loads", "status": "not_started"},
-    {"id": 7, "name": "Packet Wizard Step 1 - Submission Type", "status": "not_started"},
-    {"id": 8, "name": "Packet Wizard Step 2 - Standards", "status": "not_started"},
-    {"id": 9, "name": "Packet Wizard Step 3 - Evidence Mapping", "status": "not_started"},
-    {"id": 10, "name": "Packet Wizard Step 4 - Narrative", "status": "not_started"},
-    {"id": 11, "name": "Packet Wizard Step 5 - Preview", "status": "not_started"},
-    {"id": 12, "name": "Packet Wizard Validation", "status": "not_started"},
-    {"id": 13, "name": "Document Workbench IDE Page Loads", "status": "not_started"},
-    {"id": 14, "name": "Workbench IDE Document List", "status": "not_started"},
-    {"id": 15, "name": "Workbench IDE Inline Highlights", "status": "not_started"},
-    {"id": 16, "name": "Workbench IDE Finding Navigation", "status": "not_started"},
-    {"id": 17, "name": "Workbench IDE Fix Preview", "status": "not_started"},
-    {"id": 18, "name": "Workbench IDE Apply Fix", "status": "not_started"},
-    {"id": 19, "name": "Workbench IDE View Mode Toggle", "status": "not_started"},
-    {"id": 20, "name": "i18n Spanish Locale", "status": "not_started"}
+    {"id": 2, "name": "Task 1-02: Fix Test Failures (continued)", "status": "in_progress"},
+    {"id": 3, "name": "Task 1-03: v2.1 Integration Smoke Test", "status": "not_started"},
+    {"id": 4, "name": "Task 2-01: QA Infrastructure", "status": "not_started"},
+    {"id": 5, "name": "Task 2-02: Diagnostic Engine", "status": "not_started"},
+    {"id": 6, "name": "Task 2-03: CLI Runner", "status": "not_started"},
+    {"id": 7, "name": "Task 2-04: QA System Tests", "status": "not_started"},
+    {"id": 8, "name": "Task 3-01: Stub Sweep", "status": "not_started"},
+    {"id": 9, "name": "Task 3-02: Exception Handler Sweep", "status": "not_started"},
+    {"id": 10, "name": "Task 4-01: Final Status Report", "status": "not_started"}
   ],
-  "blockers": [],
-  "human_actions_pending": [
-    {
-      "action": "Import real accreditation documents from Marisabel folder",
-      "context": "User requested importing ~944 real documents from C:\\Users\\gpt30\\OneDrive\\Desktop\\Marisabel into the database before continuing UAT. Documents include files from ADTEC, PPG, CEM, CFTC institutions.",
-      "blocking": true
-    }
+  "blockers": [
+    {"description": "test_rbac.py, test_activity.py, test_tasks.py have local db fixtures causing SQLite locking", "type": "technical", "workaround": "Remove local db fixtures, use session-scoped one from conftest.py"}
   ],
+  "human_actions_pending": [],
   "decisions": [
-    {
-      "decision": "Use real documents for UAT testing instead of seed data",
-      "rationale": "User wants to test with actual accreditation documents from real organizations",
-      "phase": "v2.0"
-    }
+    {"decision": "Use session-scoped test database with WAL mode", "rationale": "Prevents SQLite locking", "phase": "1-02"}
   ],
-  "uncommitted_files": [
-    ".planning/config.json",
-    ".planning/phases/v2.0-milestone/v2.0-UAT.md"
-  ],
-  "next_action": "Import documents from C:\\Users\\gpt30\\OneDrive\\Desktop\\Marisabel folder into the database, creating institutions (ADTEC, PPG, CEM, CFTC) and linking documents. Then resume UAT at Test 2.",
-  "context_notes": "User paused UAT for v2.0-milestone (Productivity Tools) to import real accreditation documents. Server is running on port 5006. Database has 2 institutions and 0 documents. Need to: 1) Create institutions for ADTEC (multiple campuses), PPG, CEM, CFTC. 2) Import ~944 documents from Marisabel folder. 3) Resume UAT testing."
+  "uncommitted_files": [".planning/config.json", ".planning/phases/v2.0-milestone/v2.0-UAT.md"],
+  "next_action": "Update db fixtures in test_rbac.py, test_activity.py, test_tasks.py - remove local db fixture definitions",
+  "context_notes": "v2.1 code 100% complete. QA system (src/qa/) needs full implementation. Main blocker is test DB locking in non-auth test files."
 }
