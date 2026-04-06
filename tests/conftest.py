@@ -13,7 +13,52 @@ sys.path.insert(0, str(project_root))
 import pytest
 import tempfile
 import sqlite3
+import os
 from unittest.mock import MagicMock, patch
+
+# Global test database path - set per session
+_TEST_DB_PATH = None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_database(tmp_path_factory):
+    """Create a session-wide test database with proper isolation.
+
+    This fixture:
+    1. Creates a temp database file for the entire test session
+    2. Patches get_db_path to return the test database
+    3. Applies all migrations once
+    4. Enables WAL mode for better concurrent access
+    """
+    global _TEST_DB_PATH
+
+    # Create temp directory for test database
+    test_dir = tmp_path_factory.mktemp("test_db")
+    _TEST_DB_PATH = test_dir / "test_accreditai.db"
+
+    # Patch the config and connection module
+    import src.db.connection as conn_module
+    original_get_db_path = conn_module.get_db_path
+
+    def test_get_db_path():
+        return _TEST_DB_PATH
+
+    conn_module.get_db_path = test_get_db_path
+
+    # Apply migrations to the test database
+    from src.db.migrate import apply_migrations
+    apply_migrations()
+
+    # Enable WAL mode for better concurrent access
+    conn = sqlite3.connect(str(_TEST_DB_PATH))
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.close()
+
+    yield _TEST_DB_PATH
+
+    # Restore original function (cleanup)
+    conn_module.get_db_path = original_get_db_path
 
 
 @pytest.fixture
